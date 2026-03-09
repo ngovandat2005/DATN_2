@@ -9,23 +9,25 @@ const { Title, Text, Paragraph } = Typography;
 const blogPosts = [
   {
     id: 1,
-    title: 'Top 10 giày thể thao bán chạy nhất năm 2024',
-    summary: 'Khám phá những mẫu giày thể thao được ưa chuộng nhất trong năm nay...',
-    image: 'https://example.com/top-shoes.jpg',
-    author: 'Nguyễn Văn A',
-    date: '2024-04-15',
+    title: "Top 10 giày thể thao bán chạy nhất năm 2025",
+    summary:
+      "Khám phá những mẫu giày thể thao được ưa chuộng nhất trong năm nay...",
+    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+    author: "Nguyễn Văn A",
+    date: "2025-08-15",
     views: 1234,
-    tags: ['Giày thể thao', 'Xu hướng'],
+    tags: ["Giày thể thao", "Xu hướng"],
   },
   {
     id: 2,
-    title: 'Hướng dẫn chọn giày chạy bộ phù hợp',
-    summary: 'Làm thế nào để chọn được đôi giày chạy bộ phù hợp với đôi chân của bạn...',
-    image: 'https://example.com/running-shoes.jpg',
-    author: 'Trần Thị B',
-    date: '2024-04-10',
+    title: "Hướng dẫn chọn giày chạy bộ phù hợp",
+    summary:
+      "Làm thế nào để chọn được đôi giày chạy bộ phù hợp với đôi chân của bạn...",
+    image: "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=800",
+    author: "Trần Thị B",
+    date: "2025-09-10",
     views: 856,
-    tags: ['Chạy bộ', 'Hướng dẫn'],
+    tags: ["Chạy bộ", "Hướng dẫn"],
   },
   // Thêm các bài viết khác...
 ];
