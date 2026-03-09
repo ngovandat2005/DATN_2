@@ -187,60 +187,7 @@ function Footer() {
           </Col>
         ))}
 
-        {/* Đăng ký nhận tin */}
-        <Col xs={24} sm={24} md={8}>
-          <Title level={4} style={{ 
-            color: '#fff', 
-            marginBottom: '24px',
-            fontSize: '18px',
-            fontWeight: '600',
-            letterSpacing: '0.5px',
-          }}>
-            Đăng Ký Nhận Tin
-          </Title>
-          <Text style={{ 
-            color: 'rgba(255,255,255,0.75)', 
-            display: 'block', 
-            marginBottom: '20px',
-            fontSize: '14px',
-            lineHeight: '1.6',
-          }}>
-            Nhận thông tin về sản phẩm mới và khuyến mãi đặc biệt
-          </Text>
-          <Space.Compact style={{ width: '100%', marginBottom: '16px' }}>
-            <Input 
-              placeholder="Email của bạn" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onPressEnter={handleSubscribe}
-              style={{
-                height: '44px',
-                fontSize: '14px',
-                borderRadius: '6px 0 0 6px',
-              }}
-            />
-            <Button 
-              type="primary" 
-              onClick={handleSubscribe}
-              loading={loading}
-              style={{
-                height: '44px',
-                borderRadius: '0 6px 6px 0',
-                fontSize: '14px',
-                fontWeight: '500',
-                padding: '0 24px',
-              }}
-            >
-              Đăng ký
-            </Button>
-          </Space.Compact>
-          <Text style={{ 
-            color: 'rgba(255,255,255,0.5)', 
-            fontSize: '12px',
-          }}>
-            Chúng tôi cam kết bảo mật thông tin của bạn
-          </Text>
-        </Col>
+       
       </Row>
 
       <Divider style={{ 
