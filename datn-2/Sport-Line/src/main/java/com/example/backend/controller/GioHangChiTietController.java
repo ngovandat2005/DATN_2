@@ -41,6 +41,12 @@ public class GioHangChiTietController {
         return ResponseEntity.noContent().build();
     }
 
+        @DeleteMapping("/xoa/{id}")
+    public ResponseEntity<Void> xoaSanPhamKhoiGio(@PathVariable Integer id) {
+        gioHangChiTietService.xoaTheoId(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/so-loai/{idKhach}")
     public ResponseEntity<Integer> soLoai(@PathVariable Integer idKhach) {
         int count = gioHangChiTietService.soLoaiSanPham(idKhach);
