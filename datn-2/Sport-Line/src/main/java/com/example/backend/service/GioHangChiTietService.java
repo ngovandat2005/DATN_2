@@ -80,4 +80,7 @@ public class GioHangChiTietService {
     public double tongTien(Integer idKhachHang) {
         return repo.tinhTongTienGioHang(idKhachHang);
     }
+     public void xoaTheoId(Integer id) {
+        repo.deleteById(id);
+    }
 }
