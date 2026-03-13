@@ -4,7 +4,6 @@ package com.example.backend.service;
 
 
 import com.example.backend.entity.DanhMuc;
-import com.example.backend.entity.KichThuoc;
 import com.example.backend.repository.DanhMucInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

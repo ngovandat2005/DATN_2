@@ -38,8 +38,6 @@ public class DonHangService {
     @Autowired
     private SanPhamChiTietRepository sanPhamChiTietRepository;
 
-    @Autowired
-    private SanPhamChiTietRepository spctRepo;
 
     @Autowired
     private VoucherRepository voucherRepository;
@@ -361,12 +359,12 @@ public List<DonHangDTO> filterByTrangThaiAndLoai(Integer trangThai, String loaiD
         List<DonHangChiTiet> dsChiTiet = new ArrayList<>();
 
         for (SanPhamDatDTO dto : req.getSanPhamDat()) {
-            SanPhamChiTiet sp = spctRepo.findById(dto.getIdSanPhamChiTiet()).orElseThrow();
+            SanPhamChiTiet sp = sanPhamChiTietRepository.findById(dto.getIdSanPhamChiTiet()).orElseThrow();
             if (sp.getSoLuong() < dto.getSoLuong())
                 throw new RuntimeException("Sản phẩm đã hết hàng");
 
             sp.setSoLuong(sp.getSoLuong() - dto.getSoLuong());
-            spctRepo.save(sp);
+            sanPhamChiTietRepository.save(sp);
 
             Double gia = (sp.getGiaBanGiamGia() != null && sp.getGiaBanGiamGia() > 0 && sp.getGiaBanGiamGia() < sp.getGiaBan())
                     ? sp.getGiaBanGiamGia() : sp.getGiaBan();
@@ -453,7 +451,7 @@ public List<DonHangDTO> filterByTrangThaiAndLoai(Integer trangThai, String loaiD
             if (sp != null) {
                 int hienTai = sp.getSoLuong();
                 sp.setSoLuong(hienTai + ct.getSoLuong());
-                spctRepo.save(sp);
+                sanPhamChiTietRepository.save(sp);
             }
         }
         donHangRepository.save(don);
@@ -492,10 +490,6 @@ public List<DonHangDTO> filterByTrangThaiAndLoai(Integer trangThai, String loaiD
         donHangRepository.save(don);
 
         return new DonHangDTO(don);
-    }
-
-    private int tinhPhiGHN(int districtId, String wardCode) {
-        return 30000; // giả lập
     }
 
     public List<DonHang> layDonTheoKhach(Integer idKhach) {

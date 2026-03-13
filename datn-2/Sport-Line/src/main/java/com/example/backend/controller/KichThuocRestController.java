@@ -3,7 +3,7 @@ package com.example.backend.controller;
 
 import com.example.backend.entity.KichThuoc;
 
-import com.example.backend.entity.ThuongHieu;
+
 import com.example.backend.service.KichThuocService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

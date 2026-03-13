@@ -5,7 +5,6 @@ package com.example.backend.dto;
 
 
 import com.example.backend.entity.DonHang;
-import com.example.backend.entity.DonHangChiTiet;
 import com.example.backend.enums.TrangThaiDonHang;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,7 +13,6 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
     @AllArgsConstructor
     @NoArgsConstructor
@@ -50,7 +48,7 @@ import java.util.stream.Collectors;
         private String trangThaiText;
 
 
-        private double tongTien;
+        private Double tongTien;
 
 
         private Double tongTienGiamGia;
@@ -76,6 +74,8 @@ import java.util.stream.Collectors;
 
 
         public DonHangDTO(DonHang dh) {
+            if (dh == null) return;
+            
             this.id = dh.getId();
             this.idnhanVien = dh.getNhanVien() != null ? dh.getNhanVien().getId() : null;
             this.idkhachHang = dh.getKhachHang() != null ? dh.getKhachHang().getId() : null;
@@ -86,15 +86,23 @@ import java.util.stream.Collectors;
             this.loaiDonHang = dh.getLoaiDonHang();
 
             this.trangThai = dh.getTrangThai();
-            this.trangThaiText = TrangThaiDonHang.fromValue(dh.getTrangThai()).name();
+            if (dh.getTrangThai() != null) {
+                try {
+                    this.trangThaiText = TrangThaiDonHang.fromValue(dh.getTrangThai()).name();
+                } catch (Exception e) {
+                    this.trangThaiText = "TRẠNG THÁI " + dh.getTrangThai();
+                }
+            } else {
+                this.trangThaiText = "CHƯA XÁC ĐỊNH";
+            }
 
-            this.tongTien = dh.getTongTien();
-            this.tongTienGiamGia = dh.getTongTienGiamGia();
+            this.tongTien = dh.getTongTien() != null ? dh.getTongTien() : 0.0;
+            this.tongTienGiamGia = dh.getTongTienGiamGia() != null ? dh.getTongTienGiamGia() : 0.0;
             this.diaChiGiaoHang = dh.getDiaChiGiaoHang();
             this.soDienThoaiGiaoHang = dh.getSoDienThoaiGiaoHang();
             this.emailGiaoHang = dh.getEmailGiaoHang();
             this.tenNguoiNhan = dh.getTenNguoiNhan();
-            this.phiVanChuyen = dh.getPhiVanChuyen();
+            this.phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0;
 
 
             if (dh.getDonHangChiTiets() != null) {

@@ -30,6 +30,10 @@ public class GHNClientService {
     @Value("${ghn.baseUrl}")
     private String ghnBaseUrl;
 
+    @Value("${ghn.fromDistrictId}")
+    private Integer fromDistrictId;
+
+    @SuppressWarnings("unchecked")
     public int tinhPhiVanChuyen(Integer toDistrictId, String toWardCode, int weightGram) {
         String url = ghnBaseUrl + "/v2/shipping-order/fee";
 
@@ -39,7 +43,7 @@ public class GHNClientService {
         headers.set("ShopId", String.valueOf(ghnShopId));
 
         Map<String, Object> body = new java.util.HashMap<>();
-        body.put("from_district_id", 1442);
+        body.put("from_district_id", fromDistrictId);
         body.put("to_district_id", toDistrictId);
         body.put("to_ward_code", toWardCode);
         body.put("service_id", 53320); // Thường ổn định hơn service_type_id
@@ -55,7 +59,7 @@ public class GHNClientService {
         System.out.println("GHN ShopId = " + ghnShopId);
 
         try {
-            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, request, (Class<Map<String, Object>>) (Class<?>) Map.class);
             Map<String, Object> responseBody = response.getBody();
 
             if (responseBody == null || !(responseBody.get("data") instanceof Map)) {

@@ -7,7 +7,6 @@ package com.example.backend.controller;
 import com.example.backend.dto.KhuyenMaiDTO;
 
 import com.example.backend.entity.KhuyenMai;
-import com.example.backend.entity.SanPhamChiTiet;
 import com.example.backend.service.KhuyenMaiService;
 import com.example.backend.service.SPCTService;
 import org.springframework.beans.factory.annotation.Autowired;

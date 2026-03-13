@@ -48,7 +48,6 @@ public class SPCTRestController {
     @GetMapping("/available-for-promotion/{idKhuyenMai}")
     public ResponseEntity<List<SPCTDTO>> getAvailableForPromotion(@PathVariable Integer idKhuyenMai) {
         List<SPCTDTO> list = service.getAllForOffline();
-        System.out.println("DEBUG: available-for-promotion hit! List size: " + list.size());
         return ResponseEntity.ok(list);
     }
 

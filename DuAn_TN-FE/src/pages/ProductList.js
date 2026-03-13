@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Select, Input, Typography, Spin, Tag, Pagination, Space, Slider } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
+import config from '../config/config';
 import '../styles/Home.css'
 
 const { Option } = Select;
@@ -34,7 +35,7 @@ const getProductImage = (product) => {
   // nếu có nhiều ảnh thì lấy ảnh đầu tiên
   const firstImage = product.imanges.split(',')[0].trim();
 
-  return `http://localhost:8080/images/${firstImage}`;
+  return config.getApiUrl(`images/${firstImage}`);
 };
 
 // Hàm hiển thị giá với giá gạch đi
@@ -122,19 +123,19 @@ function ProductList() {
 
   // Lấy dữ liệu filter từ API
   useEffect(() => {
-    fetch('http://localhost:8080/api/kich-thuoc/getAll')
+    fetch(config.getApiUrl('api/kich-thuoc/getAll'))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setSizeList(data);
         else if (Array.isArray(data.data)) setSizeList(data.data);
       });
-    fetch('http://localhost:8080/api/thuong-hieu/getAll')
+    fetch(config.getApiUrl('api/thuong-hieu/getAll'))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setBrandList(data);
         else if (Array.isArray(data.data)) setBrandList(data.data);
       });
-    fetch('http://localhost:8080/api/danh-muc/getAll')
+    fetch(config.getApiUrl('api/danh-muc/getAll'))
       .then(res => res.json())
       .then(data => {
         console.log('Danh mục:', data);
@@ -146,7 +147,7 @@ function ProductList() {
   // Lấy danh sách sản phẩm từ API
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:8080/api/san-pham/getAll')
+    fetch(config.getApiUrl('api/san-pham/getAll'))
       .then(res => res.json())
       .then(async (data) => {
         let productsData = [];
@@ -158,7 +159,7 @@ function ProductList() {
         const productsWithPrices = await Promise.all(
           productsData.map(async (product) => {
             try {
-              const variantsResponse = await fetch(`http://localhost:8080/api/san-pham-chi-tiet/${product.id}`);
+              const variantsResponse = await fetch(config.getApiUrl(`api/san-pham-chi-tiet/${product.id}`));
               if (variantsResponse.ok) {
                 const variants = await variantsResponse.json();
                 if (variants && variants.length > 0) {

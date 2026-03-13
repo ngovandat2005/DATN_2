@@ -6,7 +6,7 @@ import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,7 +14,7 @@ const Login = () => {
     const password = (e.currentTarget as HTMLFormElement).password.value;
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -31,7 +31,7 @@ const Login = () => {
 
   const handleGoogleLoginSuccess = async (response: any) => {
     try {
-      const res = await fetch('http://localhost:3000/api/auth/google', {
+      const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: response.credential })
@@ -70,7 +70,7 @@ const Login = () => {
             />
             <button type="submit" className="submit-btn">ĐĂNG NHẬP</button>
             <div className="forgot-register">
-              <a href="#">Quên mật khẩu?</a>
+              <button type="button" className="link-btn" onClick={(e) => e.preventDefault()}>Quên mật khẩu?</button>
               <a href="/client/register">Đăng ký</a>
             </div>
           </form>

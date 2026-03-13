@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Card, Typography, Divider, Tag, Space, Avatar } from 'antd';
+import { Row, Col, Card, Typography, Tag, Space, Avatar } from 'antd';
 import { Link } from 'react-router-dom';
 import { UserOutlined, ClockCircleOutlined, EyeOutlined } from '@ant-design/icons';
 

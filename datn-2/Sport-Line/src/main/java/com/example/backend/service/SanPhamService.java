@@ -2,11 +2,8 @@
 package com.example.backend.service;
 
 
-import com.example.backend.dto.DonHangChiTietDTO;
-import com.example.backend.dto.SanPhanDTO;
 import com.example.backend.entity.SanPham;
 import com.example.backend.repository.SanPhamInterface;
-import com.example.backend.ThongBao;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -65,7 +62,7 @@ public class SanPhamService {
         current.setDanhMuc(sanPham.getDanhMuc());
         current.setChatLieu(sanPham.getChatLieu());
         current.setXuatXu(sanPham.getXuatXu());
-        current.setImanges(sanPham.getImanges());
+        current.setImages(sanPham.getImages());
 
         return sanPhamRepo.save(current);
     }

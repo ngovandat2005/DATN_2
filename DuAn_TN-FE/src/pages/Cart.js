@@ -9,8 +9,6 @@ import './Cart.css';
 
 function Cart() {
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectAll, setSelectAll] = useState(true);
 
   // ✅ SỬ DỤNG UTILITY FUNCTION ĐỂ LẤY ID KHÁCH HÀNG
   const customerId = getCustomerId();
@@ -30,7 +28,6 @@ function Cart() {
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        setLoading(true);
         console.log('🔄 Đang fetch giỏ hàng cho user:', customerId);
         console.log('📍 API:', config.getApiUrl(`api/gio-hang-chi-tiet/${customerId}`));
         
@@ -94,8 +91,6 @@ function Cart() {
         console.error('❌ Data:', error.response?.data);
         
         message.error(`Không lấy được giỏ hàng: ${error.response?.data?.message || error.message}`);
-      } finally {
-        setLoading(false);
       }
     };
     

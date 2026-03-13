@@ -141,7 +141,7 @@ function Footer() {
               <Text style={{ 
                 color: 'rgba(255,255,255,0.85)', 
                 fontSize: '14px',
-              }}>contact@shoestore.com</Text>
+              }}>contact@kingstep.com</Text>
             </div>
           </Space>
         </Col>
@@ -202,7 +202,7 @@ function Footer() {
             color: 'rgba(255,255,255,0.65)', 
             fontSize: '14px',
           }}>
-            © 2024 ShoeStore. Tất cả quyền được bảo lưu.
+            © 2025 KingStep. Tất cả quyền được bảo lưu.
           </Text>
         </Col>
         <Col xs={24} sm={24} md={12} style={{ 

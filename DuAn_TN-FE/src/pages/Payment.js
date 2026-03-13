@@ -17,36 +17,65 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 // ✅ THÊM: Function kiểm tra số lượng đơn hàng hiện tại của khách hàng
 const checkCustomerOrderLimit = async (customerId) => {
+  if (!customerId || customerId === 'null' || customerId === 'undefined') {
+    console.error('❌ customerId không hợp lệ:', customerId);
+    return {
+      success: false,
+      currentOrderCount: 0,
+      canCreateOrder: false,
+      message: 'Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại!'
+    };
+  }
+
+  const apiUrl = config.getApiUrl(`api/donhang/khach/${customerId}`);
   try {
-    // GỌI TRỰC TIẾP API ĐƠN HÀNG Ở PORT 8080 (như ban đầu)
-    const response = await fetch(`http://localhost:8080/api/donhang/khach/${customerId}`);
+    console.log('🚀 Đang kiểm tra giới hạn đơn hàng tại URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
+    
     if (!response.ok) {
-      throw new Error('Không thể kiểm tra đơn hàng của khách hàng');
+      const errorText = await response.text();
+      console.error(`❌ API Trả về lỗi (${response.status}):`, errorText);
+      
+      // Cố gắng parse JSON nếu có thể để lấy message lỗi từ Spring
+      let errorMessage = 'Không thể kiểm tra giới hạn đơn hàng.';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) errorMessage = errorJson.message;
+      } catch (e) {
+        // Nếu không phải JSON, lấy một phần text
+        if (errorText && errorText.length < 100) errorMessage = errorText;
+      }
+
+      return {
+        success: false,
+        currentOrderCount: 0,
+        canCreateOrder: false,
+        message: `Lỗi server (${response.status}): ${errorMessage}`
+      };
     }
 
     const orders = await response.json();
     console.log('📋 Tất cả đơn hàng của khách hàng:', orders);
 
-    // Lọc các đơn hàng không tính vào giới hạn (trạng thái 4: Hoàn thành, 5: Đã hủy, 6: Trả hàng)
-    const activeOrders = orders.filter(order => ![4, 5, 6].includes(order.trangThai));
-    console.log('📊 Đơn hàng đang hoạt động (không tính 4,5,6):', activeOrders);
-    console.log('📈 Số lượng đơn hàng hiện tại:', activeOrders.length);
+    const activeOrders = orders.filter(order => ![4, 5, 6].includes(Number(order.trangThai)));
+    console.log('📊 Đơn hàng đang hoạt động:', activeOrders.length);
 
     return {
       success: true,
       currentOrderCount: activeOrders.length,
       canCreateOrder: activeOrders.length < 10,
       message: activeOrders.length >= 10
-        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý (hiện tại: ${activeOrders.length}). Vui lòng chờ các đơn hàng hiện tại hoàn thành trước khi tạo đơn mới.`
-        : `Bạn có thể tạo thêm ${10 - activeOrders.length} đơn hàng nữa.`
+        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý.`
+        : `Có thể tạo đơn hàng.`
     };
   } catch (error) {
-    console.error('❌ Lỗi khi kiểm tra giới hạn đơn hàng:', error);
+    console.error('❌ Lỗi kết nối API:', apiUrl, error);
     return {
       success: false,
       currentOrderCount: 0,
       canCreateOrder: false,
-      message: 'Không thể kiểm tra giới hạn đơn hàng. Vui lòng thử lại sau.'
+      message: `Lỗi kết nối máy chủ! URL: ${apiUrl}. Lỗi: ${error.message}`
     };
   }
 };
@@ -951,6 +980,9 @@ const Payment = () => {
   };
 
   const handlePayment = async () => {
+    // Ngăn chặn click nhiều lần
+    if (loading) return;
+
     // ✅ SỬA: Validation chi tiết hơn
     if (!customerName.trim()) {
       toast.warning('Vui lòng nhập họ tên khách hàng!');
@@ -1003,11 +1035,14 @@ const Payment = () => {
       return;
     }
 
-    // ✅ THÊM: Kiểm tra giới hạn đơn hàng TRƯỚC KHI xử lý bất kỳ phương thức thanh toán nào
+    setLoading(true);
+
     try {
+      // ✅ THÊM: Kiểm tra giới hạn đơn hàng TRƯỚC KHI xử lý bất kỳ phương thức thanh toán nào
       const customerId = getCustomerId();
       if (!customerId) {
         toast.error('Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại!');
+        setLoading(false);
         return;
       }
 
@@ -1016,6 +1051,7 @@ const Payment = () => {
 
       if (!orderLimitCheck.success) {
         toast.error(orderLimitCheck.message);
+        setLoading(false);
         return;
       }
 
@@ -1051,7 +1087,7 @@ const Payment = () => {
             width: '500px'
           }).then((result) => {
             if (result.isConfirmed) {
-              navigate('/order-history');
+              navigate('/orders');
             }
           });
         } else {
@@ -1064,16 +1100,16 @@ const Payment = () => {
             draggable: true,
           });
         }
+        setLoading(false);
         return;
       }
 
       console.log('✅ Khách hàng có thể tạo đơn hàng mới:', orderLimitCheck.message);
     } catch (error) {
       toast.error('Lỗi khi kiểm tra giới hạn đơn hàng: ' + error.message);
+      setLoading(false);
       return;
     }
-
-    setLoading(true);
 
     // Nếu chọn thanh toán online (VNPAY)
     if (paymentMethod === 'bank') {
@@ -1318,7 +1354,7 @@ const Payment = () => {
         console.log('Bước 3: Không có voucher - cập nhật tổng tiền đơn hàng...');
 
         try {
-          const updateTotalRes = await fetch(config.getApiUrl(`api/don-hang/${newOrderId}/cap-nhat-tong-tien`), {
+          const updateTotalRes = await fetch(config.getApiUrl(`api/donhang/${newOrderId}/cap-nhat-tong-tien`), {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1771,7 +1807,7 @@ const Payment = () => {
                     <div key={index} className="gx-payment-order-item">
                       <img
                         src={item.imanges ?
-                          `http://localhost:8080/api/images/${encodeURIComponent(item.imanges)}` :
+                          config.getApiUrl(`api/images/${encodeURIComponent(item.imanges)}`) :
                           'https://via.placeholder.com/80'
                         }
                         alt={item.tenSanPham || 'Sản phẩm'}
@@ -1817,7 +1853,7 @@ const Payment = () => {
                     <div key={index} className="gx-payment-order-item">
                       <img
                         src={item.sanPhamChiTiet.sanPham?.imanges ?
-                          `http://localhost:8080/api/images/${encodeURIComponent(item.sanPhamChiTiet.sanPham.imanges)}` :
+                          config.getApiUrl(`api/images/${encodeURIComponent(item.sanPhamChiTiet.sanPham.imanges)}`) :
                           'https://via.placeholder.com/80'
                         }
                         alt={item.sanPhamChiTiet.sanPham?.tenSanPham || 'Sản phẩm'}
@@ -1857,7 +1893,7 @@ const Payment = () => {
                     <div key={index} className="gx-payment-order-item">
                       <img
                         src={item.imanges ?
-                          `http://localhost:8080/api/images/${encodeURIComponent(item.imanges)}` :
+                          config.getApiUrl(`api/images/${encodeURIComponent(item.imanges)}`) :
                           'https://via.placeholder.com/80'
                         }
                         alt={item.tenSanPham || 'Sản phẩm'}
@@ -1986,23 +2022,6 @@ const Payment = () => {
               return null;
             })()}
 
-            {/* ✅ THÊM: DEBUG BOX TRỰC TIẾP TRÊN TRANG THANH TOÁN */}
-            <div style={{
-              background: '#fffbe6',
-              border: '2px solid #ffe58f',
-              padding: '10px',
-              borderRadius: '8px',
-              marginBottom: '15px',
-              fontSize: '12px',
-              fontFamily: 'monospace'
-            }}>
-              <strong style={{ color: '#856404' }}>🔍 DEBUG DỮ LIỆU THANH TOÁN:</strong><br />
-              - Tiền hàng (chưa voucher): {total}<br />
-              - Giảm giá voucher: {orderDiscount}<br />
-              - Phí vận chuyển: {shippingFee}<br />
-              - TỔNG THANH TOÁN (final): {finalTotal}<br />
-              <span style={{ color: '#d46b08' }}>* Chụp ảnh bảng này nếu vẫn gặp lỗi!</span>
-            </div>
 
             {/* ✅ THÊM: Hiển thị tổng tiền sau khi áp dụng voucher */}
             {selectedVoucherId && orderDiscount > 0 && (

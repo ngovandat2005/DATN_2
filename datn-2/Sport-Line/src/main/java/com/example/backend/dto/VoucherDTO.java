@@ -33,8 +33,6 @@ public class VoucherDTO {
 
     private LocalDateTime ngayKetThuc;
 
-    private Integer trangThai;
-
     private Boolean isAvailable;
 
     public Integer getTrangThai() {

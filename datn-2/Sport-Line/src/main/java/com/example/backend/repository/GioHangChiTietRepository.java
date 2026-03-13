@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface GioHangChiTietRepo extends JpaRepository<GioHangChiTiet,Integer> {
+public interface GioHangChiTietRepository extends JpaRepository<GioHangChiTiet,Integer> {
 
     @Query("SELECT COALESCE(SUM(g.soLuong),0) FROM GioHangChiTiet g WHERE g.khachHang.id = :id")
     int demTongSoLuongTrongGioKhach(@Param("id") Integer idKhach);

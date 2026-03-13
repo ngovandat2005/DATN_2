@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from 'antd';
 import { ShoppingCartOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import config from '../config/config';
 import { getCustomerId, isLoggedIn } from '../utils/authUtils';
 
 /**
@@ -26,7 +27,7 @@ const CartBadge = () => {
 
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8080/api/gio-hang-chi-tiet/${customerId}`);
+        const response = await axios.get(config.getApiUrl(`api/gio-hang-chi-tiet/${customerId}`));
         
         if (response.data && Array.isArray(response.data)) {
           // Tính tổng số lượng sản phẩm trong giỏ hàng

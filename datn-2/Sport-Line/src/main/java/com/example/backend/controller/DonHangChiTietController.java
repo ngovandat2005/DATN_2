@@ -3,13 +3,9 @@ package com.example.backend.controller;
 
 
 import com.example.backend.dto.DonHangChiTietDTO;
-import com.example.backend.dto.DonHangDTO;
 import com.example.backend.entity.DonHang;
 import com.example.backend.repository.DonHangRepository;
 import com.example.backend.service.DonHangChiTietService;
-
-
-import com.example.backend.service.DonHangService;
 import com.example.backend.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +20,6 @@ public class DonHangChiTietController {
 
     @Autowired
     private DonHangChiTietService chiTietService;
-    @Autowired
-    private DonHangService donHangService;
-
     @Autowired
     private DonHangRepository donHangRepository;
 
@@ -67,33 +60,7 @@ public class DonHangChiTietController {
 
 
 
-    @GetMapping("/don-hang-chi-tiet")
-    public ResponseEntity<List<DonHangDTO>> getAll2() {
-        return ResponseEntity.ok(donHangService.getAll());
-    }
 
-    @GetMapping("/don-hang-chi-tiet/{id}")
-    public ResponseEntity<DonHangDTO> getById(@PathVariable Integer id) {
-        DonHangDTO dto = donHangService.getById(id);
-        return dto != null ? ResponseEntity.ok(dto) : ResponseEntity.notFound().build();
-    }
-
-    @PostMapping("/don-hang-chi-tiet/create")
-    public ResponseEntity<DonHangDTO> create2(@RequestBody DonHangDTO dto) {
-        return ResponseEntity.ok(donHangService.create(dto));
-    }
-
-    @PutMapping("/don-hang-chi-tiet/update/{id}")
-    public ResponseEntity<DonHangDTO> update2(@PathVariable Integer id, @RequestBody DonHangDTO dto) {
-        DonHangDTO updated = donHangService.update(id, dto);
-        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/don-hang-chi-tiet/delete/{id}")
-    public ResponseEntity<Void> delete2(@PathVariable Integer id) {
-        donHangService.delete(id);
-        return ResponseEntity.ok().build();
-    }
     @PostMapping("/don-hang-chi-tiet/{idDonHang}/apply-voucher/{idVoucher}")
     public ResponseEntity<?> applyVoucherToDonHang(
             @PathVariable Integer idDonHang,

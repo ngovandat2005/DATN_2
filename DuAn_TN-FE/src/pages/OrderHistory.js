@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import config from '../config/config';
 
 const TRANG_THAI = [
   { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
@@ -22,13 +23,7 @@ function OrderHistory() {
   const [filterStatus, setFilterStatus] = useState(-1); // Mặc định hiển thị tất cả
   const [searchText, setSearchText] = useState('');
   
-
-
-  useEffect(() => {
-    fetchOrders();
-  }, [filterStatus]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -41,40 +36,13 @@ function OrderHistory() {
              // Sử dụng API mới theo trạng thái cụ thể
        if (filterStatus === -1) {
          // Lấy tất cả đơn hàng của khách hàng
-         response = await axios.get(`http://localhost:8080/api/donhang/khach/${customerId}`);
+         response = await axios.get(config.getApiUrl(`api/donhang/khach/${customerId}`));
        } else {
          // Lấy đơn hàng theo trạng thái cụ thể (bao gồm cả trạng thái 7)
-         response = await axios.get(`http://localhost:8080/api/donhang/khach/${customerId}/trangthai/${filterStatus}`);
+         response = await axios.get(config.getApiUrl(`api/donhang/khach/${customerId}/trangthai/${filterStatus}`));
        }
       
              console.log('Orders response:', response.data);
-       // ✅ DEBUG: Log để kiểm tra dữ liệu ghiChu
-       if (filterStatus === 7) {
-         console.log('🔍 === DEBUG GIAO HÀNG KHÔNG THÀNH CÔNG ===');
-         console.log('📡 API Response:', response.data);
-         console.log('📊 Response type:', typeof response.data);
-         console.log('📊 Response length:', response.data?.length);
-         console.log('🔗 API URL:', `http://localhost:8080/api/donhang/khach/${customerId}/trangthai/${filterStatus}`);
-         
-         if (Array.isArray(response.data)) {
-           response.data.forEach((order, idx) => {
-             console.log(`📊 Đơn hàng ${idx + 1}:`, {
-               id: order.id,
-               trangThai: order.trangThai,
-               ghiChu: order.ghiChu,
-               hasGhiChu: !!order.ghiChu,
-               ghiChuType: typeof order.ghiChu,
-               // ✅ THÊM: Log toàn bộ object để kiểm tra
-               fullOrder: order,
-               // ✅ THÊM: Log tất cả keys để kiểm tra cấu trúc
-               allKeys: Object.keys(order)
-             });
-           });
-         } else {
-           console.log('⚠️ Response không phải array:', response.data);
-         }
-         console.log('🔍 === END DEBUG ===');
-       }
       
       let filteredOrders = response.data || [];
       
@@ -104,7 +72,11 @@ function OrderHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus, searchText]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // Hàm tìm kiếm
   const handleSearch = () => {
@@ -206,124 +178,7 @@ function OrderHistory() {
     </div>
   );
 
-  // Render bảng danh sách đơn hàng
-  const renderOrdersTable = () => (
-    <div style={{ width: '100%', marginTop: 0, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', overflow: 'hidden', borderCollapse: 'collapse' }}>
-      {renderFilterBar()}
-      
-      {/* Hiển thị thông tin filter hiện tại */}
-      {filterStatus !== -1 && (
-        <div style={{ 
-          background: '#e8f5e8', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
-          margin: '16px 24px',
-          border: '1px solid #4caf50',
-          color: '#2e7d32',
-          fontWeight: 500,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8
-        }}>
-          🔍 Đang lọc theo trạng thái: 
-          <span style={{ 
-            background: TRANG_THAI.find(t => t.value === filterStatus)?.color || '#999',
-            color: '#fff',
-            padding: '2px 8px',
-            borderRadius: 4,
-            fontSize: 12
-          }}>
-            {TRANG_THAI.find(t => t.value === filterStatus)?.label || 'Không xác định'}
-          </span>
-          <span style={{ marginLeft: 'auto', fontSize: 12 }}>
-            Tìm thấy {orders.length} đơn hàng
-          </span>
-        </div>
-      )}
-      
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ background: '#e3f0ff', color: '#1976d2', fontWeight: 700 }}>
-            <th style={{ padding: 12 }}>STT</th>
-            <th style={{ padding: 12 }}>Mã đơn hàng</th>
-            <th style={{ padding: 12 }}>Tên khách hàng</th>
-            <th style={{ padding: 12 }}>Ngày tạo</th>
-            <th style={{ padding: 12 }}>Số điện thoại</th>
-            <th style={{ padding: 12 }}>Tổng tiền (đã bao gồm phí ship)</th>
-            <th style={{ padding: 12 }}>Trạng thái</th>
-            <th style={{ padding: 12 }}>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.length === 0 ? (
-            <tr>
-              <td colSpan={8} style={{ textAlign: 'center', color: '#888', padding: 32 }}>
-                {loading ? 'Đang tải dữ liệu...' : 
-                 filterStatus !== -1 ? `Không có đơn hàng nào ở trạng thái "${TRANG_THAI.find(t => t.value === filterStatus)?.label}"` :
-                 'Không có đơn hàng nào'}
-              </td>
-            </tr>
-          ) : (
-            orders.map((order, idx) => {
-              const trangThaiObj = TRANG_THAI.find(t => t.value === order.trangThai) || TRANG_THAI[0];
-              return (
-                <tr key={order.id} style={{ borderBottom: '1px solid #e3e8ee', fontSize: 16 }}>
-                  <td style={{ padding: 12, textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ padding: 12, fontWeight: 700, color: '#1976d2' }}>#{order.id}</td>
-                  <td style={{ padding: 12 }}>{order.tenKhachHang || order.tenNguoiNhan || 'Chưa có thông tin'}</td>
-                  <td style={{ padding: 12 }}>{order.ngayTao || '-'}</td>
-                  <td style={{ padding: 12 }}>{order.soDienThoaiGiaoHang || '---'}</td>
-                  <td style={{ padding: 12, fontWeight: 700 }}>
-                    {(() => {
-                      // Tính tổng tiền bao gồm phí ship
-                      const tongTien = order.tongTien || 0; // tongTien đã bao gồm phí ship từ backend
-                      const phiVanChuyen = order.phiVanChuyen || 0;
-                      
-                      // Hiển thị tổng tiền cuối cùng (đã bao gồm phí ship)
-                      return `${tongTien.toLocaleString()}₫`;
-                    })()}
-                  </td>
-                  <td style={{ padding: 12 }}>
-                    <span style={{
-                      display: 'inline-block',
-                      background: trangThaiObj.color,
-                      color: '#fff',
-                      borderRadius: 12,
-                      padding: '4px 18px',
-                      fontWeight: 600,
-                      fontSize: 15,
-                      whiteSpace: 'nowrap',
-                      minWidth: 110,
-                      textAlign: 'center',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
-                    }}>
-                      {trangThaiObj.label}
-                    </span>
-                  </td>
-                  <td style={{ padding: 12 }}>
-                                         <button
-                       style={{
-                         padding: '6px 16px',
-                         background: '#1976d2',
-                         color: '#fff',
-                         border: 'none',
-                         borderRadius: 6,
-                         fontWeight: 600,
-                         cursor: 'pointer'
-                       }}
-                       onClick={() => navigate(`/orders/${order.id}`)}
-                     >
-                       Chi tiết
-                     </button>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+
 
 
 

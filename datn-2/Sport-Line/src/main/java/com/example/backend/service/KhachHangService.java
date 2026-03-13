@@ -2,7 +2,7 @@
 package com.example.backend.service;
 
 
-import com.example.backend.dto.KhachHangReponseDTO;
+import com.example.backend.dto.KhachHangResponseDTO;
 
 import com.example.backend.entity.KhachHang;
 import com.example.backend.repository.KhachHangRepository;
@@ -19,8 +19,8 @@ public class KhachHangService {
     @Autowired
     private KhachHangRepository khachHangRepository;
 
-    private KhachHangReponseDTO convertDTO(KhachHang kh){
-      return   new KhachHangReponseDTO(
+    private KhachHangResponseDTO convertDTO(KhachHang kh){
+      return   new KhachHangResponseDTO(
               kh.getId(),
               kh.getTenKhachHang(),
               kh.getEmail(),
@@ -36,9 +36,9 @@ public class KhachHangService {
 
     }
 
-    public List<KhachHangReponseDTO> findAll(){
+    public List<KhachHangResponseDTO> findAll(){
         return khachHangRepository.findAll().stream()
-                .map(khachHang -> new KhachHangReponseDTO(
+                .map(khachHang -> new KhachHangResponseDTO(
                         khachHang.getId(),
                         khachHang.getTenKhachHang(),
                         khachHang.getEmail(),
@@ -57,9 +57,9 @@ public class KhachHangService {
 
     }
 
-    public KhachHangReponseDTO findAllbyid(int id) {
+    public KhachHangResponseDTO findAllbyid(int id) {
         return khachHangRepository.findById(id)
-                .map(khachHang -> new KhachHangReponseDTO(
+                .map(khachHang -> new KhachHangResponseDTO(
                         khachHang.getId(),
                         khachHang.getTenKhachHang(),
                         khachHang.getEmail(),
@@ -77,7 +77,7 @@ public class KhachHangService {
     }
     // ham them
     // KhachHangService.java
-    public KhachHangReponseDTO create(KhachHangReponseDTO dto) {
+    public KhachHangResponseDTO create(KhachHangResponseDTO dto) {
         // Kiểm tra trùng số điện thoại
         Optional<KhachHang> existing = khachHangRepository.findBySoDienThoai(dto.getSoDienThoai());
         if (existing.isPresent()) {
@@ -105,7 +105,7 @@ public class KhachHangService {
     return      false;
     }
 
-    public KhachHangReponseDTO update( int id,KhachHangReponseDTO dto) {
+    public KhachHangResponseDTO update( int id,KhachHangResponseDTO dto) {
         return khachHangRepository.findById(id)
                 .map(kh -> {
                     kh.setTenKhachHang(dto.getTenKhachHang());

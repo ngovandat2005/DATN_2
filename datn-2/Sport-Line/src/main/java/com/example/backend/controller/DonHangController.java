@@ -1,8 +1,12 @@
-    package com.example.backend.controller;
+package com.example.backend.controller;
 
 
 
-    import com.example.backend.dto.*;
+    import com.example.backend.dto.DonHangDTO;
+    import com.example.backend.dto.UpdateVoucherDonHangRequest;
+    import com.example.backend.dto.UpdateKhachHangRequest;
+    import com.example.backend.dto.XacNhanThanhToanDTO;
+    import com.example.backend.dto.HoaDonOnlineRequest;
     import com.example.backend.entity.DonHang;
     import com.example.backend.enums.TrangThaiDonHang;
     import com.example.backend.service.DonHangService;
@@ -211,6 +215,28 @@
                 @PathVariable Integer id,
                 @RequestParam("value") int value
         ) {
+            return capNhatTrangThaiInternal(id, value);
+        }
+
+        @PutMapping("/donhang/{id}/trang-thai")
+        public ResponseEntity<?> doiTrangThaiAlias(
+                @PathVariable Integer id,
+                @RequestParam("value") int value
+        ) {
+            return capNhatTrangThaiInternal(id, value);
+        }
+
+        @PutMapping({"/donhang/{id}/cap-nhat-tong-tien", "/don-hang/{id}/cap-nhat-tong-tien"})
+        public ResponseEntity<?> capNhatTongTien(@PathVariable Integer id) {
+            try {
+                donHangService.capNhatTongTienDonHang(id);
+                return ResponseEntity.ok("Đã cập nhật lại tổng tiền đơn hàng #" + id);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Lỗi khi cập nhật tổng tiền: " + e.getMessage());
+            }
+        }
+
+        private ResponseEntity<?> capNhatTrangThaiInternal(Integer id, int value) {
             try {
                 TrangThaiDonHang trangThaiMoi = TrangThaiDonHang.fromValue(value);
                 donHangService.capNhatTrangThai(id, trangThaiMoi);

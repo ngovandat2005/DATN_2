@@ -9,35 +9,61 @@ import config from "../config/config";
 
 // ✅ THÊM: Function kiểm tra số lượng đơn hàng hiện tại của khách hàng
 const checkCustomerOrderLimit = async (customerId) => {
+  if (!customerId || customerId === 'null' || customerId === 'undefined') {
+    console.error('❌ [CheckPayment] customerId không hợp lệ:', customerId);
+    return {
+      success: false,
+      currentOrderCount: 0,
+      canCreateOrder: false,
+      message: 'Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại!'
+    };
+  }
+
+  const apiUrl = config.getApiUrl(`api/donhang/khach/${customerId}`);
   try {
-    const response = await fetch(config.getApiUrl(`api/donhang/khach/${customerId}`));
+    console.log('🚀 [CheckPayment] Đang kiểm tra giới hạn đơn hàng tại URL:', apiUrl);
+    
+    const response = await fetch(apiUrl);
+    
     if (!response.ok) {
-      throw new Error('Không thể kiểm tra đơn hàng của khách hàng');
+      const errorText = await response.text();
+      console.error(`❌ [CheckPayment] API Trả về lỗi (${response.status}):`, errorText);
+      
+      let errorMessage = 'Lỗi kiểm tra giới hạn.';
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.message) errorMessage = errorJson.message;
+      } catch (e) {
+        if (errorText && errorText.length < 100) errorMessage = errorText;
+      }
+
+      return {
+        success: false,
+        currentOrderCount: 0,
+        canCreateOrder: false,
+        message: `Lỗi server (${response.status}) khi kiểm tra giới hạn: ${errorMessage}`
+      };
     }
 
     const orders = await response.json();
-    console.log('📋 Tất cả đơn hàng của khách hàng:', orders);
-
-    // Lọc các đơn hàng không tính vào giới hạn (trạng thái 4: Hoàn thành, 5: Đã hủy, 6: Trả hàng)
-    const activeOrders = orders.filter(order => ![4, 5, 6].includes(order.trangThai));
-    console.log('📊 Đơn hàng đang hoạt động (không tính 4,5,6):', activeOrders);
-    console.log('📈 Số lượng đơn hàng hiện tại:', activeOrders.length);
+    const activeOrders = orders.filter(order => ![4, 5, 6].includes(Number(order.trangThai)));
+    console.log('📊 [CheckPayment] Đơn hàng đang hoạt động:', activeOrders.length);
 
     return {
       success: true,
       currentOrderCount: activeOrders.length,
       canCreateOrder: activeOrders.length < 10,
       message: activeOrders.length >= 10
-        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý (hiện tại: ${activeOrders.length}). Vui lòng chờ các đơn hàng hiện tại hoàn thành trước khi tạo đơn mới.`
-        : `Bạn có thể tạo thêm ${10 - activeOrders.length} đơn hàng nữa.`
+        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý.`
+        : `Hợp lệ.`
     };
   } catch (error) {
-    console.error('❌ Lỗi khi kiểm tra giới hạn đơn hàng:', error);
+    console.error('❌ [CheckPayment] Lỗi kết nối API:', apiUrl, error);
     return {
       success: false,
       currentOrderCount: 0,
       canCreateOrder: false,
-      message: 'Không thể kiểm tra giới hạn đơn hàng. Vui lòng thử lại sau.'
+      message: `Lỗi kết nối máy chủ! URL: ${apiUrl}. Lỗi: ${error.message}`
     };
   }
 };
@@ -175,51 +201,6 @@ const CheckPayment = () => {
     return processedItem;
   };
 
-  // ✅ Function áp dụng voucher (đơn giản hóa sau khi sửa Backend)
-  const applyVoucherToOrder = async (orderId, voucherId) => {
-    if (!orderId || !voucherId) return false;
-
-    try {
-      console.log('🎫 === ÁP DỤNG VOUCHER (VNPAY) ===');
-      console.log('📦 Order ID:', orderId);
-      console.log('🎫 Voucher ID:', voucherId);
-
-      console.log('🚀 Gọi API apply-voucher...');
-      const response = await fetch(config.getApiUrl(`api/donhang/${orderId}/apply-voucher/${voucherId}`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        const updatedOrder = await response.json();
-        console.log('✅ Áp dụng voucher thành công:', updatedOrder);
-
-        // ✅ Thông báo thành công (Backend đã tự động xử lý số lượng)
-        toast.success('🎫 Voucher đã được áp dụng thành công!', {
-          position: "top-center",
-          autoClose: 3000,
-        });
-
-        return true;
-      } else {
-        const errorMessage = await response.text();
-        console.error('❌ Không thể áp dụng voucher:', response.status, errorMessage);
-        toast.error(`Không thể áp dụng voucher: ${errorMessage}`, {
-          position: "top-center",
-          autoClose: 5000,
-        });
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Lỗi kết nối khi áp dụng voucher:', error);
-      toast.error('Lỗi kết nối khi áp dụng voucher', {
-        position: "top-center",
-        autoClose: 5000,
-      });
-      return false;
-    }
-  };
-
   // ✅ Function xử lý đơn hàng thành công
   const processSuccessfulOrder = async (orderInfo) => {
     if (isProcessing || hasProcessed.current) {
@@ -282,7 +263,7 @@ const CheckPayment = () => {
             width: '500px'
           }).then((result) => {
             if (result.isConfirmed) {
-              navigate('/order-history');
+              navigate('/orders');
             }
           });
         } else {
@@ -352,7 +333,7 @@ const CheckPayment = () => {
       try {
         console.log(`🔄 Gọi API cập nhật trạng thái đơn hàng #${finalOrderId}...`);
         // ✅ SỬA: URL đúng là /api/don-hang/${id}/trang-thai?value=1
-        const updateRes = await fetch(config.getApiUrl(`api/don-hang/${finalOrderId}/trang-thai?value=1`), {
+        const updateRes = await fetch(config.getApiUrl(`api/donhang/${finalOrderId}/trang-thai?value=1`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -583,7 +564,7 @@ const CheckPayment = () => {
     };
 
     processPayment();
-  }, []);
+  }, [isProcessing, navigate, searchParams, processSuccessfulOrder]);
 
   if (loading) {
     return (

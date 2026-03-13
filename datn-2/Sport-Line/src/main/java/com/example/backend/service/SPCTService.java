@@ -15,8 +15,6 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
 @Service
 public class SPCTService {
 
@@ -146,7 +144,7 @@ public class SPCTService {
     }
 
     public List<SanPhamChiTiet> removeSanPhamDuocKhuyenMai(Integer idKhuyenMai, List<Integer> listIdSanPham) {
-        KhuyenMai khuyenMai = khuyenMaiRepository.findById(idKhuyenMai)
+        khuyenMaiRepository.findById(idKhuyenMai)
                 .orElseThrow(() -> new IllegalArgumentException("Khuyến mãi không tồn tại"));
 
         List<SanPhamChiTiet> danhSachSanPham = spcti.findAllById(listIdSanPham);
@@ -210,7 +208,7 @@ public class SPCTService {
     }
 
     public SanPhamChiTiet update(Integer id, SanPhamChiTiet s) {
-        SanPhamChiTiet old = spcti.getById(id);
+        SanPhamChiTiet old = spcti.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể"));
         s.setId(old.getId());
         return spcti.save(s);
     }

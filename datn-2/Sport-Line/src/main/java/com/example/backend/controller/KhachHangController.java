@@ -3,7 +3,7 @@ package com.example.backend.controller;
 
 
 
-import com.example.backend.dto.KhachHangReponseDTO;
+import com.example.backend.dto.KhachHangResponseDTO;
 
 import com.example.backend.service.KhachHangService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +19,13 @@ public class KhachHangController {
     KhachHangService khachHangService;
 
     @GetMapping("/khachhang")
-    public ResponseEntity<List<KhachHangReponseDTO>> getall() {
+    public ResponseEntity<List<KhachHangResponseDTO>> getall() {
         return ResponseEntity.ok(khachHangService.findAll());
     }
 
     @GetMapping("/khachhang/{id}")
-    public ResponseEntity<KhachHangReponseDTO> getbyid(@PathVariable int id) {
-        KhachHangReponseDTO khachHangDTO = khachHangService.findAllbyid(id);
+    public ResponseEntity<KhachHangResponseDTO> getbyid(@PathVariable int id) {
+        KhachHangResponseDTO khachHangDTO = khachHangService.findAllbyid(id);
         if(khachHangDTO==null){
             return ResponseEntity.notFound().build();
         }
@@ -36,9 +36,9 @@ public class KhachHangController {
 
     // KhachHangController.java
     @PostMapping("/khachhang/create")
-    public ResponseEntity<?> create(@RequestBody KhachHangReponseDTO khachHangDTO) {
+    public ResponseEntity<?> create(@RequestBody KhachHangResponseDTO khachHangDTO) {
         try {
-            KhachHangReponseDTO dto = khachHangService.create(khachHangDTO);
+            KhachHangResponseDTO dto = khachHangService.create(khachHangDTO);
             return ResponseEntity.ok(dto);
         } catch (RuntimeException e) {
             // Lỗi chủ động (ví dụ: số điện thoại đã tồn tại)
@@ -59,7 +59,7 @@ public class KhachHangController {
     }
 
     @PutMapping("/khachhang/update/{id}")
-    public ResponseEntity<KhachHangReponseDTO> update(@PathVariable int id, @RequestBody KhachHangReponseDTO dto) {
+    public ResponseEntity<KhachHangResponseDTO> update(@PathVariable int id, @RequestBody KhachHangResponseDTO dto) {
         return ResponseEntity.ok(khachHangService.update(id, dto));
     }
 }

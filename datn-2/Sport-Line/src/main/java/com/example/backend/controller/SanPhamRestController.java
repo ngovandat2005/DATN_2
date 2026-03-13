@@ -1,8 +1,6 @@
 package com.example.backend.controller;
 
 
-import com.example.backend.dto.DonHangChiTietDTO;
-import com.example.backend.dto.SanPhanDTO;
 import com.example.backend.entity.SanPham;
 
 import com.example.backend.service.SanPhamService;

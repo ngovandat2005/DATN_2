@@ -13,7 +13,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Setter
 @Getter
-public class KhachHangReponseDTO {
+public class KhachHangResponseDTO {
 
 
     private Integer id;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Divider, message, Select, Row, Col } from 'antd';
+import { Form, Input, Button, Typography, Divider, Select } from 'antd';
 import { UserOutlined, MailOutlined, LockOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -7,7 +7,6 @@ import AddressSelector from '../components/AddressSelector';
 import config from '../config/config';
 
 const { Title } = Typography;
-const { Option } = Select;
 
 function Register() {
   const [loading, setLoading] = useState(false);

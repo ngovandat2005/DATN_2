@@ -3,7 +3,6 @@ package com.example.backend.service;
 
 
 
-import com.example.backend.entity.KichThuoc;
 import com.example.backend.entity.XuatXu;
 import com.example.backend.repository.XuatXuInterface;
 import org.springframework.beans.factory.annotation.Autowired;

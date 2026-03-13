@@ -38,7 +38,7 @@ function ContactPage() {
                 <MailOutlined style={{ fontSize: '20px', marginRight: '8px' }} />
                 <Text strong>Email:</Text>
                 <br />
-                <Text>contact@shoestore.com</Text>
+                <Text>contact@kingstep.com</Text>
               </div>
 
               <div>

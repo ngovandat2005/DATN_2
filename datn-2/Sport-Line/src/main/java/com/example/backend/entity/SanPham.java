@@ -1,7 +1,6 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.sql.Date;
@@ -46,7 +45,7 @@ public class SanPham {
     private DanhMuc danhMuc;
 
     @Column(name = "Images")
-    private String imanges;
+    private String images;
 
     @Column(name = "TrangThai")
     private Integer trangThai;

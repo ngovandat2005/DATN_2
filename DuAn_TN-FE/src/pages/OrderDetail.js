@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -23,11 +23,7 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchOrderDetails();
-  }, [id]);
-
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -62,9 +58,8 @@ const OrderDetail = () => {
               anh: productResponse.data?.images || '',
               mauSac: productResponse.data?.mauSac || '---',
               kichThuoc: productResponse.data?.kichThuoc || '---',
-              // ✅ SỬA: Giống hệt OrderDetailPOSPage
-              giaBan: productResponse.data?.giaBan,                // Giá gốc từ sản phẩm
-              giaBanGiamGia: item.gia,                             // Giá đã lưu trong DonHangChiTiet
+              giaBan: productResponse.data?.giaBan,
+              giaBanGiamGia: item.gia,
             };
           } catch (err) {
             console.error('Lỗi khi fetch chi tiết sản phẩm:', err);
@@ -74,9 +69,8 @@ const OrderDetail = () => {
               anh: '',
               mauSac: '---',
               kichThuoc: '---',
-              // ✅ SỬA: Giống hệt OrderDetailPOSPage
-              giaBan: 0,                    // Giá gốc từ sản phẩm
-              giaBanGiamGia: item.gia,      // Giá đã lưu trong DonHangChiTiet
+              giaBan: 0,
+              giaBanGiamGia: item.gia,
             };
           }
         })
@@ -89,7 +83,11 @@ const OrderDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchOrderDetails();
+  }, [fetchOrderDetails]);
 
   // Hàm hủy đơn hàng (chỉ cho trạng thái 0)
   const handleHuyDon = async () => {
@@ -185,7 +183,7 @@ const OrderDetail = () => {
 
     if (formValues) {
       try {
-        const response = await axios.put(`http://localhost:8080/api/donhang/huy/${id}`, {
+        const response = await axios.put(config.getApiUrl(`api/donhang/huy/${id}`), {
           ghiChu: formValues
         });
 
@@ -570,8 +568,8 @@ const OrderDetail = () => {
                 {sp.anh && sp.anh.trim() !== '' ? (
                   <img
                     src={sp.anh.includes(',')
-                      ? `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`
-                      : `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.trim())}`}
+                      ? config.getApiUrl(`api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`)
+                      : config.getApiUrl(`api/images/${encodeURIComponent(sp.anh.trim())}`)}
                     alt={sp.tenSanPham}
                     style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                     onError={(e) => {
@@ -640,25 +638,6 @@ const OrderDetail = () => {
         maxWidth: 400,
         marginLeft: 'auto'
       }}>
-        {/* ✅ DEBUG SECTION - Temporary for troubleshooting */}
-        <div style={{
-          background: '#fffbe6',
-          border: '2px solid #ffe58f',
-          borderRadius: 8,
-          padding: 15,
-          marginBottom: 16,
-          fontSize: 12,
-          color: '#856404',
-          fontFamily: 'monospace'
-        }}>
-          <strong style={{ fontSize: '14px' }}>🔍 DEBUG DỮ LIỆU ĐƠN HÀNG:</strong><br />
-          - ID Đơn: {order.id}<br />
-          - Phí vận chuyển: {order.phiVanChuyen === null ? 'null' : order.phiVanChuyen} (Kiểu: {typeof order.phiVanChuyen})<br />
-          - Tổng tiền: {order.tongTien}<br />
-          - Giảm giá: {order.tongTienGiamGia}<br />
-          - Loại đơn: {order.loaiDonHang}<br />
-          <p style={{ margin: '8px 0 0 0', color: '#d46b08' }}>* Nếu Phí vận chuyển là 0 hoặc null, dữ liệu chưa được lưu đúng vào DB.</p>
-        </div>
 
         <h3 style={{ color: '#1976d2', fontWeight: 700, marginBottom: 16 }}>💰 Tổng kết đơn hàng</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>

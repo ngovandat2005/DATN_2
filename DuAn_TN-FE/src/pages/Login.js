@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message, Alert } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Alert } from 'antd';
+import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { saveLoginInfo, isLoggedIn, getUserRole, logout } from '../utils/authUtils';
+import { saveLoginInfo, isLoggedIn, getUserRole } from '../utils/authUtils';
 import Swal from 'sweetalert2';
 
 const { Title, Text } = Typography;
@@ -42,12 +42,11 @@ function Login() {
       console.log('🔄 Login: response.data.dieuHuong:', response.data.dieuHuong);
 
       // ✅ SỬA LẠI: Map đúng tên field từ server response (loai -> lowercase 'l')
-      const { id, hoTen, loai, dieuHuong } = response.data;
+      const { id, hoTen, loai } = response.data;
 
       // Map sang tên biến mà code sử dụng
       const ten = hoTen;
       const vaiTro = loai;
-      const redirectUrl = dieuHuong;
 
       // ✅ DEBUG: Kiểm tra dữ liệu từ server
       console.log('🔄 Login: Dữ liệu từ server:', { id, ten, vaiTro });

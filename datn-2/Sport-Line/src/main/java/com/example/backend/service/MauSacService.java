@@ -2,7 +2,6 @@
 package com.example.backend.service;
 
 import com.example.backend.entity.MauSac;
-import com.example.backend.entity.ThuongHieu;
 import com.example.backend.repository.MauSacInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

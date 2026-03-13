@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +37,6 @@ public class VoucherService {
                 voucher.getDonToiThieu(),
                 voucher.getNgayBatDau(),
                 voucher.getNgayKetThuc(),
-                null, // Không set trangThai từ database
                 isAvailable
         );
         // Trạng thái sẽ được tính động bởi getTrangThai()
@@ -63,7 +61,6 @@ public class VoucherService {
                         voucher.getDonToiThieu(),
                         voucher.getNgayBatDau(),
                         voucher.getNgayKetThuc(),
-                        voucher.getTrangThai(),
                         null // hoặc true nếu muốn mặc định là đủ điều kiện
                 )).toList();
     }
@@ -83,7 +80,6 @@ public class VoucherService {
                         voucher.getDonToiThieu(),
                         voucher.getNgayBatDau(),
                         voucher.getNgayKetThuc(),
-                        voucher.getTrangThai(),
                         null // hoặc true
                 ))
                 .orElse(null);
@@ -110,7 +106,7 @@ public class VoucherService {
 
     // ham delete voucher
     public boolean delete(Integer id){
-        Voucher voucher = voucherRepository.findById(id)
+        voucherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
         // Kiểm tra có đơn hàng nào đang dùng voucher này không
         List<DonHang> donHangs = donHangRepository.findAllByGiamGia_Id(id);
@@ -234,7 +230,7 @@ public class VoucherService {
         dh.setTongTienGiamGia(tinhTongTienSauGiam(tongTien, voucher));
 
         // Trừ số lượng nếu đơn hàng đã hoàn tất
-        if ("".equals(dh.getTrangThai())) {
+        if (java.util.Objects.equals(dh.getTrangThai(), 1)) {
             voucher.setSoLuong(voucher.getSoLuong() - 1);
             voucherRepository.save(voucher);
         }

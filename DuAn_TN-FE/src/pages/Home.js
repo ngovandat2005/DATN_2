@@ -5,7 +5,6 @@ import HeroSection from '../components/HeroSection';
 import ErrorBoundary from '../components/ErrorBoundary';
 import config from '../config/config';
 import '../styles/Home.css';
-import UserProfileCard from '../components/UserProfileCard';
 
 const { Title, Text } = Typography;
 
@@ -157,7 +156,6 @@ function ProductCard({ product }) {
   console.log('🔍 ProductImage processed:', productImage);
 
   const isNew = product.moi || product.isNew || false;
-  const isOnSale = product.giamGia || product.isHotSale || false;
   const hasPromotion = idKhuyenMai || (product.khuyenMai && product.khuyenMai.id);
 
   // Tính phần trăm giảm giá
@@ -230,7 +228,7 @@ function ProductCard({ product }) {
     }
 
     // URL đúng backend
-    return `http://localhost:8080/images/${encodeURIComponent(imagePath)}`;
+    return config.getApiUrl(`images/${encodeURIComponent(imagePath)}`);
   };
   return (
     <Card

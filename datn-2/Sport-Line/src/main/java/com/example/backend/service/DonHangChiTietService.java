@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class DonHangChiTietService {
@@ -41,7 +40,7 @@ public class DonHangChiTietService {
         return chiTietRepository.findAll()
                 .stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public DonHangChiTietDTO getById(int id) {
@@ -138,7 +137,9 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             }
 
             chiTietRepository.deleteById(id);
-            donHangService.capNhatTongTienDonHang(donHang.getId());
+            if (donHang != null) {
+                donHangService.capNhatTongTienDonHang(donHang.getId());
+            }
         }
     }
     private DonHangChiTietDTO convertToDTO(DonHangChiTiet ct) {

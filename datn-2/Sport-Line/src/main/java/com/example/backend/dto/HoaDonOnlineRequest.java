@@ -1,6 +1,5 @@
 package com.example.backend.dto;
 
-import com.example.backend.dto.SanPhamDatDTO;
 import lombok.Data;
 
 import java.util.List;

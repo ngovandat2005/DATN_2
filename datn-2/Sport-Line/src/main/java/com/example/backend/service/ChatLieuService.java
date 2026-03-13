@@ -2,7 +2,6 @@ package com.example.backend.service;
 
 
 import com.example.backend.entity.ChatLieu;
-import com.example.backend.entity.ThuongHieu;
 import com.example.backend.repository.ChatLieuInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
