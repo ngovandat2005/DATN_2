@@ -327,28 +327,8 @@ const CheckPayment = () => {
       const finalOrderId = createdOrder.id;
       console.log('✅ Đã tạo đơn hàng thành công qua backend (đã bao gồm chi tiết và voucher):', finalOrderId);
 
-      // ✅ BƯỚC 5: Cập nhật trạng thái đơn hàng
-      console.log('Bước 5: Cập nhật trạng thái đơn hàng...');
-
-      try {
-        console.log(`🔄 Gọi API cập nhật trạng thái đơn hàng #${finalOrderId}...`);
-        // ✅ SỬA: URL đúng là /api/don-hang/${id}/trang-thai?value=1
-        const updateRes = await fetch(config.getApiUrl(`api/donhang/${finalOrderId}/trang-thai?value=1`), {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (updateRes.ok) {
-          console.log('✅ Cập nhật trạng thái đơn hàng thành công');
-        } else {
-          console.warn('⚠️ Không thể cập nhật trạng thái đơn hàng');
-        }
-      } catch (updateError) {
-        console.warn('⚠️ Lỗi khi cập nhật trạng thái đơn hàng:', updateError);
-      }
-
-      // ✅ BƯỚC 6: Xử lý giỏ hàng
-      console.log('Bước 6: Xử lý giỏ hàng...');
+      // ✅ BƯỚC 5: Xử lý giỏ hàng
+      console.log('Bước 5: Xử lý giỏ hàng...');
 
       if (orderInfo.cart && orderInfo.cart.length > 0) {
         const firstItem = orderInfo.cart[0];

@@ -17,7 +17,7 @@ export default function ThuongHieuPage() {
   const [showTrashModal, setShowTrashModal] = useState(false);
   const [trashThuongHieus, setTrashThuongHieus] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearchọng] = useState(false);
 
   const fetchAll = () => {
     fetch('http://localhost:8080/api/thuong-hieu/getAllFull')
@@ -39,7 +39,7 @@ export default function ThuongHieuPage() {
       return;
     }
 
-    setIsSearching(true);
+    setIsSearchọng(true);
     setSearchTerm(value);
 
     fetch(`http://localhost:8080/api/thuong-hieu/search?name=${encodeURIComponent(value)}`)
@@ -51,12 +51,12 @@ export default function ThuongHieuPage() {
       })
       .then(data => {
         setThuongHieus(data);
-        setIsSearching(false);
+        setIsSearchọng(false);
       })
       .catch(error => {
         console.error('Lỗi khi tìm kiếm:', error);
         message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearching(false);
+        setIsSearchọng(false);
       });
   };
 

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import mockOrdersOnline from './mockOrdersOnline';
 
 const TRANG_THAI = [
+  { value: -1, label: 'Tất cả', color: '#1976d2' }, // ✅ Thêm tab Tất cả
   { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
   { value: 1, label: 'Đã xác nhận', color: '#43b244' },
   { value: 2, label: 'Đang chuẩn bị', color: '#1976d2' },
@@ -25,13 +26,13 @@ const DonHangPage = () => {
   const [selectedOrderOnline, setSelectedOrderOnline] = useState(null);
 
   // Thêm các state cho filter và search hóa đơn online
-  const [filterStatus, setFilterStatus] = useState(TRANG_THAI[0].value);
+  const [filterStatus, setFilterStatus] = useState(-1); // ✅ Mặc định là Tất cả
   const [searchText, setSearchText] = useState('');
   
   // State cho tìm kiếm đơn hàng online với API
   const [searchFromDateOnline, setSearchFromDateOnline] = useState('');
   const [searchToDateOnline, setSearchToDateOnline] = useState('');
-  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+  const [isSearchingOnline, setIsSearchọngOnline] = useState(false);
   
   // State cho modal hủy đơn hàng
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -46,10 +47,10 @@ const DonHangPage = () => {
   const [searchStatus, setSearchStatus] = useState(-1);
   const [isSearchingPOS, setIsSearchingPOS] = useState(false);
 
-  // Hàm lọc và tìm kiếm hóa đơn online
+  // Hàm log và tìm kiếm hóa đơn online
   const filteredOrdersOnline = ordersOnline.filter(order => {
     // Lọc theo trạng thái nếu filterStatus khác ALL
-    const matchStatus = Number(order.trangThai) === Number(filterStatus);
+    if (filterStatus !== -1 && Number(order.trangThai) !== Number(filterStatus)) return false;
     // Tìm kiếm theo mã đơn hoặc tên khách hàng
     const search = searchText.trim().toLowerCase();
     const matchSearch =
@@ -57,7 +58,7 @@ const DonHangPage = () => {
       (order.maDon?.toLowerCase?.().includes(search) || '') ||
       (order.tenKhachHang?.toLowerCase?.().includes(search) || '') ||
       (order.tenNguoiNhan?.toLowerCase?.().includes(search) || '');
-    return matchStatus && matchSearch;
+    return matchSearch;
   });
 
   // --- POS ---
@@ -145,7 +146,7 @@ const DonHangPage = () => {
 
   // Hàm tìm kiếm đơn hàng online
   const searchOrdersOnline = async () => {
-    setIsSearchingOnline(true);
+    setIsSearchọngOnline(true);
     setLoadingOnline(true);
     setErrorOnline('');
     
@@ -166,7 +167,7 @@ const DonHangPage = () => {
       }
       
       const url = `http://localhost:8080/api/donhang/search-online?${params.toString()}`;
-      console.log('🔍 Searching online orders with URL:', url);
+      console.log('🔍 Searchọng online orders with URL:', url);
       
       const res = await fetch(url);
       if (!res.ok) throw new Error('Lỗi khi tìm kiếm đơn hàng online');
@@ -196,11 +197,11 @@ const DonHangPage = () => {
       
       setOrdersOnline(mappedData);
     } catch (err) {
-      console.error('🔍 Error searching online orders:', err);
+      console.error('🔍 Error searchọng online orders:', err);
       setErrorOnline(err.message || 'Lỗi không xác định');
     } finally {
       setLoadingOnline(false);
-      setIsSearchingOnline(false);
+      setIsSearchọngOnline(false);
     }
   };
 
@@ -209,7 +210,7 @@ const DonHangPage = () => {
     setSearchText('');
     setSearchFromDateOnline('');
     setSearchToDateOnline('');
-    // Gọi lại API để lấy dữ liệu gốc với thứ tự sắp xếp đúng
+    // Gửi lại API để lấy dữ liệu gốc với thứ tự sắp xếp đúng
     fetchOrdersOnline(Number(filterStatus));
   };
 
@@ -284,7 +285,7 @@ const DonHangPage = () => {
     }
   };
 
-  // Gọi API khi vào tab ONLINE hoặc filterStatus đổi
+  // Gii API khi vào tab ONLINE hoặc filterStatus đối
   useEffect(() => {
     if (activeTab === 'ONLINE') {
       fetchOrdersOnline(Number(filterStatus));
@@ -507,7 +508,7 @@ const DonHangPage = () => {
       
       setOrdersPOS(sortedData);
     } catch (err) {
-      console.error('❌ Error fetching POS orders:', err);
+      console.error('❌ Error fetchọng POS orders:', err);
       setErrorPOS(err.message || 'Lỗi không xác định');
     } finally {
       setLoadingPOS(false);
@@ -551,9 +552,9 @@ const DonHangPage = () => {
           }}
         />
         
-        {/* Bộ lọc từ ngày */}
+        {/* Lọc từ ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Từ:</label>
+          <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Từ ngày:</label>
           <input
             type="date"
             value={searchFromDateOnline}
@@ -567,9 +568,9 @@ const DonHangPage = () => {
           />
         </div>
         
-        {/* Bộ lọc đến ngày */}
+        {/* Lọc đến ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Đến:</label>
+          <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Đến ngày:</label>
           <input
             type="date"
             value={searchToDateOnline}
@@ -740,7 +741,7 @@ const DonHangPage = () => {
             fontSize: 14,
           }}
         >
-          🔄 Reset
+          ≡ƒöä Reset
         </button>
 
         {/* Nút test sắp xếp */}
@@ -770,7 +771,6 @@ const DonHangPage = () => {
     </div>
   );
 
-  // Render bảng danh sách đơn hàng POS
   const renderOrdersPOS = (orders) => (
     <div style={{ padding: '0 24px 24px 24px' }}>
       {/* Thông báo kết quả tìm kiếm */}
@@ -934,7 +934,6 @@ const DonHangPage = () => {
     );
   };
 
-  // Render bảng danh sách đơn hàng online (nâng cấp UI, badge trạng thái, nút thao tác)
   const renderOrdersOnline = (orders) => (
     <div style={{ width: '100%', marginTop: 0, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', overflow: 'hidden', borderCollapse: 'collapse' }}>
       {renderFilterBar()}
@@ -1002,7 +1001,7 @@ const DonHangPage = () => {
             <th style={{ padding: 12 }}>Mã đơn hàng</th>
             <th style={{ padding: 12 }}>Tên khách hàng</th>
             <th style={{ padding: 12 }}>Ngày tạo</th>
-            <th style={{ padding: 12 }}>Số khách</th>
+            <th style={{ padding: 12 }}>Số điện thoại</th>
             <th style={{ padding: 12 }}>Thành tiền</th>
             <th style={{ padding: 12 }}>Trạng thái</th>
             {(filterStatus === 5 || filterStatus === 7) && (
@@ -1128,7 +1127,7 @@ const DonHangPage = () => {
           }}
           onClick={() => setActiveTab('POS')}
         >
-          <span role="img" aria-label="pos">🧾</span> Đơn hàng POS
+          <span role="img" aria-label="pos">📦</span> Đơn hàng POS
         </button>
         <button
           style={{

@@ -15,7 +15,7 @@ export default function NhanVienPage() {
 
   const [nhanViens, setNhanViens] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearchọng] = useState(false);
 
   useEffect(() => {
     fetchNhanViens();
@@ -35,7 +35,7 @@ export default function NhanVienPage() {
       return;
     }
 
-    setIsSearching(true);
+    setIsSearchọng(true);
     setSearchTerm(value);
 
     fetch(`http://localhost:8080/api/nhanvien/search?keyword=${encodeURIComponent(value)}`)
@@ -47,12 +47,12 @@ export default function NhanVienPage() {
       })
       .then(data => {
         setNhanViens(data);
-        setIsSearching(false);
+        setIsSearchọng(false);
       })
       .catch(error => {
         console.error('Lỗi khi tìm kiếm:', error);
         message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearching(false);
+        setIsSearchọng(false);
       });
   };
 

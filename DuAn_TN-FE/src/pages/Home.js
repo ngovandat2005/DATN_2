@@ -132,19 +132,19 @@ function ProductCard({ product }) {
       .replace(/(^-|-$)/g, '');
 
   // Xử lý ảnh sản phẩm - kiểm tra nhiều trường có thể có
-  let productImage = product.hinhAnh || product.image || product.imanges || null;
+  let productImage = product.hinhAnh || product.image || product.images || null;
 
-  // Nếu imanges là array, lấy ảnh đầu tiên
+  // Nếu images là array, lấy ảnh đầu tiên
   if (Array.isArray(productImage)) {
     productImage = productImage[0] || '/unnamed.jpg';
   }
 
-  // Nếu imanges là string chứa nhiều ảnh được phân tách bởi dấu phẩy
+  // Nếu images là string chứa nhiều ảnh được phân tách bởi dấu phẩy
   if (typeof productImage === 'string' && productImage.includes(',')) {
     productImage = productImage.split(',')[0].trim() || '/unnamed.jpg';
   }
 
-  // Nếu không có ảnh hoặc ảnh rỗng, fallback về ảnh local trong public/products theo brand + tên sản phẩm
+  // Nếu không có ảnh hoặc ảnh rỗng, fallback về ảnh local trong publog/products theo brand + tên sản phẩm
   if (!productImage || productImage === '' || productImage === 'null' || productImage === 'undefined') {
     const name = productName || '';
     const brand = productBrand || '';
@@ -333,7 +333,7 @@ function Home() {
             console.log('🔍 ThuongHieu value:', allProducts[0].thuongHieu);
             console.log('🔍 HinhAnh:', allProducts[0].hinhAnh);
             console.log('🔍 Image:', allProducts[0].image);
-            console.log('🔍 Imanges:', allProducts[0].imanges);
+            console.log('🔍 Images:', allProducts[0].images);
 
             // Debug tên sản phẩm
             console.log('🔍 Tên sản phẩm - ten:', allProducts[0].ten);
@@ -352,7 +352,7 @@ function Home() {
             console.log('🔍 Tất cả các key của sản phẩm:', Object.keys(allProducts[0]));
           }
 
-          // Lọc sản phẩm nổi bật (sản phẩm có lượt xem cao hoặc được đánh dấu nổi bật)
+          // Log sản phẩm nổi bật (sản phẩm có lượt xem cao hoặc được đánh dấu nổi bật)
           const featured = allProducts
             .filter(product => product.trangThai === 1) // Chỉ sản phẩm đang hoạt động
             .sort((a, b) => {
@@ -418,7 +418,7 @@ function Home() {
 
 
 
-          // Lọc sản phẩm giảm giá (sản phẩm có giá gốc cao hơn giá bán hoặc có khuyến mãi)
+          // Log sản phẩm giảm giá (sản phẩm có giá gốc cao hơn giá bán hoặc có khuyến mãi)
           let saleProducts = allProducts
             .filter(product => {
               if (product.trangThai !== 1) return false;

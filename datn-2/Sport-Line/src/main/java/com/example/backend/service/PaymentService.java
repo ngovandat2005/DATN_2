@@ -36,32 +36,26 @@ public class PaymentService {
         List<String> fieldNames = new ArrayList<>(vnpParams.keySet());
         Collections.sort(fieldNames);
 
-        StringBuilder hashData = new StringBuilder();
-        StringBuilder query = new StringBuilder();
+        List<String> hashParts = new ArrayList<>();
+        List<String> queryParts = new ArrayList<>();
         
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String fieldName = fieldNames.get(i);
+        for (String fieldName : fieldNames) {
             String fieldValue = vnpParams.get(fieldName);
             
             if (fieldValue != null && fieldValue.length() > 0) {
                 String encodedKey = encodeValue(fieldName);
                 String encodedValue = encodeValue(fieldValue);
                 
-                // Build hash data (VNPAY 2.1.0 yêu cầu các giá trị đã encode)
-                hashData.append(fieldName).append("=").append(encodedValue);
+                // Build hash data
+                hashParts.add(fieldName + "=" + encodedValue);
                 
                 // Build query string
-                query.append(encodedKey).append("=").append(encodedValue);
-                
-                if (i < fieldNames.size() - 1) {
-                    hashData.append("&");
-                    query.append("&");
-                }
+                queryParts.add(encodedKey + "=" + encodedValue);
             }
         }
 
-        String hashDataStr = hashData.toString();
-        String queryStr = query.toString();
+        String hashDataStr = String.join("&", hashParts);
+        String queryStr = String.join("&", queryParts);
 
         String secretKey = vnpayConfig.getSecretKey().trim();
         String secureHash = VNPayUtil.hmacSHA512(secretKey, hashDataStr);
@@ -77,8 +71,8 @@ public class PaymentService {
 
     private String encodeValue(String value) {
         try {
-            // VNPAY standard Java sample uses URLEncoder without replacing + with %20
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+            // VNPAY standard Java sample requires replacing + with %20 for correct checksum
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString()).replace("+", "%20");
         } catch (Exception e) {
             return value;
         }

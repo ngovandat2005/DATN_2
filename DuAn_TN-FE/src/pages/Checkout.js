@@ -63,8 +63,8 @@ function Checkout() {
             <li key={item.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
               <img
                 src={
-                  item.sanPhamChiTiet?.sanPham?.imanges?.split(',')[0]
-                    ? `/${item.sanPhamChiTiet.sanPham.imanges.split(',')[0]}`
+                  item.sanPhamChiTiet?.sanPham?.images?.split(',')[0]
+                    ? `/${item.sanPhamChiTiet.sanPham.images.split(',')[0]}`
                     : 'https://via.placeholder.com/80x80?text=No+Image'
                 }
                 alt={item.sanPhamChiTiet?.sanPham?.tenSanPham || item.name}

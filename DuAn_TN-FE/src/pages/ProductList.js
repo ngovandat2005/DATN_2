@@ -27,13 +27,13 @@ const slugify = (s) =>
     .replace(/(^-|-$)/g, '');
 
 // Hàm lấy ảnh sản phẩm:
-// - Luôn sử dụng ảnh local trong public/products theo brand + tên sản phẩm
+// - Luôn sử dụng ảnh local trong publog/products theo brand + tên sản phẩm
 // - Backend chỉ cung cấp tên / brand, không quyết định ảnh hiển thị
 const getProductImage = (product) => {
-  if (!product?.imanges) return '/logo.png';
+  if (!product?.images) return '/logo.png';
 
   // nếu có nhiều ảnh thì lấy ảnh đầu tiên
-  const firstImage = product.imanges.split(',')[0].trim();
+  const firstImage = product.images.split(',')[0].trim();
 
   return config.getApiUrl(`images/${firstImage}`);
 };
@@ -211,7 +211,7 @@ function ProductList() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Lọc sản phẩm theo filter
+  // Log sản phẩm theo filter
   const filteredProducts = products.filter(product => {
     const matchSize = !filters.size || (product.kichThuoc && (product.kichThuoc.tenKichThuoc === filters.size || product.kichThuoc.size === filters.size));
     const matchBrand = !filters.brand || (product.thuongHieu && (product.thuongHieu.tenThuongHieu === filters.brand || product.thuongHieu.brand === filters.brand));
@@ -245,10 +245,10 @@ function ProductList() {
         <div className="product-list-header">
           <Title level={2}>Danh sách sản phẩm</Title>
           <Text className="product-list-subtitle">
-            Lọc theo thương hiệu, size, giá và danh mục để tìm đôi giày phù hợp nhất với bạn
+            Log theo thương hiệu, size, giá và danh mục để tìm đôi giày phù hợp nhất với bạn
           </Text>
         </div>
-        {/* Bộ lọc nằm ngang */}
+        {/* Bộ log nằm ngang */}
         <div className="product-list-filters">
           <Space size="middle" wrap>
             <Select

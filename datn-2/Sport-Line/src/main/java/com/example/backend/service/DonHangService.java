@@ -214,6 +214,7 @@ public List<DonHangDTO> filterByTrangThaiAndLoai(Integer trangThai, String loaiD
             }
 
             donHang.setTrangThai(1); // Đã thanh toán
+            donHang.setNgayMua(LocalDate.now()); // ✅ Cập nhật ngày mua (ngày thanh toán)
             if (phiVanChuyen != null) donHang.setPhiVanChuyen(phiVanChuyen);
             if (diaChiGiaoHang != null) donHang.setDiaChiGiaoHang(diaChiGiaoHang);
 
@@ -243,19 +244,8 @@ public List<DonHangDTO> filterByTrangThaiAndLoai(Integer trangThai, String loaiD
     }
 
     private DonHangDTO convertToDTO(DonHang dh) {
-        DonHangDTO dto = new DonHangDTO();
-        dto.setId(dh.getId());
-        dto.setIdkhachHang(dh.getKhachHang() != null ? dh.getKhachHang().getId() : null);
-        dto.setIdnhanVien(dh.getNhanVien() != null ? dh.getNhanVien().getId() : null);
-        dto.setTenNhanVien(dh.getNhanVien() != null ? dh.getNhanVien().getTenNhanVien() : null); // Thêm dòng này
-        dto.setIdgiamGia(dh.getGiamGia() != null ? dh.getGiamGia().getId() : null);
-        dto.setNgayMua(dh.getNgayMua());
-        dto.setNgayTao(dh.getNgayTao());
-        dto.setLoaiDonHang(dh.getLoaiDonHang());
-        dto.setTrangThai(dh.getTrangThai());
-        dto.setTongTien(dh.getTongTien());
-        dto.setTongTienGiamGia(dh.getTongTienGiamGia());
-        dto.setPhiVanChuyen(dh.getPhiVanChuyen()); // Add this
+        DonHangDTO dto = new DonHangDTO(dh);
+        dto.setTenNhanVien(dh.getNhanVien() != null ? dh.getNhanVien().getTenNhanVien() : null);
         return dto;
     }
 

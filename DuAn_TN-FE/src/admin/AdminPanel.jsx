@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Button, theme, Dropdown, Space } from 'antd';
+import { Layout, Menu, Button, theme } from 'antd';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import {
   MenuFoldOutlined,
@@ -69,6 +69,24 @@ function AdminPanel() {
 
   const menuItems = [
     {
+      key: 'statistics',
+      icon: <BarChartOutlined />,
+      label: 'Thống Kê',
+      onClick: () => navigate('/admin-panel/statistics'),
+    },
+    {
+      key: 'banhang',
+      icon: <ShoppingCartOutlined />,
+      label: 'Bán hàng tại quầy',
+      onClick: () => navigate('/admin-panel/banhang'),
+    },
+    {
+      key: 'orders',
+      icon: <ShoppingCartOutlined />,
+      label: 'Đơn Hàng',
+      onClick: () => navigate('/admin-panel/orders'),
+    },
+    {
       key: 'products',
       icon: <ShoppingOutlined />,
       label: 'Sản Phẩm',
@@ -93,34 +111,16 @@ function AdminPanel() {
       onClick: () => navigate('/admin-panel/promotions'),
     },
     {
-      key: 'staff',
-      icon: <TeamOutlined />,
-      label: 'Nhân Viên',
-      onClick: () => navigate('/admin-panel/staff'),
-    },
-    {
       key: 'customers',
       icon: <CustomerServiceOutlined />,
       label: 'Khách Hàng',
       onClick: () => navigate('/admin-panel/customers'),
     },
     {
-      key: 'orders',
-      icon: <ShoppingCartOutlined />,
-      label: 'Đơn Hàng',
-      onClick: () => navigate('/admin-panel/orders'),
-    },
-    {
-      key: 'statistics',
-      icon: <BarChartOutlined />,
-      label: 'Thống Kê',
-      onClick: () => navigate('/admin-panel/statistics'),
-    },
-    {
-      key: 'banhang',
-      icon: <ShoppingCartOutlined />,
-      label: 'Bán hàng tại quầy',
-      onClick: () => navigate('/admin-panel/banhang'),
+      key: 'staff',
+      icon: <TeamOutlined />,
+      label: 'Nhân Viên',
+      onClick: () => navigate('/admin-panel/staff'),
     },
   ];
 

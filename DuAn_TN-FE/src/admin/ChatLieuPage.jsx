@@ -17,7 +17,7 @@ export default function ChatLieuPage() {
   const [showTrashModal, setShowTrashModal] = useState(false);
   const [trashList, setTrashList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearchọng] = useState(false);
 
   const fetchAll = () => {
     fetch('http://localhost:8080/api/chat-lieu/getAllFull')
@@ -37,7 +37,7 @@ export default function ChatLieuPage() {
       return;
     }
 
-    setIsSearching(true);
+    setIsSearchọng(true);
     setSearchTerm(value);
 
     fetch(`http://localhost:8080/api/chat-lieu/search?name=${encodeURIComponent(value)}`)
@@ -49,12 +49,12 @@ export default function ChatLieuPage() {
       })
       .then(data => {
         setChatLieus(data);
-        setIsSearching(false);
+        setIsSearchọng(false);
       })
       .catch(error => {
         console.error('Lỗi khi tìm kiếm:', error);
         message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearching(false);
+        setIsSearchọng(false);
       });
   };
 

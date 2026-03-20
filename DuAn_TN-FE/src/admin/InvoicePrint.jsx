@@ -37,8 +37,13 @@ const InvoiceContent = React.forwardRef(({ order }, ref) => {
       <h2 style={{ textAlign: 'center', margin: '32px 0 16px 0', color: '#1976d2' }}>HÓA ĐƠN</h2>
       <div style={{ marginBottom: 8 }}>
       </div>
-      <div style={{ marginBottom: 12 }}>
-        <b>Tên khách hàng:</b> {customerName}
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <b>Tên khách hàng:</b> {customerName}
+        </div>
+        <div>
+          <b>Nhân viên bán hàng:</b> {order.employeeName || 'Admin'}
+        </div>
       </div>
       <div style={{ textAlign: 'right', fontStyle: 'italic', marginBottom: 12 }}>
         Ngày mua hàng: {dateStr}
@@ -103,7 +108,7 @@ const InvoiceContent = React.forwardRef(({ order }, ref) => {
   );
 });
 
-const InvoicePrint = ({ order, onClose, chiTietList = [], spctList = [] }) => {
+const InvoicePrint = ({ order, onClose, chiTietList = [], spctList = [], employeeName = 'Admin' }) => {
   const componentRef = useRef();
 
   // Nếu có chiTietList và spctList thì join thông tin sản phẩm chi tiết
@@ -131,6 +136,7 @@ const InvoicePrint = ({ order, onClose, chiTietList = [], spctList = [] }) => {
     totalHang,
     totalGiamGia: order?.tongTienGiamGia || 0,
     totalThanhToan: order?.tongTien || 0,
+    employeeName: employeeName || order.employeeName
   };
 
   const handleExportPDF = async () => {

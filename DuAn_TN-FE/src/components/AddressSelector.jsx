@@ -196,6 +196,7 @@ const AddressSelector = ({
         onChange={handleProvinceChange}
         loading={loading}
         showSearch
+        getPopupContainer={triggerNode => triggerNode.parentNode}
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
@@ -216,6 +217,7 @@ const AddressSelector = ({
         loading={districtLoading}
         disabled={!selectedProvince}
         showSearch
+        getPopupContainer={triggerNode => triggerNode.parentNode}
         filterOption={(input, option) =>
           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }
@@ -237,6 +239,7 @@ const AddressSelector = ({
           loading={wardLoading}
           disabled={!selectedDistrict}
           showSearch
+          getPopupContainer={triggerNode => triggerNode.parentNode}
           filterOption={(input, option) =>
             option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }

@@ -16,7 +16,7 @@ export default function XuatXuPage() {
   const [showTrashModal, setShowTrashModal] = useState(false);
   const [trashList, setTrashList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearchọng] = useState(false);
 
   const fetchAll = () => {
     fetch('http://localhost:8080/api/xuat-xu/getAllFull')
@@ -36,7 +36,7 @@ export default function XuatXuPage() {
       return;
     }
 
-    setIsSearching(true);
+    setIsSearchọng(true);
     setSearchTerm(value);
 
     fetch(`http://localhost:8080/api/xuat-xu/search?name=${encodeURIComponent(value)}`)
@@ -48,12 +48,12 @@ export default function XuatXuPage() {
       })
       .then(data => {
         setXuatXus(data);
-        setIsSearching(false);
+        setIsSearchọng(false);
       })
       .catch(error => {
         console.error('Lỗi khi tìm kiếm:', error);
         message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearching(false);
+        setIsSearchọng(false);
       });
   };
 

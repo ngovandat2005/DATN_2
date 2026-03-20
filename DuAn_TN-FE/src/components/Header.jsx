@@ -40,27 +40,16 @@ function Header() {
   ]);
   const inputRef = useRef(null);
 
-  // ✅ CẬP NHẬT MENU USER DỰA TRÊN TRẠNG THÁI ĐĂNG NHẬP
-  useEffect(() => {
+  // Hàm cập nhật menu user
+  const updateMenuItems = () => {
     console.log('🔄 Header: Cập nhật menu user...');
-    console.log('🔄 Header: isLoggedIn =', isLoggedIn());
-    console.log('🔄 Header: localStorage trực tiếp:', {
-      isLoggedIn: localStorage.getItem('isLoggedIn'),
-      userRole: localStorage.getItem('userRole'),
-      customerName: localStorage.getItem('customerName'),
-      customerId: localStorage.getItem('customerId')
-    });
     
     if (isLoggedIn()) {
       const customerName = getCustomerName();
       const userRole = getUserRole();
       
-      console.log('🔄 Header: customerName =', customerName);
-      console.log('🔄 Header: userRole =', userRole);
-      
       if (userRole === 'KHACH') {
-        // Menu cho khách hàng đã đăng nhập
-        const menuItems = [
+        const items = [
           { 
             key: 'welcome', 
             label: `Xin chào, ${customerName || 'Khách hàng'}!`,
@@ -78,11 +67,6 @@ function Header() {
             label: 'Đơn hàng của tôi',
             icon: <HeartOutlined style={{ marginRight: 8, color: '#1890ff' }} />
           },
-          // {
-          //   key: 'wishlist',
-          //   label: 'Sản phẩm yêu thích',
-          //   icon: <HeartOutlined style={{ marginRight: 8, color: '#ff4d4f' }} />
-          // },
           { key: 'divider2', type: 'divider' },
           { 
             key: 'logout', 
@@ -90,13 +74,9 @@ function Header() {
             icon: <LogoutOutlined />
           },
         ];
-        
-        console.log('🔄 Header: Menu khách hàng =', menuItems);
-        setUserMenuItems(menuItems);
-        
+        setUserMenuItems(items);
       } else if (userRole === 'NHANVIEN') {
-        // Menu cho nhân viên
-        const menuItems = [
+        const items = [
           { 
             key: 'welcome', 
             label: `Nhân viên: ${customerName || 'Admin'}`,
@@ -116,13 +96,10 @@ function Header() {
             icon: <LogoutOutlined />
           },
         ];
-        
-        console.log('🔄 Header: Menu nhân viên =', menuItems);
-        setUserMenuItems(menuItems);
+        setUserMenuItems(items);
       }
     } else {
-      // Menu cho khách chưa đăng nhập
-      const menuItems = [
+      const items = [
         {
           key: 'login',
           label: 'Đăng nhập',
@@ -140,36 +117,39 @@ function Header() {
           icon: <CartBadge />
         },
       ];
-      
-      console.log('🔄 Header: Menu chưa đăng nhập =', menuItems);
-      setUserMenuItems(menuItems);
+      setUserMenuItems(items);
     }
-  }, [location.pathname]); // ✅ CẬP NHẬT KHI LOCATION THAY ĐỔI HOẶC KHI COMPONENT MOUNT
+  };
 
-  // ✅ THÊM: Lắng nghe thay đổi localStorage để force re-render
+  // Cập nhật khi mount và khi path thay đổi
+  useEffect(() => {
+    updateMenuItems();
+  }, [location.pathname]);
+
+  // Lắng nghe thay đổi localStorage
   useEffect(() => {
     const handleStorageChange = () => {
-      console.log('🔄 Header: localStorage changed, forcing menu update...');
-      // Force re-render bằng cách cập nhật state
-      setUserMenuItems(prev => [...prev]);
+      console.log('🔄 Header: localStorage changed, updating menu...');
+      updateMenuItems();
     };
 
-    // Lắng nghe sự kiện storage change
     window.addEventListener('storage', handleStorageChange);
     
-    // Cũng kiểm tra localStorage mỗi 500ms để đảm bảo
+    // Kiểm tra định kỳ để khắc phục race conditions khi login
     const interval = setInterval(() => {
-      if (isLoggedIn() && userMenuItems[0]?.key === 'default') {
-        console.log('🔄 Header: Detected login but menu still loading, forcing update...');
-        handleStorageChange();
+      const loggedIn = isLoggedIn();
+      const hasDefaultMenu = userMenuItems.length === 1 && userMenuItems[0].key === 'default';
+      
+      if (loggedIn && hasDefaultMenu) {
+        updateMenuItems();
       }
-    }, 500);
+    }, 1000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, [userMenuItems]);
+  }, [userMenuItems.length]);
 
   // ✅ XỬ LÝ ĐĂNG XUẤT
   const handleLogout = () => {

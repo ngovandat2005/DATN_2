@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import config from '../config/config';
 
 const TRANG_THAI = [
   { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
@@ -23,7 +22,13 @@ function OrderHistory() {
   const [filterStatus, setFilterStatus] = useState(-1); // Mặc định hiển thị tất cả
   const [searchText, setSearchText] = useState('');
   
-  const fetchOrders = useCallback(async () => {
+
+
+  useEffect(() => {
+    fetchOrders();
+  }, [filterStatus]);
+
+  const fetchOrders = async () => {
     try {
       setLoading(true);
       setError('');
@@ -36,13 +41,40 @@ function OrderHistory() {
              // Sử dụng API mới theo trạng thái cụ thể
        if (filterStatus === -1) {
          // Lấy tất cả đơn hàng của khách hàng
-         response = await axios.get(config.getApiUrl(`api/donhang/khach/${customerId}`));
+         response = await axios.get(`http://localhost:8080/api/donhang/khach/${customerId}`);
        } else {
          // Lấy đơn hàng theo trạng thái cụ thể (bao gồm cả trạng thái 7)
-         response = await axios.get(config.getApiUrl(`api/donhang/khach/${customerId}/trangthai/${filterStatus}`));
+         response = await axios.get(`http://localhost:8080/api/donhang/khach/${customerId}/trangthai/${filterStatus}`);
        }
       
              console.log('Orders response:', response.data);
+       // ✅ DEBUG: Log để kiểm tra dữ liệu ghiChu
+       if (filterStatus === 7) {
+         console.log('🔍 === DEBUG GIAO HÀNG KHÔNG THÀNH CÔNG ===');
+         console.log('📡 API Response:', response.data);
+         console.log('📊 Response type:', typeof response.data);
+         console.log('📊 Response length:', response.data?.length);
+         console.log('🔗 API URL:', `http://localhost:8080/api/donhang/khach/${customerId}/trangthai/${filterStatus}`);
+         
+         if (Array.isArray(response.data)) {
+           response.data.forEach((order, idx) => {
+             console.log(`📊 Đơn hàng ${idx + 1}:`, {
+               id: order.id,
+               trangThai: order.trangThai,
+               ghiChu: order.ghiChu,
+               hasGhiChu: !!order.ghiChu,
+               ghiChuType: typeof order.ghiChu,
+               // ✅ THÊM: Log toàn bộ object để kiểm tra
+               fullOrder: order,
+               // ✅ THÊM: Log tất cả keys để kiểm tra cấu trúc
+               allKeys: Object.keys(order)
+             });
+           });
+         } else {
+           console.log('⚠️ Response không phải array:', response.data);
+         }
+         console.log('🔍 === END DEBUG ===');
+       }
       
       let filteredOrders = response.data || [];
       
@@ -72,11 +104,7 @@ function OrderHistory() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, searchText]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+  };
 
   // Hàm tìm kiếm
   const handleSearch = () => {
@@ -177,10 +205,6 @@ function OrderHistory() {
       </div>
     </div>
   );
-
-
-
-
 
   // Tính tổng thống kê
   const totalStats = {

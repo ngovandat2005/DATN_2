@@ -13,7 +13,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import Swal from 'sweetalert2';
 import InvoicePrint from './InvoicePrint';
-import { validateAdminForOrder, debugAdminInfo } from './utils/adminUtils';
+import { validateAdminForOrder, debugAdminInfo, getCurrentAdminName } from './utils/adminUtils';
 import QRCodePayment from './components/QRCodePayment';
 
 const BanHangTaiQuayPage = () => {
@@ -155,14 +155,22 @@ const BanHangTaiQuayPage = () => {
   useEffect(() => {
     fetch('http://localhost:8080/api/voucher')
       .then(res => res.json())
-      .then(data => setVouchers(data || []));
+      .then(data => setVouchers(data || []))
+      .catch(err => {
+        console.error('Lỗi khi load danh sách voucher:', err);
+        setVouchers([]);
+      });
   }, []);
 
   // Load danh sách khách hàng khi mount
   useEffect(() => {
     fetch('http://localhost:8080/api/khachhang')
       .then(res => res.json())
-      .then(data => setCustomers(data || []));
+      .then(data => setCustomers(data || []))
+      .catch(err => {
+        console.error('Lỗi khi load danh sách khách hàng:', err);
+        setCustomers([]);
+      });
   }, []);
 
   // Fetch sản phẩm từ API
@@ -1333,6 +1341,21 @@ const BanHangTaiQuayPage = () => {
             Hủy hóa đơn
           </Button>
         )}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'flex-end',
+          padding: '0 12px',
+          borderRight: '2px solid #e0e0e0',
+          marginRight: '8px'
+        }}>
+          <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Nhân viên
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#1976d2', fontWeight: 700 }}>
+            {getCurrentAdminName()}
+          </Typography>
+        </div>
         <Button
           variant="contained"
           color="primary"
@@ -2043,7 +2066,13 @@ const BanHangTaiQuayPage = () => {
           background: 'rgba(0,0,0,0.2)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{ background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 16px #0002' }}>
-            <InvoicePrint order={orderInfo} chiTietList={chiTietList} spctList={spctList} onClose={() => setShowInvoice(false)} />
+            <InvoicePrint 
+              order={orderInfo} 
+              chiTietList={chiTietList} 
+              spctList={spctList} 
+              employeeName={getCurrentAdminName()}
+              onClose={() => setShowInvoice(false)} 
+            />
           </div>
         </div>
       )}

@@ -15,6 +15,8 @@ import config from "../config/config";
 import { parseGHNResponse, logGHNResponse } from "../utils/ghnUtils";
 import moment from "moment";
 import Swal from 'sweetalert2';
+import AddressManager from "./AddressManager";
+import { Divider } from "antd"; // Đảm bảo Divider được import
 
 const { Option } = Select;
 
@@ -469,6 +471,13 @@ const UserProfileCard = () => {
           Lưu thông tin
         </Button>
       </Form>
+
+      <Divider style={{ margin: "24px 0" }} />
+      
+      <AddressManager 
+        customerId={getCustomerId()} 
+        showSelection={false} 
+      />
     </Card>
   );
 };

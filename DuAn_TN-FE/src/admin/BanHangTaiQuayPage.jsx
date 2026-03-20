@@ -13,7 +13,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 import Swal from 'sweetalert2';
 import InvoicePrint from './InvoicePrint';
-import { validateAdminForOrder, debugAdminInfo } from './utils/adminUtils';
+import { validateAdminForOrder, debugAdminInfo, getCurrentAdminName } from './utils/adminUtils';
 import QRCodePayment from './components/QRCodePayment';
 
 const BanHangTaiQuayPage = () => {
@@ -168,23 +168,35 @@ const BanHangTaiQuayPage = () => {
   useEffect(() => {
     fetch('http://localhost:8080/api/voucher')
       .then(res => res.json())
-      .then(data => setVouchers(data || []));
+      .then(data => setVouchers(data || []))
+      .catch(err => {
+        console.error('Lỗi khi load danh sách voucher:', err);
+        setVouchers([]);
+      });
   }, []);
 
   // Load danh sách khách hàng khi mount
   useEffect(() => {
     fetch('http://localhost:8080/api/khachhang')
       .then(res => res.json())
-      .then(data => setCustomers(data || []));
+      .then(data => setCustomers(data || []))
+      .catch(err => {
+        console.error('Lỗi khi load danh sách khách hàng:', err);
+        setCustomers([]);
+      });
   }, []);
 
   // Fetch tỉnh thành từ GHN
   useEffect(() => {
-    fetch('https://online-gateway.ghn.vn/shiip/public-api/master-data/province', {
+    fetch('https://online-gateway.ghn.vn/shiip/publog-api/master-data/province', {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
-      .then(data => setProvinces(data.data || []));
+      .then(data => setProvinces(data.data || []))
+      .catch(err => {
+        console.error('Lỗi khi load tỉnh thành GHN:', err);
+        setProvinces([]);
+      });
   }, []);
 
   // Fetch quận huyện khi chọn tỉnh
@@ -193,11 +205,15 @@ const BanHangTaiQuayPage = () => {
       setDistricts([]);
       return;
     }
-    fetch(`https://online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${selectedProvince}`, {
+    fetch(`https://online-gateway.ghn.vn/shiip/publog-api/master-data/district?province_id=${selectedProvince}`, {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
-      .then(data => setDistricts(data.data || []));
+      .then(data => setDistricts(data.data || []))
+      .catch(err => {
+        console.error('Lỗi khi load quận huyện GHN:', err);
+        setDistricts([]);
+      });
   }, [selectedProvince]);
 
   // Fetch phường xã khi chọn huyện
@@ -206,18 +222,22 @@ const BanHangTaiQuayPage = () => {
       setWards([]);
       return;
     }
-    fetch(`https://online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${selectedDistrict}`, {
+    fetch(`https://online-gateway.ghn.vn/shiip/publog-api/master-data/ward?district_id=${selectedDistrict}`, {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
-      .then(data => setWards(data.data || []));
+      .then(data => setWards(data.data || []))
+      .catch(err => {
+        console.error('Lỗi khi load phường xã GHN:', err);
+        setWards([]);
+      });
   }, [selectedDistrict]);
 
   // Tính phí vận chuyển tự động
   const calculateShippingFee = async (districtId, wardCode) => {
     if (!districtId || !wardCode) return;
     try {
-      const res = await fetch('https://online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee', {
+      const res = await fetch('https://online-gateway.ghn.vn/shiip/publog-api/v2/shipping-order/fee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -574,7 +594,7 @@ const BanHangTaiQuayPage = () => {
   const colorOptions = [...new Set(products.map(p => p.mauSac).filter(Boolean))];
   const sizeOptions = [...new Set(products.map(p => p.kichThuoc).filter(Boolean))];
 
-  // Lọc sản phẩm theo filter
+  // Log sản phẩm theo filter
   const filteredProducts = products.filter(p =>
     (!filterColor || p.mauSac === filterColor) &&
     (!filterSize || p.kichThuoc === filterSize) &&
@@ -1433,6 +1453,21 @@ const BanHangTaiQuayPage = () => {
             Hủy hóa đơn
           </Button>
         )}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'flex-end',
+          padding: '0 12px',
+          borderRight: '2px solid #e0e0e0',
+          marginRight: '8px'
+        }}>
+          <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Nhân viên
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#1976d2', fontWeight: 700 }}>
+            {getCurrentAdminName()}
+          </Typography>
+        </div>
         <Button
           variant="contained"
           color="primary"
@@ -1971,7 +2006,7 @@ const BanHangTaiQuayPage = () => {
           Chọn sản phẩm
         </DialogTitle>
         <DialogContent>
-          {/* Bộ lọc màu sắc và size */}
+          {/* Bộ log màu sắc và size */}
           <Box display="flex" gap={2} mb={2}>
             <TextField select label="Màu sắc" value={filterColor} onChange={e => setFilterColor(e.target.value)} size="small" sx={{ minWidth: 120 }}>
               <MenuItem value="">Tất cả</MenuItem>
@@ -2218,7 +2253,13 @@ const BanHangTaiQuayPage = () => {
           background: 'rgba(0,0,0,0.2)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{ background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 16px #0002' }}>
-            <InvoicePrint order={orderInfo} chiTietList={chiTietList} spctList={spctList} onClose={() => setShowInvoice(false)} />
+            <InvoicePrint 
+              order={orderInfo} 
+              chiTietList={chiTietList} 
+              spctList={spctList} 
+              employeeName={getCurrentAdminName()}
+              onClose={() => setShowInvoice(false)} 
+            />
           </div>
         </div>
       )}

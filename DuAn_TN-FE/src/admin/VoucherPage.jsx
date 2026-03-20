@@ -17,7 +17,7 @@ export default function VoucherPage() {
   const [filteredVouchers, setFilteredVouchers] = useState([]);
   const [selectedVoucherType, setSelectedVoucherType] = useState('Giảm giá %');
   
-  // ✅ THÊM: State cho tìm kiếm và lọc
+  // ✅ THÊM: State cho tìm kiếm và log
   const [searchText, setSearchText] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [loading, setLoading] = useState(false);
@@ -100,7 +100,7 @@ export default function VoucherPage() {
     
     let filtered = [...vouchers];
 
-    // Lọc theo text tìm kiếm (tên hoặc mã voucher)
+    // Log theo text tìm kiếm (tên hoặc mã voucher)
     if (searchText) {
       filtered = filtered.filter(voucher => 
         voucher.tenVoucher?.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -109,7 +109,7 @@ export default function VoucherPage() {
       console.log('🔍 Sau khi filter text:', filtered.length);
     }
 
-    // Lọc theo loại voucher
+    // Log theo loại voucher
     if (selectedType) {
       filtered = filtered.filter(voucher => voucher.loaiVoucher === selectedType);
       console.log('🏷️ Sau khi filter type:', filtered.length);
@@ -136,7 +136,7 @@ export default function VoucherPage() {
     // Sử dụng filter local thay vì gọi API
     filterVouchers();
     if (searchText || selectedType) {
-      message.success(`Đã lọc ${filteredVouchers.length} voucher`);
+      message.success(`Đã log ${filteredVouchers.length} voucher`);
     }
   };
 
@@ -384,7 +384,7 @@ export default function VoucherPage() {
           </Col>
           <Col span={4}>
             <Select
-              placeholder="Lọc theo loại"
+              placeholder="Log theo loại"
               style={{ width: '100%' }}
               value={selectedType}
               onChange={(value) => setSelectedType(value)}
@@ -406,13 +406,13 @@ export default function VoucherPage() {
               icon={<ReloadOutlined />}
               style={{ width: '100%' }}
             >
-              Đặt lại lọc
+              Đặt lại log
             </Button>
           </Col>
           <Col span={8} style={{ textAlign: 'right' }}>
             <span className="text-muted">
               Hiển thị {filteredVouchers.length} / {vouchers.length} voucher
-              {searchText || selectedType ? ` (đã lọc)` : ''}
+              {searchText || selectedType ? ` (đã log)` : ''}
             </span>
           </Col>
         </Row>

@@ -6,6 +6,7 @@ import './Payment.css';
 import { getCustomerId, getCustomerName, getUserInfo, isLoggedIn } from '../utils/authUtils';
 import config from '../config/config';
 import AddressSelector from '../components/AddressSelector';
+import AddressManager from '../components/AddressManager';
 import { parseGHNResponse } from '../utils/ghnUtils';  // ✅ THÊM: Import parseGHNResponse
 
 // ✅ THÊM: Import Material-UI components (giống BanHangTaiQuay)
@@ -17,65 +18,35 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 // ✅ THÊM: Function kiểm tra số lượng đơn hàng hiện tại của khách hàng
 const checkCustomerOrderLimit = async (customerId) => {
-  if (!customerId || customerId === 'null' || customerId === 'undefined') {
-    console.error('❌ customerId không hợp lệ:', customerId);
-    return {
-      success: false,
-      currentOrderCount: 0,
-      canCreateOrder: false,
-      message: 'Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại!'
-    };
-  }
-
-  const apiUrl = config.getApiUrl(`api/donhang/khach/${customerId}`);
   try {
-    console.log('🚀 Đang kiểm tra giới hạn đơn hàng tại URL:', apiUrl);
-    
-    const response = await fetch(apiUrl);
-    
+    const response = await fetch(`http://localhost:8080/api/donhang/khach/${customerId}`);
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API Trả về lỗi (${response.status}):`, errorText);
-      
-      // Cố gắng parse JSON nếu có thể để lấy message lỗi từ Spring
-      let errorMessage = 'Không thể kiểm tra giới hạn đơn hàng.';
-      try {
-        const errorJson = JSON.parse(errorText);
-        if (errorJson.message) errorMessage = errorJson.message;
-      } catch (e) {
-        // Nếu không phải JSON, lấy một phần text
-        if (errorText && errorText.length < 100) errorMessage = errorText;
-      }
-
-      return {
-        success: false,
-        currentOrderCount: 0,
-        canCreateOrder: false,
-        message: `Lỗi server (${response.status}): ${errorMessage}`
-      };
+      throw new Error('Không thể kiểm tra đơn hàng của khách hàng');
     }
 
     const orders = await response.json();
     console.log('📋 Tất cả đơn hàng của khách hàng:', orders);
 
-    const activeOrders = orders.filter(order => ![4, 5, 6].includes(Number(order.trangThai)));
-    console.log('📊 Đơn hàng đang hoạt động:', activeOrders.length);
+    // Log các đơn hàng không tính vào giới hạn (trạng thái 4: Hoàn thành, 5: Đã hủy, 6: Trả hàng)
+    const activeOrders = orders.filter(order => ![4, 5, 6].includes(order.trangThai));
+    console.log('📊 Đơn hàng đang hoạt động (không tính 4,5,6):', activeOrders);
+    console.log('📈 Số lượng đơn hàng hiện tại:', activeOrders.length);
 
     return {
       success: true,
       currentOrderCount: activeOrders.length,
       canCreateOrder: activeOrders.length < 10,
       message: activeOrders.length >= 10
-        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý.`
-        : `Có thể tạo đơn hàng.`
+        ? `Bạn đã đạt giới hạn tối đa 10 đơn hàng đang xử lý (hiện tại: ${activeOrders.length}). Vui lòng chờ các đơn hàng hiện tại hoàn thành trước khi tạo đơn mới.`
+        : `Bạn có thể tạo thêm ${10 - activeOrders.length} đơn hàng nữa.`
     };
   } catch (error) {
-    console.error('❌ Lỗi kết nối API:', apiUrl, error);
+    console.error('❌ Lỗi khi kiểm tra giới hạn đơn hàng:', error);
     return {
       success: false,
       currentOrderCount: 0,
       canCreateOrder: false,
-      message: `Lỗi kết nối máy chủ! URL: ${apiUrl}. Lỗi: ${error.message}`
+      message: 'Không thể kiểm tra giới hạn đơn hàng. Vui lòng thử lại sau.'
     };
   }
 };
@@ -85,6 +56,8 @@ const checkCustomerOrderLimit = async (customerId) => {
 const Payment = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const addressStorageKey = `savedAddresses_${getCustomerId() || 'guest'}`;
+  const selectedAddressStorageKey = `selectedAddressId_${getCustomerId() || 'guest'}`;
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
@@ -120,8 +93,228 @@ const Payment = () => {
   // ✅ THÊM: State cho modal voucher (giống BanHangTaiQuay)
   const [showVoucherModal, setShowVoucherModal] = useState(false);
 
+  // ✅ Sổ địa chỉ giao hàng (dùng cho popup chọn địa chỉ - giờ do AddressManager quản lý)
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [addressIsDefault, setAddressIsDefault] = useState(false);
+
+  // Áp dụng một địa chỉ từ sổ địa chỉ vào state hiện tại
+  const applyAddressFromBook = (addr) => {
+    if (!addr) return;
+    setSelectedAddressId(addr.id);
+    setCustomerName(addr.name || '');
+    setCustomerPhone(addr.phone || '');
+    setCustomerEmail(addr.email || '');
+    setAddressDetail(addr.addressDetail || '');
+
+    setSelectedProvince(addr.provinceId || null);
+    setSelectedDistrict(addr.districtId || null);
+    setSelectedWard(addr.wardCode || null);
+
+    if (addr.fullAddress) {
+      setCustomerAddress(addr.fullAddress);
+    }
+
+    setAddressIsDefault(!!addr.isDefault);
+    try {
+      localStorage.setItem(selectedAddressStorageKey, String(addr.id));
+    } catch {
+      // ignore
+    }
+
+    // gọi lại tính phí ship dựa trên địa chỉ mới
+    setTimeout(() => {
+      handleAddressChange();
+    }, 200);
+  };
+
+  // Load sổ địa chỉ từ localStorage khi vào trang để chọn địa chỉ mặc định
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(addressStorageKey);
+      let list = raw ? JSON.parse(raw) : [];
+
+      // Nếu chưa có sổ địa chỉ, thử lấy địa chỉ đã đăng ký (localStorage user) để seed vào sổ
+      if (!Array.isArray(list) || list.length === 0) {
+        const userLocal = JSON.parse(localStorage.getItem('user') || '{}');
+        const regAddress = userLocal.diaChi || userLocal.address || '';
+        const regName = userLocal.ten || userLocal.name || '';
+        const regPhone = userLocal.soDienThoai || userLocal.phone || '';
+        const regEmail = userLocal.email || '';
+
+        if (regAddress) {
+          const seededId = Date.now();
+          const seeded = [
+            {
+              id: seededId,
+              name: regName,
+              phone: regPhone,
+              email: regEmail,
+              addressDetail: '',
+              fullAddress: regAddress,
+              provinceId: null,
+              districtId: null,
+              wardCode: null,
+              isDefault: true // Đặt làm mặc định nếu là cái duy nhất
+            }
+          ];
+          list = seeded;
+          localStorage.setItem(addressStorageKey, JSON.stringify(seeded));
+          applyAddressFromBook(seeded[0]);
+
+          if (isCodeAddressFormat(regAddress)) {
+            resolveFullAddressFromCodes(regAddress).then((resolved) => {
+              if (!resolved) return;
+              const updatedList = [{ ...seeded[0], ...resolved, fullAddress: resolved.fullAddress }];
+              localStorage.setItem(addressStorageKey, JSON.stringify(updatedList));
+              applyAddressFromBook(updatedList[0]);
+            });
+          }
+          return;
+        }
+      }
+
+      if (list.length > 0) {
+        const preferredIdRaw = localStorage.getItem(selectedAddressStorageKey);
+        const preferredId = preferredIdRaw ? Number(preferredIdRaw) : null;
+        const preferred = preferredId ? list.find(a => Number(a.id) === Number(preferredId)) : null;
+        const def = preferred || list.find(a => a.isDefault) || list[0];
+        if (def) applyAddressFromBook(def);
+      }
+    } catch (e) {
+      console.error('Lỗi khởi tạo địa chỉ:', e);
+    }
+  }, [addressStorageKey]);
+
   // ✅ THÊM: Fetch giá khuyến mãi từ API sản phẩm nếu cần
   const [productPrices, setProductPrices] = useState({});
+
+  const formatVnd = (value) => {
+    const n = Number(value || 0);
+    return `${n.toLocaleString('vi-VN').replaceAll(',', '.')} ₫`;
+  };
+
+  const prettyAddress = (value) => {
+    if (!value) return '';
+    return String(value)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .join(', ');
+  };
+
+  const formatPhone = (value) => {
+    if (!value) return '';
+    let s = String(value).trim();
+    // Normalize common VN formats: +84xxxxxxxxx -> 0xxxxxxxxx
+    if (s.startsWith('+84')) s = '0' + s.slice(3);
+    s = s.replace(/\s+/g, '');
+    return s;
+  };
+
+  const safeText = (value, fallback = '') => {
+    const s = String(value || '').trim();
+    return s ? s : fallback;
+  };
+
+  const buildImageUrl = (raw) => {
+    if (!raw) return 'https://via.placeholder.com/80';
+    if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
+    return `http://localhost:8080/api/images/${encodeURIComponent(raw)}`;
+  };
+
+  const normalizeCartItem = (item) => {
+    // returns: { imageUrl, name, variant, qty, unitPrice, originalUnitPrice }
+    // originalUnitPrice is used for strike-through when discounted
+    if (!item) {
+      return {
+        imageUrl: 'https://via.placeholder.com/80',
+        name: 'Sản phẩm',
+        variant: '',
+        qty: 1,
+        unitPrice: 0,
+        originalUnitPrice: 0
+      };
+    }
+
+    // 🛒 MUA NGAY (có hinhAnh, giaBan, giaBanGiamGia, soLuong)
+    if (item.hinhAnh) {
+      const qty = item.soLuong || 1;
+      const originalUnitPrice = Number(item.giaBan || 0);
+      const discounted = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice;
+      const unitPrice = discounted ? Number(item.giaBanGiamGia) : originalUnitPrice;
+      return {
+        imageUrl: buildImageUrl(item.hinhAnh),
+        name: item.tenSanPham || 'Sản phẩm',
+        variant: [item.mauSac ? `Màu: ${item.mauSac}` : null, item.kichThuoc ? `Size: ${item.kichThuoc}` : null].filter(Boolean).join(' • '),
+        qty,
+        unitPrice,
+        originalUnitPrice
+      };
+    }
+
+    // 🆕 Backend item có giaBan, giaBanGiamGia, soLuong
+    if (item.giaBan !== undefined && item.idSanPhamChiTiet) {
+      const qty = item.soLuong || 1;
+      const originalUnitPrice = Number(item.giaBan || 0);
+      const discounted = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice;
+      const unitPrice = discounted ? Number(item.giaBanGiamGia) : originalUnitPrice;
+      return {
+        imageUrl: buildImageUrl(item.images),
+        name: item.tenSanPham || 'Sản phẩm',
+        variant: [item.tenMauSac ? `Màu: ${item.tenMauSac}` : null, item.tenKichThuoc ? `Size: ${item.tenKichThuoc}` : null].filter(Boolean).join(' • '),
+        qty,
+        unitPrice,
+        originalUnitPrice
+      };
+    }
+
+    // 🔄 Item từ giỏ hàng có sanPhamChiTiet
+    if (item.sanPhamChiTiet) {
+      const qty = item.soLuong || 1;
+      const originalUnitPrice = Number(item.sanPhamChiTiet.giaBan || item.giaBan || 0);
+      const discountCandidate = item.giaBanGiamGia ?? item.sanPhamChiTiet.giaBanGiamGia;
+      const discounted = discountCandidate && discountCandidate > 0 && discountCandidate < originalUnitPrice;
+      const unitPrice = discounted ? Number(discountCandidate) : originalUnitPrice;
+      const rawImg = item.sanPhamChiTiet?.sanPham?.images;
+      return {
+        imageUrl: buildImageUrl(rawImg),
+        name: item.sanPhamChiTiet?.sanPham?.tenSanPham || item.tenSanPham || 'Sản phẩm',
+        variant: '',
+        qty,
+        unitPrice,
+        originalUnitPrice
+      };
+    }
+
+    // 🔍 Item có trường gia trực tiếp
+    if (item.gia !== undefined && item.idSanPhamChiTiet) {
+      const qty = item.soLuong || 1;
+      const unitPrice = Number(item.gia || 0);
+      return {
+        imageUrl: buildImageUrl(item.images),
+        name: item.tenSanPham || 'Sản phẩm',
+        variant: [item.tenMauSac ? `Màu: ${item.tenMauSac}` : null, item.tenKichThuoc ? `Size: ${item.tenKichThuoc}` : null].filter(Boolean).join(' • '),
+        qty,
+        unitPrice,
+        originalUnitPrice: unitPrice
+      };
+    }
+
+    // Cấu trúc mua ngay (cũ): price/discountPrice/originalPrice/quantity
+    const qty = item.quantity || 1;
+    const originalUnitPrice = Number(item.originalPrice || item.price || 0);
+    const discounted = item.discountPrice && item.discountPrice > 0 && item.discountPrice < originalUnitPrice;
+    const unitPrice = discounted ? Number(item.discountPrice) : Number(item.price || 0);
+    return {
+      imageUrl: item.image || 'https://via.placeholder.com/80',
+      name: item.name || 'Sản phẩm',
+      variant: [item.color ? `Màu: ${item.color}` : null, item.size ? `Size: ${item.size}` : null].filter(Boolean).join(' • '),
+      qty,
+      unitPrice,
+      originalUnitPrice
+    };
+  };
 
   useEffect(() => {
     if (!Array.isArray(location.state?.cart) || !location.state.cart.length) {
@@ -215,7 +408,7 @@ const Payment = () => {
         if (response.ok) {
           const data = await response.json();
 
-          // ✅ Sử dụng trực tiếp data từ API (đã được backend lọc sẵn)
+          // ✅ Sử dụng trực tiếp data từ API (đã được backend log sẵn)
           setVouchers(data);
         } else {
           // Fallback: sử dụng API cũ nếu API mới lỗi
@@ -301,6 +494,22 @@ const Payment = () => {
       }
 
       try {
+        // Nếu đã có sổ địa chỉ cho user này thì không lấy địa chỉ đăng ký để ghi đè
+        let hasAddressBook = false;
+        try {
+          const rawBook = localStorage.getItem(addressStorageKey);
+          const parsed = rawBook ? JSON.parse(rawBook) : [];
+          hasAddressBook = Array.isArray(parsed) && parsed.length > 0;
+        } catch {
+          hasAddressBook = false;
+        }
+
+        // Nếu đã có sổ địa chỉ (và sẽ apply địa chỉ đã chọn/mặc định),
+        // không auto-fill name/phone/email từ tài khoản để tránh ghi đè lên địa chỉ đang chọn.
+        if (hasAddressBook) {
+          return;
+        }
+
         // Thử lấy thông tin từ localStorage trước
         // ✅ SỬA: Lấy thông tin từ localStorage với logic ưu tiên
         const userInfo = getUserInfo();
@@ -315,8 +524,8 @@ const Payment = () => {
 
           // ✅ SỬA: Xử lý địa chỉ từ localStorage (giống UserProfileCard)
           const addressLocal = userLocal.diaChi || userLocal.address || userInfo?.diaChi || userInfo?.address;
-          if (addressLocal) {
-            setCustomerAddress(addressLocal);
+          if (addressLocal && !hasAddressBook) {
+            setCustomerAddress(prettyAddress(addressLocal));
 
             // Parse địa chỉ để select trong AddressSelector (giống UserProfileCard)
             const addressParts = addressLocal.split(',').map(p => p.trim());
@@ -353,8 +562,8 @@ const Payment = () => {
 
           // Xử lý địa chỉ từ thông tin đã đăng ký
           const addressLocal = userLocal.diaChi || userLocal.address || customerData.diaChi;
-          if (addressLocal) {
-            setCustomerAddress(addressLocal);
+          if (addressLocal && !hasAddressBook) {
+            setCustomerAddress(prettyAddress(addressLocal));
 
             // Đợi provinces load xong rồi mới parse địa chỉ
             setTimeout(async () => {
@@ -374,6 +583,7 @@ const Payment = () => {
 
     autoFillCustomerInfo();
   }, []);
+
 
   // ✅ THÊM: Load provinces khi component mount
   useEffect(() => {
@@ -409,14 +619,9 @@ const Payment = () => {
   useEffect(() => {
     setOrderTotal(total);
     setOrderDiscount(0);
-  }, [total]);
-
-  // ✅ THÊM: Cập nhật finalTotal duy nhất ở một nơi để tránh xung đột
-  useEffect(() => {
-    const newFinalTotal = total - orderDiscount + shippingFee;
-    setFinalTotal(newFinalTotal);
-    console.log('💰 [REACTIVE] Cập nhật finalTotal:', { total, orderDiscount, shippingFee, final: newFinalTotal });
-  }, [total, orderDiscount, shippingFee]);
+    // ✅ THÊM: Cập nhật finalTotal khi total hoặc shippingFee thay đổi
+    setFinalTotal(total + shippingFee);
+  }, [total, shippingFee]);
 
   // ✅ THÊM: Tự động tính phí ship khi địa chỉ thay đổi
   useEffect(() => {
@@ -457,6 +662,13 @@ const Payment = () => {
           console.log('🎯 Giảm giá cuối cùng:', finalDiscount);
 
           setOrderDiscount(finalDiscount);
+          setOrderTotal(total - finalDiscount);
+
+          // ✅ QUAN TRỌNG: Cập nhật finalTotal để hiển thị đúng
+          const newFinalTotal = (total - finalDiscount) + shippingFee;
+          setFinalTotal(newFinalTotal);
+
+          console.log('💰 Sau khi áp dụng voucher: orderDiscount=', finalDiscount, 'orderTotal=', total - finalDiscount, 'finalTotal=', newFinalTotal);
 
           toast.success(`Đã chọn voucher: ${voucher.tenVoucher}`);
           setVoucherMessage(`Voucher đã được áp dụng! Giảm ${finalDiscount.toLocaleString()}₫`);
@@ -817,60 +1029,110 @@ const Payment = () => {
     }
   };
 
+  const isCodeAddressFormat = (addressString) => {
+    if (!addressString) return false;
+    const parts = String(addressString).split(',').map(p => p.trim());
+    if (parts.length < 4) return false;
+    const districtId = parts[2];
+    const provinceId = parts[3];
+    return /^\d+$/.test(String(districtId)) && /^\d+$/.test(String(provinceId));
+  };
+
+  const resolveFullAddressFromCodes = async (addressString) => {
+    const parts = String(addressString).split(',').map(p => p.trim());
+    if (parts.length < 4) return null;
+
+    const detail = parts[0] || '';
+    const wardCode = parts[1];
+    const districtId = Number(parts[2]);
+    const provinceId = Number(parts[3]);
+
+    const provincesData = provinces.length > 0 ? provinces : await fetchProvinces();
+    const province = provincesData.find(p => Number(p.ProvinceID) === provinceId);
+    if (!province) return null;
+
+    const districtsData = await fetchDistrictsForProvince(province.ProvinceID);
+    const district = districtsData.find(d => Number(d.DistrictID) === districtId);
+    if (!district) return null;
+
+    const wardsData = await fetchWardsForDistrict(district.DistrictID);
+    const ward = wardsData.find(w => String(w.WardCode) === String(wardCode));
+    if (!ward) return null;
+
+    return {
+      fullAddress: `${detail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`,
+      provinceId: province.ProvinceID,
+      districtId: district.DistrictID,
+      wardCode: ward.WardCode,
+      addressDetail: detail
+    };
+  };
+
   // ✅ THÊM: Function xử lý thay đổi địa chỉ
-  const handleAddressChange = () => {
+  const handleAddressChange = async () => {
     console.log('🔄 handleAddressChange được gọi');
     console.log('📍 selectedProvince:', selectedProvince);
     console.log('📍 selectedDistrict:', selectedDistrict);
     console.log('📍 selectedWard:', selectedWard);
 
-    if (selectedProvince && selectedDistrict && selectedWard) {
-      // Tìm thông tin địa chỉ từ danh sách đã load
-      const province = provinces.find(p => p.ProvinceID === selectedProvince);
-      const district = districts.find(d => d.DistrictID === selectedDistrict);
-      const ward = wards.find(w => w.WardCode === selectedWard);
-
-      console.log('📍 Tìm thấy province:', province);
-      console.log('📍 Tìm thấy district:', district);
-      console.log('📍 Tìm thấy ward:', ward);
-
-      if (province && district && ward) {
-        // ✅ THÊM: Tính cân nặng từ cart
-        let totalWeight = 0;
-        cart.forEach(item => {
-          // Ước tính cân nặng dựa trên số lượng (mỗi sản phẩm khoảng 500g)
-          const itemWeight = 500; // gram
-          const quantity = item.soLuong || item.quantity || 1;
-          totalWeight += itemWeight * quantity;
-        });
-
-        // Đảm bảo cân nặng tối thiểu 500g
-        totalWeight = Math.max(totalWeight, 500);
-
-        console.log('📦 Cân nặng tính toán:', totalWeight, 'g');
-        console.log('🚚 Gọi calculateShippingFee với params:', {
-          fromDistrict: 1484, // Ba Đình, Hà Nội - địa chỉ shop thực tế (DistrictID chính xác)
-          toDistrict: selectedDistrict,
-          toWardCode: selectedWard,
-          weight: totalWeight
-        });
-
-        // Tính phí ship từ Ba Đình, Hà Nội (district 1484) đến địa chỉ được chọn
-        calculateShippingFee(1484, selectedDistrict, selectedWard, totalWeight);
-
-        // Cập nhật địa chỉ giao hàng
-        const fullAddress = `${addressDetail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
-        setCustomerAddress(fullAddress);
-
-        // ✅ THÊM: Cập nhật địa chỉ chi tiết riêng biệt
-        if (addressDetail) {
-          setAddressDetail(addressDetail);
-        }
-      } else {
-        console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ');
-      }
-    } else {
+    if (!(selectedProvince && selectedDistrict && selectedWard)) {
       console.log('❌ Thiếu thông tin địa chỉ:', { selectedProvince, selectedDistrict, selectedWard });
+      return;
+    }
+
+    // Đảm bảo đã có đủ dữ liệu tỉnh/quận/phường, nếu chưa thì fetch bổ sung
+    let provinceList = provinces;
+    if (!provinceList || provinceList.length === 0) {
+      provinceList = await fetchProvinces();
+    }
+    const province = provinceList.find(p => p.ProvinceID === selectedProvince);
+
+    let districtList = districts;
+    if ((!districtList || districtList.length === 0) && selectedProvince) {
+      districtList = await fetchDistrictsForProvince(selectedProvince);
+    }
+    const district = districtList.find(d => d.DistrictID === selectedDistrict);
+
+    let wardList = wards;
+    if ((!wardList || wardList.length === 0) && selectedDistrict) {
+      wardList = await fetchWardsForDistrict(selectedDistrict);
+    }
+    const ward = wardList.find(w => w.WardCode === selectedWard);
+
+    console.log('📍 Tìm thấy province:', province);
+    console.log('📍 Tìm thấy district:', district);
+    console.log('📍 Tìm thấy ward:', ward);
+
+    if (!(province && district && ward)) {
+      console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ để tính phí ship');
+      return;
+    }
+
+    // ✅ Tính cân nặng từ cart
+    let totalWeight = 0;
+    cart.forEach(item => {
+      const itemWeight = 500; // gram
+      const quantity = item.soLuong || item.quantity || 1;
+      totalWeight += itemWeight * quantity;
+    });
+    totalWeight = Math.max(totalWeight, 500);
+
+    console.log('📦 Cân nặng tính toán:', totalWeight, 'g');
+    console.log('🚚 Gọi calculateShippingFee với params:', {
+      fromDistrict: 1484,
+      toDistrict: selectedDistrict,
+      toWardCode: selectedWard,
+      weight: totalWeight
+    });
+
+    // Tính phí ship từ Ba Đình, Hà Nội (district 1484) đến địa chỉ được chọn
+    calculateShippingFee(1484, selectedDistrict, selectedWard, totalWeight);
+
+    const fullAddress = `${addressDetail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
+    setCustomerAddress(fullAddress);
+
+    if (addressDetail) {
+      setAddressDetail(addressDetail);
     }
   };
 
@@ -905,7 +1167,7 @@ const Payment = () => {
     if (!orderId || !voucherId) return false;
 
     try {
-      const response = await fetch(config.getApiUrl(`api/donhang/${orderId}/apply-voucher/${voucherId}`), {
+      const response = await fetch(config.getApiUrl(`api/don-hang-chi-tiet/${orderId}/apply-voucher/${voucherId}`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -979,10 +1241,8 @@ const Payment = () => {
     }
   };
 
-  const handlePayment = async () => {
-    // Ngăn chặn click nhiều lần
-    if (loading) return;
 
+  const handlePayment = async () => {
     // ✅ SỬA: Validation chi tiết hơn
     if (!customerName.trim()) {
       toast.warning('Vui lòng nhập họ tên khách hàng!');
@@ -1035,14 +1295,11 @@ const Payment = () => {
       return;
     }
 
-    setLoading(true);
-
+    // ✅ THÊM: Kiểm tra giới hạn đơn hàng TRƯỚC KHI xử lý bất kỳ phương thức thanh toán nào
     try {
-      // ✅ THÊM: Kiểm tra giới hạn đơn hàng TRƯỚC KHI xử lý bất kỳ phương thức thanh toán nào
       const customerId = getCustomerId();
       if (!customerId) {
         toast.error('Không thể xác định thông tin người dùng. Vui lòng đăng nhập lại!');
-        setLoading(false);
         return;
       }
 
@@ -1051,7 +1308,6 @@ const Payment = () => {
 
       if (!orderLimitCheck.success) {
         toast.error(orderLimitCheck.message);
-        setLoading(false);
         return;
       }
 
@@ -1087,7 +1343,7 @@ const Payment = () => {
             width: '500px'
           }).then((result) => {
             if (result.isConfirmed) {
-              navigate('/orders');
+              navigate('/order-history');
             }
           });
         } else {
@@ -1100,16 +1356,16 @@ const Payment = () => {
             draggable: true,
           });
         }
-        setLoading(false);
         return;
       }
 
       console.log('✅ Khách hàng có thể tạo đơn hàng mới:', orderLimitCheck.message);
     } catch (error) {
       toast.error('Lỗi khi kiểm tra giới hạn đơn hàng: ' + error.message);
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     // Nếu chọn thanh toán online (VNPAY)
     if (paymentMethod === 'bank') {
@@ -1131,9 +1387,9 @@ const Payment = () => {
           paymentMethod,
           // ✅ SỬA: Gửi finalTotal (đã bao gồm phí ship từ GHN)
           tongTien: finalTotal, // Tổng tiền đã bao gồm phí ship thực tế
-          phiVanChuyen: Number(shippingFee || 0), // Phí ship từ GHN API - Đảm bảo là số
+          phiVanChuyen: shippingFee, // Phí ship từ GHN API
           finalAmount: finalTotal, // Sử dụng finalTotal thay vì orderTotal + shippingFee
-          trangThai: 1, // Thanh toán chuyển khoản thành công -> Đã xác nhận
+          trangThai: 0, // VNPAY: Chờ xác nhận (admin kiểm tra rồi mới chuyển sang Đã xác nhận)
           ngayTao: new Date().toISOString().slice(0, 10),
           cart: cart,
           selectedVoucherId: selectedVoucherId
@@ -1209,31 +1465,58 @@ const Payment = () => {
     try {
       // ✅ Lấy ID khách hàng từ user đang đăng nhập (đã kiểm tra ở trên)
       const customerId = getCustomerId();
+      // BƯỚC 1: Xử lý VNPAY (Chuyển hướng sang VNPay, không tạo đơn ở đây)
+      if (paymentMethod !== 'cod') {
+        const orderInfo = {
+          tenNguoiNhan: customerName,
+          soDienThoaiGiaoHang: customerPhone,
+          emailGiaoHang: customerEmail,
+          diaChiGiaoHang: customerAddress,
+          selectedVoucherId: selectedVoucherId || null,
+          tongTien: finalTotal,
+          phiVanChuyen: shippingFee,
+          cart: location.state?.buyNow ? [{
+            ...cart[0],
+            source: 'buy_now'
+          }] : cart,
+          isBuyNow: location.state?.buyNow === true
+        };
+        localStorage.setItem('pendingOrderInfo', JSON.stringify(orderInfo));
 
-      // BƯỚC 1: Tạo đơn hàng cơ bản với API create-online
+        try {
+          const res = await fetch(config.getApiUrl(`api/payment/create?amount=${Math.round(finalTotal)}`));
+          const data = await res.text();
+          const vnpUrl = data.trim();
+          window.location.href = vnpUrl;
+          return; // Stop execution here
+        } catch (vnpErr) {
+          console.error('Lỗi khi lấy VNPAY URL:', vnpErr);
+          throw new Error('Không thể kết nối với VNPAY. Vui lòng thử lại sau.');
+        }
+      }
+
+      // BƯỚC 1.5: Tạo đơn hàng cơ bản (Chỉ dành cho COD)
       const orderData = {
-        idKhachHang: customerId, // ✅ SỬA: idkhachHang -> idKhachHang
+        idkhachHang: customerId, // ID khách hàng từ user đang đăng nhập
         idnhanVien: null,
-        idVoucher: selectedVoucherId || null, // ✅ SỬA: idgiamGia -> idVoucher
+        idgiamGia: selectedVoucherId || null,
         ngayTao: null,
-        // ✅ QUAN TRỌNG: Gửi tiền hàng (chưa gồm ship) vì backend sẽ tự cộng phiVanChuyen
-        tongTien: Number(finalTotal || 0) - Number(shippingFee || 0),
-        tongTienGiamGia: orderDiscount,
-        phiVanChuyen: Number(shippingFee || 0), // ✅ Đảm bảo là số, tránh null
+        // ✅ QUAN TRỌNG: Gửi finalTotal (đã bao gồm phí ship)
+        tongTien: finalTotal, // 660k (630k + 30k ship) - Frontend đã tính xong
+        tongTienGiamGia: orderDiscount, // 70k (nếu có voucher)
+        phiVanChuyen: shippingFee, // Phí ship từ GHN API
         tenNguoiNhan: customerName,
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
+        // ✅ SỬA: Chỉ sử dụng customerAddress (đã bao gồm địa chỉ chi tiết)
         diaChiGiaoHang: customerAddress,
-        loaiDonHang: 'online',
-        trangThai: 0
+        loaiDonHang: 'online', // Sử dụng chữ thường để phù hợp với Backend
+        trangThai: 0 // COD: Chờ xác nhận (cần xác nhận thủ công)
       };
 
 
-      console.log('🚀 [COD] Gửi dữ liệu tạo đơn hàng:', orderData);
-      console.log('🔍 [COD] DEBUG - shippingFee:', shippingFee);
-      console.log('🔍 [COD] DEBUG - finalTotal:', finalTotal);
 
-      const orderRes = await fetch(config.getApiUrl('api/donhang/online'), {
+      const orderRes = await fetch(config.getApiUrl('api/donhang/create'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -1324,8 +1607,8 @@ const Payment = () => {
         // ✅ SỬA: Sử dụng API khác nhau cho COD và VNPAY
         let apiUrl;
         if (paymentMethod === 'cod') {
-          // COD: Sử dụng API không trừ tồn kho
-          apiUrl = config.getApiUrl('api/donhangchitiet/create_k_tru_ton_kho');
+          // COD: Sử dụng API không trừ tồn kho -> SỬA: Dùng API mặc định /create vì create_k_tru_ton_kho không tồn tại
+          apiUrl = config.getApiUrl('api/donhangchitiet/create');
           console.log(`🎯 COD - Sử dụng API không trừ tồn kho: ${apiUrl}`);
         } else {
           // VNPAY: Sử dụng API trừ tồn kho (giữ nguyên)
@@ -1354,7 +1637,7 @@ const Payment = () => {
         console.log('Bước 3: Không có voucher - cập nhật tổng tiền đơn hàng...');
 
         try {
-          const updateTotalRes = await fetch(config.getApiUrl(`api/donhang/${newOrderId}/cap-nhat-tong-tien`), {
+          const updateTotalRes = await fetch(config.getApiUrl(`api/don-hang/${newOrderId}/cap-nhat-tong-tien`), {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' }
           });
@@ -1447,7 +1730,6 @@ const Payment = () => {
 
       setLoading(false);
 
-      // ✅ SỬA: Xử lý khác nhau cho COD và VNPAY
       if (paymentMethod === 'cod') {
         // ✅ COD: Hiển thị thông báo thành công và chuyển trang sau delay
         toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ xác nhận.', {
@@ -1459,11 +1741,6 @@ const Payment = () => {
         setTimeout(() => {
           navigate('/orders');
         }, 3000);
-
-      } else {
-        // ✅ VNPAY: Logic cũ (đã được xử lý ở CheckPayment)
-        toast.success('Đặt hàng thành công!');
-        navigate('/orders');
       }
 
     } catch (err) {
@@ -1482,177 +1759,52 @@ const Payment = () => {
       <div className="gx-payment-main">
         {/* Cột trái: Form khách hàng */}
         <div className="gx-payment-form-col">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 className="gx-payment-title">Thông tin khách hàng</h2>
-            {isLoggedIn() && (
+          {/* Khối địa chỉ kiểu Shopee */}
+          <div className="gx-payment-address-card gx-payment-card">
+            <div className="gx-payment-address-header">
+              <div className="gx-payment-address-title-wrapper">
+                <span className="gx-payment-address-title">Địa chỉ nhận hàng</span>
+                {addressIsDefault && (
+                  <span className="gx-payment-address-tag">Mặc định</span>
+                )}
+              </div>
               <button
                 type="button"
-                onClick={async () => {
-                  const customerId = getCustomerId();
-                  if (customerId) {
-                    try {
-                      console.log('🔄 Đang cập nhật thông tin khách hàng...');
-                      const response = await fetch(config.getApiUrl(`api/khachhang/${customerId}`));
-                      if (response.ok) {
-                        const customerData = await response.json();
-                        console.log('✅ Thông tin khách hàng từ API:', customerData);
-
-                        // ✅ SỬA: Ưu tiên dữ liệu đã chỉnh sửa từ localStorage nếu có
-                        const userLocal = JSON.parse(localStorage.getItem('user') || '{}');
-
-                        // Cập nhật thông tin với logic ưu tiên
-                        setCustomerName(userLocal.ten || userLocal.name || customerData.ten || customerData.hoTen || '');
-                        setCustomerEmail(userLocal.email || customerData.email || '');
-                        setCustomerPhone(userLocal.soDienThoai || userLocal.phone || customerData.soDienThoai || customerData.sdt || '');
-
-                        // Xử lý địa chỉ từ thông tin đã đăng ký
-                        const addressLocal = userLocal.diaChi || userLocal.address || customerData.diaChi;
-                        if (addressLocal) {
-                          setCustomerAddress(addressLocal);
-                          console.log('📍 Địa chỉ từ localStorage/API:', addressLocal);
-
-                          // Đợi provinces load xong rồi parse địa chỉ
-                          if (provinces.length === 0) {
-                            await fetchProvinces();
-                          }
-
-                          // Parse và chọn địa chỉ
-                          setTimeout(async () => {
-                            await parseAndSelectAddress(addressLocal);
-                          }, 1000);
-                        }
-
-                        toast.success('✅ Đã cập nhật thông tin khách hàng!');
-                      } else {
-                        toast.error('❌ Không thể cập nhật thông tin!');
-                      }
-                    } catch (error) {
-                      toast.error('❌ Lỗi kết nối khi cập nhật thông tin!');
-                    }
-                  } else {
-                    toast.warning('⚠️ Vui lòng đăng nhập để cập nhật thông tin!');
-                  }
-                }}
-                style={{
-                  backgroundColor: '#1890ff',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
+                className="gx-payment-address-change"
+                onClick={() => {
+                  setAddressModalOpen(true);
                 }}
               >
-                🔄 Cập nhật thông tin
+                Thay đổi
               </button>
-            )}
-          </div>
-          {isLoggedIn() && (
-            <div style={{
-              background: '#f6ffed',
-              border: '1px solid #b7eb8f',
-              borderRadius: '6px',
-              padding: '12px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ fontWeight: 'bold', color: '#52c41a', marginBottom: '4px' }}>
-                ✅ Thông tin đã được tự động điền
+            </div>
+            <div className="gx-payment-address-body">
+              <div className="gx-payment-address-name">
+                {safeText(customerName, 'Chưa có tên')}{' '}
+                <span className="gx-payment-address-phone">{safeText(formatPhone(customerPhone), 'Chưa có SĐT')}</span>
               </div>
-              <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
-                Thông tin khách hàng đã được lấy từ tài khoản của bạn. Bạn có thể chỉnh sửa nếu cần thiết.
-              </div>
-              <div style={{ fontSize: '12px', color: '#52c41a', marginBottom: '8px' }}>
-                💡 <strong>Lưu ý:</strong> Nếu bạn đã chỉnh sửa thông tin trước đó, thông tin đã chỉnh sửa sẽ được ưu tiên hiển thị.
-              </div>
-              <div style={{ fontSize: '12px', color: '#1890ff' }}>
-                🔄 <strong>Tip:</strong> Sử dụng nút "Cập nhật thông tin" để đồng bộ thông tin mới nhất từ tài khoản.
+              <div className="gx-payment-address-text">
+                {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
               </div>
             </div>
-          )}
-
-          <div className="gx-payment-form-group">
-            <label>Họ và tên <span>*</span></label>
-            <input className="gx-payment-input" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nhập họ tên" />
-          </div>
-          <div className="gx-payment-form-group">
-            <label>Số điện thoại <span>*</span></label>
-            <input className="gx-payment-input" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Nhập số điện thoại" />
-          </div>
-          <div className="gx-payment-form-group">
-            <label>Email <span>*</span></label>
-            <input className="gx-payment-input" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="Nhập email" />
-          </div>
-          {/* ✅ THÊM: Select địa chỉ chi tiết */}
-          <div className="gx-payment-form-group">
-            <label>Địa chỉ nhận hàng <span>*</span></label>
-            <AddressSelector
-              selectedProvince={selectedProvince}
-              selectedDistrict={selectedDistrict}
-              selectedWard={selectedWard}
-              onProvinceChange={handleProvinceChange}
-              onDistrictChange={handleDistrictChange}
-              onWardChange={handleWardChange}
-            />
-            {/* ✅ THÊM: Thông báo hướng dẫn chọn địa chỉ */}
-            {(!selectedProvince || !selectedDistrict || !selectedWard) && (
-              <div style={{
-                fontSize: '12px',
-                color: '#1890ff',
-                marginTop: '4px',
-                fontStyle: 'italic'
-              }}>
-                💡 Vui lòng chọn địa chỉ giao hàng để tính phí vận chuyển chính xác
-              </div>
-            )}
           </div>
 
-          <div className="gx-payment-form-group">
-            <label>Địa chỉ chi tiết <span>*</span></label>
-            <input
-              className="gx-payment-input"
-              value={addressDetail}
-              onChange={e => {
-                setAddressDetail(e.target.value);
-                // ✅ THÊM: Cập nhật địa chỉ giao hàng đầy đủ khi địa chỉ chi tiết thay đổi
-                if (selectedProvince && selectedDistrict && selectedWard) {
-                  const province = provinces.find(p => p.ProvinceID === selectedProvince);
-                  const district = districts.find(d => d.DistrictID === selectedDistrict);
-                  const ward = wards.find(w => w.WardCode === selectedWard);
-
-                  if (province && district && ward) {
-                    const fullAddress = `${e.target.value}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
-                    setCustomerAddress(fullAddress);
-                    console.log('📍 Địa chỉ chi tiết mới:', e.target.value);
-                    console.log('📍 Địa chỉ giao hàng đầy đủ mới:', fullAddress);
-                  }
-                }
-              }}
-              placeholder="Số nhà, tên đường, tòa nhà..."
-            />
-            {/* ✅ THÊM: Thông báo hướng dẫn địa chỉ chi tiết */}
-            <div style={{
-              fontSize: '12px',
-              color: '#666',
-              marginTop: '4px',
-              fontStyle: 'italic'
-            }}>
-              💡 Nhập địa chỉ chi tiết: số nhà, tên đường, tòa nhà, căn hộ...
-            </div>
-          </div>
           {/* <div className="gx-payment-form-group">
             <label>Ghi chú</label>
             <textarea className="gx-payment-input" style={{ minHeight: 60 }} value={customerNote} onChange={e => setCustomerNote(e.target.value)} placeholder="Ghi chú cho đơn hàng (nếu có)" />
           </div> */}
-          <div className="gx-payment-form-group">
-            <label>Phương thức thanh toán</label>
-            <select
-              className="gx-payment-input"
-              value={paymentMethod}
-              onChange={e => setPaymentMethod(e.target.value)}
-            >
-              <option value="cod">Thanh toán khi nhận hàng (COD)</option>
-              <option value="bank">Chuyển khoản ngân hàng</option>
-            </select>
+          <div className="gx-payment-card">
+            <div className="gx-payment-form-group" style={{ marginBottom: 0 }}>
+              <label>Phương thức thanh toán</label>
+              <select
+                className="gx-payment-input"
+                value={paymentMethod}
+                onChange={e => setPaymentMethod(e.target.value)}
+              >
+                <option value="cod">Thanh toán khi nhận hàng (COD)</option>
+                <option value="bank">Chuyển khoản ngân hàng</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1661,7 +1813,7 @@ const Payment = () => {
           <h2 className="gx-payment-title">Đơn hàng của bạn</h2>
 
           {/* ✅ THÊM: Phần chọn voucher (giống BanHangTaiQuay - Modal) */}
-          <div className="gx-payment-voucher-section">
+          <div className="gx-payment-voucher-section gx-payment-card">
             <h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#333' }}>🎫 Mã giảm giá</h3>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
               <button
@@ -1747,226 +1899,69 @@ const Payment = () => {
               </div>
             )}
           </div>
-          <div className="gx-payment-order-list">
+          <div className="gx-payment-order-list gx-payment-card">
             {cart.length === 0 ? (
               <p>Không có sản phẩm nào!</p>
             ) : (
-              cart.map((item, index) => {
-                console.log(`🔍 DEBUG Item ${index}:`, item);
-                console.log(`🔍 DEBUG Item ${index} keys:`, Object.keys(item));
+              <div className="gx-payment-order-table" role="table" aria-label="Danh sách sản phẩm">
+                <div className="gx-payment-order-row gx-payment-order-row--head" role="row">
+                  <div className="gx-payment-order-cell gx-payment-order-cell--product" role="columnheader">Sản phẩm</div>
+                  <div className="gx-payment-order-cell gx-payment-order-cell--price" role="columnheader">Đơn giá</div>
+                  <div className="gx-payment-order-cell gx-payment-order-cell--qty" role="columnheader">Số lượng</div>
+                  <div className="gx-payment-order-cell gx-payment-order-cell--amount" role="columnheader">Thành tiền</div>
+                </div>
 
-                // ✅ SỬA: Xử lý "mua ngay" TRƯỚC TIÊN (có trường hinhAnh)
-                if (item.hinhAnh) {
-                  // 🛒 MUA NGAY: Có trường hinhAnh, giaBan, giaBanGiamGia, soLuong
-                  const hasDiscount = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan;
-                  const finalPrice = hasDiscount ? item.giaBanGiamGia : item.giaBan;
-                  const soLuong = item.soLuong || 1;
+                {cart.map((rawItem, index) => {
+                  const item = normalizeCartItem(rawItem);
+                  const hasDiscount = item.originalUnitPrice > 0 && item.unitPrice > 0 && item.unitPrice < item.originalUnitPrice;
+                  const lineTotal = item.unitPrice * (item.qty || 1);
 
                   return (
-                    <div key={index} className="gx-payment-order-item">
-                      <img
-                        src={item.hinhAnh || 'https://via.placeholder.com/80'}
-                        alt={item.tenSanPham || 'Sản phẩm'}
-                        className="gx-payment-order-img"
-                      />
-                      <div className="gx-payment-order-info">
-                        <div className="gx-payment-order-name">
-                          {item.tenSanPham || 'Tên sản phẩm'}
-                        </div>
-                        <div className="gx-payment-order-variant">
-                          {item.mauSac && <span>Màu: {item.mauSac} </span>}
-                          {item.kichThuoc && <span>Size: {item.kichThuoc}</span>}
-                        </div>
-                        <div className="gx-payment-order-qty">
-                          Số lượng: {soLuong}
+                    <div key={index} className="gx-payment-order-row" role="row">
+                      <div className="gx-payment-order-cell gx-payment-order-cell--product" role="cell">
+                        <div className="gx-payment-product">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="gx-payment-order-img"
+                          />
+                          <div className="gx-payment-product-info">
+                            <div className="gx-payment-order-name">{item.name}</div>
+                            {item.variant ? (
+                              <div className="gx-payment-order-variant">{item.variant}</div>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                      <div className="gx-payment-order-price">
+
+                      <div className="gx-payment-order-cell gx-payment-order-cell--price" role="cell">
                         {hasDiscount ? (
-                          <div>
-                            <div style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px' }}>
-                              {(item.giaBan * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                            <div style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                              {(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
+                          <div className="gx-payment-price-stack">
+                            <div className="gx-payment-price-old">{formatVnd(item.originalUnitPrice)}</div>
+                            <div className="gx-payment-price-new">{formatVnd(item.unitPrice)}</div>
                           </div>
                         ) : (
-                          <div>{(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</div>
+                          <div className="gx-payment-price-new">{formatVnd(item.unitPrice)}</div>
                         )}
                       </div>
-                    </div>
-                  );
-                } else if (item.giaBan !== undefined && item.giaBanGiamGia !== undefined) {
-                  // 🆕 Cấu trúc mới từ backend
-                  const hasDiscount = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan;
-                  const finalPrice = hasDiscount ? item.giaBanGiamGia : item.giaBan;
-                  const soLuong = item.soLuong || 1;
 
-                  return (
-                    <div key={index} className="gx-payment-order-item">
-                      <img
-                        src={item.imanges ?
-                          config.getApiUrl(`api/images/${encodeURIComponent(item.imanges)}`) :
-                          'https://via.placeholder.com/80'
-                        }
-                        alt={item.tenSanPham || 'Sản phẩm'}
-                        className="gx-payment-order-img"
-                      />
-                      <div className="gx-payment-order-info">
-                        <div className="gx-payment-order-name">
-                          {item.tenSanPham || 'Tên sản phẩm'}
-                        </div>
-                        <div className="gx-payment-order-variant">
-                          {item.tenMauSac && <span>Màu: {item.tenMauSac} </span>}
-                          {item.tenKichThuoc && <span>Size: {item.tenKichThuoc}</span>}
-                        </div>
-                        <div className="gx-payment-order-qty">
-                          Số lượng: {soLuong}
-                        </div>
+                      <div className="gx-payment-order-cell gx-payment-order-cell--qty" role="cell">
+                        x{item.qty}
                       </div>
-                      <div className="gx-payment-order-price">
-                        {hasDiscount ? (
-                          <div>
-                            <div style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px' }}>
-                              {(item.giaBan * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                            <div style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                              {(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                          </div>
-                        ) : (
-                          <div>{(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                } else if (item.sanPhamChiTiet) {
-                  // 🔄 Cấu trúc cũ từ giỏ hàng
-                  const hasDiscount = item.sanPhamChiTiet.giaBanGiamGia &&
-                    item.sanPhamChiTiet.giaBanGiamGia > 0 &&
-                    item.sanPhamChiTiet.giaBanGiamGia < item.sanPhamChiTiet.giaBan;
-                  const finalPrice = hasDiscount ? item.sanPhamChiTiet.giaBanGiamGia : item.sanPhamChiTiet.giaBan;
-                  const soLuong = item.soLuong || 1;
 
-                  return (
-                    <div key={index} className="gx-payment-order-item">
-                      <img
-                        src={item.sanPhamChiTiet.sanPham?.imanges ?
-                          config.getApiUrl(`api/images/${encodeURIComponent(item.sanPhamChiTiet.sanPham.imanges)}`) :
-                          'https://via.placeholder.com/80'
-                        }
-                        alt={item.sanPhamChiTiet.sanPham?.tenSanPham || 'Sản phẩm'}
-                        className="gx-payment-order-img"
-                      />
-                      <div className="gx-payment-order-info">
-                        <div className="gx-payment-order-name">
-                          {item.sanPhamChiTiet.sanPham?.tenSanPham || 'Tên sản phẩm'}
-                        </div>
-                        <div className="gx-payment-order-variant">
-                          {/* Có thể thêm màu, size nếu có */}
-                        </div>
-                        <div className="gx-payment-order-qty">
-                          Số lượng: {soLuong}
-                        </div>
-                      </div>
-                      <div className="gx-payment-order-price">
-                        {hasDiscount ? (
-                          <div>
-                            <div style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px' }}>
-                              {(item.sanPhamChiTiet.giaBan * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                            <div style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                              {(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</div>
-                          </div>
-                        ) : (
-                          <div>{(finalPrice * soLuong).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</div>
-                        )}
+                      <div className="gx-payment-order-cell gx-payment-order-cell--amount" role="cell">
+                        <div className="gx-payment-amount">{formatVnd(lineTotal)}</div>
                       </div>
                     </div>
                   );
-                } else if (item.gia !== undefined) {
-                  // Cấu trúc có trường gia trực tiếp
-                  const soLuong = item.soLuong || 1;
-                  console.log(`🔍 Cấu trúc gia trực tiếp: gia=${item.gia}, soLuong=${soLuong}`);
-                  return (
-                    <div key={index} className="gx-payment-order-item">
-                      <img
-                        src={item.imanges ?
-                          config.getApiUrl(`api/images/${encodeURIComponent(item.imanges)}`) :
-                          'https://via.placeholder.com/80'
-                        }
-                        alt={item.tenSanPham || 'Sản phẩm'}
-                        className="gx-payment-order-img"
-                      />
-                      <div className="gx-payment-order-info">
-                        <div className="gx-payment-order-name">
-                          {item.tenSanPham || 'Tên sản phẩm'}
-                        </div>
-                        <div className="gx-payment-order-variant">
-                          {item.tenMauSac && <span>Màu: {item.tenMauSac} </span>}
-                          {item.tenKichThuoc && <span>Size: {item.kichThuoc}</span>}
-                        </div>
-                        <div className="gx-payment-order-qty">
-                          Số lượng: {soLuong}
-                        </div>
-                      </div>
-                      <div className="gx-payment-order-price">
-                        {(item.gia * soLuong).toLocaleString('vi-VN').replaceAll(',', '.') + ' ₫'}
-                      </div>
-                    </div>
-                  );
-                } else {
-                  // Xử lý data từ mua ngay (cấu trúc cũ)
-                  const quantity = item.quantity || 1;
-                  console.log(`🛒 Data từ mua ngay (cấu trúc cũ): price=${item.price}, discountPrice=${item.discountPrice}, originalPrice=${item.originalPrice}, quantity=${quantity}`);
-                  const hasDiscount = item.discountPrice && item.discountPrice < item.originalPrice;
-                  const finalPrice = hasDiscount ? item.discountPrice : item.price;
-                  console.log(`💰 Kết quả: hasDiscount=${hasDiscount}, finalPrice=${finalPrice}`);
-
-                  return (
-                    <div key={index} className="gx-payment-order-item">
-                      <img
-                        src={item.image || 'https://via.placeholder.com/80'}
-                        alt={item.name || 'Sản phẩm'}
-                        className="gx-payment-order-img"
-                      />
-                      <div className="gx-payment-order-info">
-                        <div className="gx-payment-order-name">
-                          {item.name || 'Tên sản phẩm'}
-                        </div>
-                        <div className="gx-payment-order-variant">
-                          {item.color && <span>Màu: {item.color} </span>}
-                          {item.size && <span>Size: {item.size}</span>}
-                        </div>
-                        <div className="gx-payment-order-qty">
-                          Số lượng: {quantity}
-                        </div>
-                      </div>
-                      <div className="gx-payment-order-price">
-                        {hasDiscount ? (
-                          <div>
-                            <div style={{ textDecoration: 'line-through', color: '#999', fontSize: '12px' }}>
-                              {(item.originalPrice * quantity).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                            <div style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                              {(finalPrice * quantity).toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                            </div>
-                          </div>
-                        ) : (
-                          <div>{(finalPrice * quantity).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                }
-              })
+                })}
+              </div>
             )}
           </div>
-          <div className="gx-payment-summary">
+          <div className="gx-payment-summary gx-payment-card">
             <div className="gx-payment-summary-row">
               <span className="gx-payment-label">Tạm tính:</span>
-              <span className="gx-payment-value">{total.toLocaleString('vi-VN').replaceAll(',', '.')} ₫</span>
+              <span className="gx-payment-value">{formatVnd(total)}</span>
             </div>
 
             {/* ✅ THÊM: Hiển thị giảm giá voucher */}
@@ -1974,7 +1969,7 @@ const Payment = () => {
               <div className="gx-payment-summary-row" style={{ color: '#52c41a' }}>
                 <span className="gx-payment-label">🎫 Giảm giá voucher:</span>
                 <span className="gx-payment-value">
-                  -{orderDiscount.toLocaleString('vi-VN').replaceAll(',', '.')} ₫
+                  -{formatVnd(orderDiscount)}
                 </span>
               </div>
             )}
@@ -2022,7 +2017,6 @@ const Payment = () => {
               return null;
             })()}
 
-
             {/* ✅ THÊM: Hiển thị tổng tiền sau khi áp dụng voucher */}
             {selectedVoucherId && orderDiscount > 0 && (
               <div className="gx-payment-summary-row" style={{
@@ -2033,7 +2027,7 @@ const Payment = () => {
                 paddingTop: '8px'
               }}>
                 <span className="gx-payment-label">Tổng tiền sau voucher:</span>
-                <span className="gx-payment-value">{(total - orderDiscount).toLocaleString('vi-VN').replaceAll(',', '.')} ₫</span>
+                <span className="gx-payment-value">{formatVnd(total - orderDiscount)}</span>
               </div>
             )}
 
@@ -2043,7 +2037,7 @@ const Payment = () => {
                 {shippingFeeLoading ? (
                   <span style={{ color: '#1890ff' }}>Đang tính...</span>
                 ) : shippingFee > 0 ? (
-                  `${shippingFee.toLocaleString('vi-VN').replaceAll(',', '.')} ₫`
+                  formatVnd(shippingFee)
                 ) : (
                   <span style={{ color: '#ff4d4f' }}>Chưa tính phí</span>
                 )}
@@ -2090,7 +2084,7 @@ const Payment = () => {
               paddingTop: '12px'
             }}>
               <span className="gx-payment-label">Tổng thanh toán:</span>
-              <span className="gx-payment-value">{finalTotal.toLocaleString('vi-VN').replaceAll(',', '.')} ₫</span>
+              <span className="gx-payment-value">{formatVnd(finalTotal)}</span>
             </div>
           </div>
 
@@ -2197,6 +2191,32 @@ const Payment = () => {
           <Button onClick={() => setShowVoucherModal(false)} color="primary">Đóng</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Popup chọn / lưu nhiều địa chỉ giao hàng (sử dụng AddressManager dùng chung) */}
+      <Dialog open={addressModalOpen} onClose={() => setAddressModalOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Địa chỉ của tôi</DialogTitle>
+        <DialogContent>
+          <div style={{ padding: '8px 0' }}>
+            <AddressManager
+              customerId={getCustomerId()}
+              selectedId={selectedAddressId}
+              onSelect={(addr) => {
+                applyAddressFromBook(addr);
+                // Nếu đang ở chế độ chọn địa chỉ từ danh sách, thì đóng modal sau khi chọn
+                // (Trong AddressManager, onSelect được gọi cả khi chọn radio và khi hoàn thành form thêm mới)
+                setAddressModalOpen(false);
+              }}
+              showSelection={true}
+            />
+          </div>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddressModalOpen(false)} color="inherit">
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
+
 
       <ToastContainer />
     </div>

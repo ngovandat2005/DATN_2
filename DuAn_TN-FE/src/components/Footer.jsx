@@ -15,7 +15,7 @@ const footerLinks = {
   'Chính Sách': [
     { label: 'Chính sách bảo mật', link: '/privacy' },
     { label: 'Điều khoản sử dụng', link: '/terms' },
-    { label: 'Chính sách đổi trả', link: '/return-policy' },
+    { label: 'Chính sách đổi trả', link: '/return-pology' },
   ],
   'Hỗ Trợ': [
     { label: 'FAQ', link: '/faq' },

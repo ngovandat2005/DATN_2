@@ -18,7 +18,7 @@ export default function KichThuocPage() {
   const [showTrashModal, setShowTrashModal] = useState(false);
   const [trashList, setTrashList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearchọng] = useState(false);
 
   const fetchAll = () => {
     fetch('http://localhost:8080/api/kich-thuoc/getAllFull')
@@ -40,7 +40,7 @@ export default function KichThuocPage() {
       return;
     }
 
-    setIsSearching(true);
+    setIsSearchọng(true);
     setSearchTerm(value);
 
     fetch(`http://localhost:8080/api/kich-thuoc/search?name=${encodeURIComponent(value)}`)
@@ -52,13 +52,13 @@ export default function KichThuocPage() {
       })
       .then(data => {
         setKichThuocs(data);
-        setIsSearching(false);
+        setIsSearchọng(false);
       })
       
       .catch(error => {
         console.error('Lỗi khi tìm kiếm:', error);
         message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearching(false);
+        setIsSearchọng(false);
       });
   };
 

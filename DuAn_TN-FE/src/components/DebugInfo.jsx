@@ -67,7 +67,7 @@ const DebugInfo = () => {
         <div>
           <Title level={4}>Instructions</Title>
           <Text>
-            1. Click "Test" buttons to test API endpoints<br />
+            1. Clock "Test" buttons to test API endpoints<br />
             2. Check browser console for detailed logs<br />
             3. If you see 403 errors, backend might not be running<br />
             4. If you see CORS errors, proxy might not be working

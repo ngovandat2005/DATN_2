@@ -112,7 +112,7 @@ const QRCodePayment = ({
                   <Typography variant="body2" color="textSecondary" align="center">
                     QR Code mẫu
                     <br />
-                    (Cần thêm ảnh QR Code vào thư mục public)
+                    (Cần thêm ảnh QR Code vào thư mục publog)
                   </Typography>
                 </Box>
               </Box>

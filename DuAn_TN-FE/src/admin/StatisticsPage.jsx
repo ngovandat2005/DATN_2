@@ -149,7 +149,7 @@ function StatisticsPage() {
         axios.get(`http://localhost:8080/api/thong-ke/products-sold-by-channel?channel=ONLINE&month=${month}&year=${year}`),
         axios.get(`http://localhost:8080/api/thong-ke/products-sold-by-channel?channel=OFFLINE&month=${month}&year=${year}`),
         axios.get(`http://localhost:8080/api/thong-ke/revenue-share?month=${month}&year=${year}`),
-        axios.get(`http://localhost:8080/api/thong-ke/best-sellers?type=month`) // Luôn gọi với type=month
+        axios.get(`http://localhost:8080/api/thong-ke/best-sellers?type=month`) // Luôn gửi với type=month
       ]);
 
       // Xử lý response data - có thể backend trả về format khác
@@ -271,7 +271,7 @@ function StatisticsPage() {
       key: 'image',
       render: (_, record) => (
         <img
-          src={getImageUrl(record.images || record.imanges)} // Hỗ trợ cả 2 field
+          src={getImageUrl(record.images || record.images)} // Hỗ trợ cả 2 field
           alt={record.productName || "Không có ảnh"}
           style={{
             width: 60,
@@ -283,7 +283,7 @@ function StatisticsPage() {
             background: "#f6f8fa"
           }}
           onError={(e) => {
-            console.error(`Product image failed to load: ${record.images || record.imanges}`);
+            console.error(`Product image failed to load: ${record.images || record.images}`);
             e.target.src = "/logo.png";
           }}
         />
@@ -330,7 +330,7 @@ function StatisticsPage() {
     },
   ];
 
-  // Helper hiển thị đổi so với tháng trước
+  // Helper hiển thị đối so với tháng trước
   const MonthlyChange = () => (
     <span style={{ fontSize: 12 }}>
       {monthlyGrowthPct >= 0 ? '▲' : '▼'} {Math.abs(monthlyGrowthPct).toFixed(1)}% so với tháng trước
@@ -597,7 +597,7 @@ function StatisticsPage() {
       </Row>
 
       <Divider orientation="left">
-        <Title level={4}>Tỉ Trọng Doanh Thu ONLINE / OFFLINE</Title>
+        <Title level={4}>Tỷ Trọng Doanh Thu ONLINE / OFFLINE</Title>
       </Divider>
 
       <Row gutter={[12, 12]}>

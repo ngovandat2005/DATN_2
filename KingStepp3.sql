@@ -109,6 +109,20 @@ CREATE TABLE [dbo].[GioHangChiTiet] (
 );
 GO
 
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[DanhGia]') AND type in (N'U'))
+CREATE TABLE [dbo].[DanhGia] (
+    [Id] INT IDENTITY(1,1) PRIMARY KEY, 
+    [IdKhachHang] INT, 
+    [IdSanPham] INT, 
+    [SoSao] INT, 
+    [BinhLuan] NVARCHAR(MAX), 
+    [NgayDanhGia] DATETIME, 
+    [TrangThai] INT,
+    FOREIGN KEY ([IdKhachHang]) REFERENCES [dbo].[KhachHang]([id]),
+    FOREIGN KEY ([IdSanPham]) REFERENCES [dbo].[SanPham]([Id])
+);
+GO
+
 -- ==========================================
 -- SEED DATA (THÊM 10 DÒNG CHO MỖI BẢNG)
 -- ==========================================
@@ -249,15 +263,20 @@ INSERT INTO [dbo].[donHangChiTiet] ([idDonHang], [idSanPhamChiTiet], [soLuong], 
 
 -- 15. GioHangChiTiet
 INSERT INTO [dbo].[GioHangChiTiet] ([idSanPhamChiTiet], [idKhachHang], [soLuong], [gia]) VALUES 
-(1, 1, 1, 1350000),
-(2, 2, 2, 1700000),
-(3, 3, 1, 960000),
-(4, 4, 1, 1710000),
-(5, 5, 2, 2200000),
-(6, 6, 1, 810000),
-(7, 7, 1, 1105000),
-(8, 8, 3, 600000),
-(9, 9, 1, 1045000),
-(10, 10, 2, 1232000);
+(1, 1, 1, 1350000), (2, 2, 2, 1700000), (3, 3, 1, 960000), (4, 4, 1, 1710000), (5, 5, 2, 2200000),
+(6, 6, 1, 810000), (7, 7, 1, 1105000), (8, 8, 3, 600000), (9, 9, 1, 1045000), (10, 10, 2, 1232000);
 
-PRINT 'Thêm 10 dòng dữ liệu vào các Bảng thành công!'
+-- 16. DanhGia
+INSERT INTO [dbo].[DanhGia] ([IdKhachHang], [IdSanPham], [SoSao], [BinhLuan], [NgayDanhGia], [TrangThai]) VALUES 
+(1, 1, 5, N'Giày đi êm chân, rất hài lòng.', GETDATE(), 1),
+(2, 2, 4, N'Sản phẩm tốt, giao hàng nhanh.', GETDATE(), 1),
+(3, 3, 5, N'Màu sắc bên ngoài đẹp hơn trong ảnh luôn.', GETDATE(), 1),
+(4, 4, 3, N'Đế hơi cứng, chắc phải đi vài lần mới mềm ra.', GETDATE(), 1),
+(5, 5, 5, N'Sản phẩm tuyệt vời, sẽ ủng hộ shop tiếp.', GETDATE(), 1),
+(6, 6, 2, N'Giao nhầm size cho mình rồi shop ơi.', GETDATE(), 1),
+(7, 7, 5, N'Chất lượng tốt so với tầm giá.', GETDATE(), 1),
+(8, 8, 4, N'Giày nhẹ, ôm chân, rất phù hợp chạy bộ.', GETDATE(), 1),
+(9, 9, 5, N'Ưng ý cực kỳ, đóng gói rất cẩn thận.', GETDATE(), 1),
+(10, 10, 1, N'Hàng không giống hình cho lắm, hơi thất vọng.', GETDATE(), 1);
+
+PRINT 'Thêm dữ liệu vào các Bảng thành công!'

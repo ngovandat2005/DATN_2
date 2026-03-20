@@ -40,7 +40,7 @@ public class VNpayConfig {
         params.put("vnp_Amount", String.valueOf(amount * 100)); // đơn vị VND * 100
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_TxnRef", String.valueOf(System.currentTimeMillis()));
-        params.put("vnp_OrderInfo", "Thanh toan don hang");
+        params.put("vnp_OrderInfo", "ThanhToanDonHang");
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
         params.put("vnp_ReturnUrl", vnpReturnUrl);

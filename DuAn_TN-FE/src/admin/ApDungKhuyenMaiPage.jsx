@@ -17,7 +17,7 @@ const ApDungKhuyenMaiPage = () => {
   const [promotion, setPromotion] = useState(null);
   const [selectedSPCTIds, setSelectedSPCTIds] = useState([]);
 
-  // State cho bộ lọc
+  // State cho bộ log
   const [filterTenSanPham, setFilterTenSanPham] = useState('');
   const [filterMauSac, setFilterMauSac] = useState('');
   const [filterKichThuoc, setFilterKichThuoc] = useState('');
@@ -230,7 +230,7 @@ const ApDungKhuyenMaiPage = () => {
   // Hàm helper để lấy hình ảnh an toàn
   const getProductImage = (spct) => {
     // Thử nhiều cách để lấy ảnh từ sản phẩm chi tiết
-    let images = spct.images || spct.sanPham?.images || spct.sanPham?.imanges;
+    let images = spct.images || spct.sanPham?.images || spct.sanPham?.images;
 
 
 
@@ -266,7 +266,7 @@ const ApDungKhuyenMaiPage = () => {
     return '/logo192.png';
   };
 
-  // Lọc sản phẩm theo filter
+  // Log sản phẩm theo filter
   const filteredListSPCT = listSPCT.filter(spct => {
     const tenSanPham = getProductName(spct).toLowerCase();
     const mauSac = getColorName(spct).toLowerCase();
@@ -377,9 +377,9 @@ const ApDungKhuyenMaiPage = () => {
           </Space>
         }
       >
-        {/* Bộ lọc sản phẩm */}
+        {/* Bộ log sản phẩm */}
         <div style={{ marginBottom: 16, padding: '16px', background: '#f8f9fa', borderRadius: 8, border: '1px solid #e8e8e8' }}>
-          <div style={{ marginBottom: 12, fontWeight: 600, color: '#333' }}>🔍 Bộ lọc sản phẩm:</div>
+          <div style={{ marginBottom: 12, fontWeight: 600, color: '#333' }}>🔍 Bộ log sản phẩm:</div>
           <Row gutter={16} align="middle">
             <Col span={8}>
               <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 500 }}>Tên sản phẩm:</div>
@@ -450,7 +450,7 @@ const ApDungKhuyenMaiPage = () => {
                 }}
                 style={{ fontSize: 12 }}
               >
-                🔄 Xóa bộ lọc
+                🔄 Xóa bộ log
               </Button>
             )}
           </div>
@@ -550,7 +550,7 @@ const ApDungKhuyenMaiPage = () => {
                       {errorState ? (
                         <span style={{ color: 'red' }}>Lỗi tải dữ liệu: {errorState}</span>
                       ) : listSPCT.length > 0
-                        ? `Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại.`
+                        ? `Không tìm thấy sản phẩm nào phù hợp với bộ log hiện tại.`
                         : `Không có sản phẩm chi tiết nào.`
                       }
                     </Text>

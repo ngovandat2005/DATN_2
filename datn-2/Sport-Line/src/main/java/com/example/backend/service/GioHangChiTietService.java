@@ -1,6 +1,7 @@
 package com.example.backend.service;
 
 
+import com.example.backend.ThongBao;
 import com.example.backend.dto.ThemGioHangDTO;
 import com.example.backend.entity.GioHangChiTiet;
 import com.example.backend.entity.KhachHang;
@@ -37,9 +38,17 @@ public class GioHangChiTietService {
                 spct.getId(), kh.getId());
 
         if (tonTai != null) {
-            tonTai.setSoLuong(tonTai.getSoLuong() + req.getSoLuong());
+            int soLuongMoi = tonTai.getSoLuong() + req.getSoLuong();
+            if (soLuongMoi > spct.getSoLuong()) {
+                throw new ThongBao("Số lượng vượt quá tồn kho. Còn lại: " + spct.getSoLuong());
+            }
+            tonTai.setSoLuong(soLuongMoi);
             tonTai.setGia(spct.getGiaBan());
             return repo.save(tonTai);
+        }
+
+        if (req.getSoLuong() > spct.getSoLuong()) {
+            throw new ThongBao("Số lượng vượt quá tồn kho. Còn lại: " + spct.getSoLuong());
         }
 
         GioHangChiTiet moi = new GioHangChiTiet();
@@ -58,6 +67,12 @@ public class GioHangChiTietService {
     public GioHangChiTiet capNhatSoLuong(Integer id, int soLuongMoi) {
         GioHangChiTiet chiTiet = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy chi tiết giỏ hàng"));
+        
+        SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
+        if (soLuongMoi > spct.getSoLuong()) {
+            throw new ThongBao("Số lượng vượt quá tồn kho. Còn lại: " + spct.getSoLuong());
+        }
+        
         chiTiet.setSoLuong(soLuongMoi);
         return repo.save(chiTiet);
     }

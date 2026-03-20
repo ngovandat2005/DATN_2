@@ -115,13 +115,13 @@ const DetailSanPhamPage = () => {
     e.preventDefault();
 
     // Kiểm tra trùng ở FE
-    const isDuplicate = chiTietList.some(
+    const isDuplogate = chiTietList.some(
       (ct) =>
         String(ct.mauSac?.id || ct.idMauSac) === String(spctForm.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(spctForm.idKichThuoc)
     );
 
-    if (isDuplicate) {
+    if (isDuplogate) {
       Swal.fire({
         icon: 'warning',
         title: 'Biến thể này đã tồn tại!',
@@ -176,14 +176,14 @@ const DetailSanPhamPage = () => {
     e.preventDefault();
 
     // Kiểm tra trùng ở FE (trừ chính biến thể đang sửa)
-    const isDuplicate = chiTietList.some(
+    const isDuplogate = chiTietList.some(
       (ct) =>
         ct.id !== editSpct.id &&
         String(ct.mauSac?.id || ct.idMauSac) === String(editSpct.mauSac?.id || editSpct.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(editSpct.kichThuoc?.id || editSpct.idKichThuoc)
     );
 
-    if (isDuplicate) {
+    if (isDuplogate) {
       Swal.fire({
         icon: 'warning',
         title: 'Biến thể này đã tồn tại!',
@@ -419,7 +419,7 @@ const DetailSanPhamPage = () => {
         }}>
           <div style={{ flex: '0 0 200px' }}>
             <img
-              src={getImageUrl(product.imanges)}
+              src={getImageUrl(product.images)}
               alt={product.tenSanPham}
               style={{
                 width: '100%',
@@ -429,7 +429,7 @@ const DetailSanPhamPage = () => {
                 border: '1px solid #eee'
               }}
               onError={e => {
-                console.error(`Product image failed to load: ${product.imanges}`);
+                console.error(`Product image failed to load: ${product.images}`);
                 e.target.src = "/logo.png";
               }}
             />
@@ -478,7 +478,7 @@ const DetailSanPhamPage = () => {
           </div>
         </div>
 
-        {/* Bộ lọc biến thể */}
+        {/* Bộ log biến thể */}
         <div style={{
           background: '#f9f9f9',
           padding: 16,

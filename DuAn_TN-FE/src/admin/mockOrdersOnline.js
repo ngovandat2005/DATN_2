@@ -9,7 +9,7 @@ const mockOrdersOnline = [
     loaiDon: 'Online',
     trangThai: 3, // 3: Chờ xác nhận, 1: Đã xác nhận, 2: Đang giao, 4: Đã hủy
     chiTiet: {
-      lichSuThanhToan: [
+      loghSuThanhToan: [
         {
           stt: 1,
           maGiaoDich: '89468395',

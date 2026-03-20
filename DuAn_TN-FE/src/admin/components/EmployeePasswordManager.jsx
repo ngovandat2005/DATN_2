@@ -22,7 +22,7 @@ const EmployeePasswordManager = () => {
         message.error('Không thể tải danh sách nhân viên');
       }
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error('Error fetchọng employees:', error);
       message.error('Có lỗi xảy ra khi tải danh sách nhân viên');
     } finally {
       setLoading(false);

@@ -97,7 +97,15 @@ function Cart() {
     fetchCart();
   }, [customerId]);
 
-  const handleQuantityChange = async (id, newQuantity) => {
+  const handleQuantityChange = async (item, newQuantity) => {
+    const id = item.id;
+    const stock = item.sanPhamChiTiet?.soLuong || 0;
+
+    if (newQuantity > stock) {
+      message.warning(`Không thể tăng thêm. Sản phẩm này chỉ còn ${stock} trong kho!`);
+      return;
+    }
+
     try {
       console.log('🔄 Đang cập nhật số lượng sản phẩm...');
       console.log('📦 Item ID:', id);
@@ -308,12 +316,12 @@ function Cart() {
                       (() => {
                         let imagePath;
                         
-                        if (item.sanPhamChiTiet && item.sanPhamChiTiet.sanPham && item.sanPhamChiTiet.sanPham.imanges) {
-                          // Cấu trúc cũ: item.sanPhamChiTiet.sanPham.imanges
-                          imagePath = item.sanPhamChiTiet.sanPham.imanges.split(',')[0];
-                        } else if (item.imanges) {
-                          // Cấu trúc mới: item.imanges
-                          imagePath = item.imanges.split(',')[0];
+                        if (item.sanPhamChiTiet && item.sanPhamChiTiet.sanPham && item.sanPhamChiTiet.sanPham.images) {
+                          // Cấu trúc cũ: item.sanPhamChiTiet.sanPham.images
+                          imagePath = item.sanPhamChiTiet.sanPham.images.split(',')[0];
+                        } else if (item.images) {
+                          // Cấu trúc mới: item.images
+                          imagePath = item.images.split(',')[0];
                         } else {
                           imagePath = null;
                         }
@@ -497,14 +505,33 @@ function Cart() {
                   })()}
                 </td>
                 <td className="gx-cart-quantity">
-                  <Button size="small" onClick={() => handleQuantityChange(item.id, Math.max(1, item.soLuong - 1))} disabled={item.soLuong <= 1}>-</Button>
+                  <Button
+                    size="small"
+                    onClick={() => handleQuantityChange(item, Math.max(1, item.soLuong - 1))}
+                    disabled={item.soLuong <= 1}
+                  >
+                    -
+                  </Button>
                   <InputNumber
                     min={1}
+                    max={item.sanPhamChiTiet?.soLuong || 1000}
                     value={item.soLuong}
-                    onChange={val => handleQuantityChange(item.id, val)}
+                    onChange={(val) => handleQuantityChange(item, val)}
                     style={{ width: 50, margin: '0 8px' }}
                   />
-                  <Button size="small" onClick={() => handleQuantityChange(item.id, item.soLuong + 1)}>+</Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const currentStock = item.sanPhamChiTiet?.soLuong || 0;
+                      if (item.soLuong >= currentStock) {
+                        message.warning(`Chỉ còn ${currentStock} sản phẩm trong kho!`);
+                      } else {
+                        handleQuantityChange(item, item.soLuong + 1);
+                      }
+                    }}
+                  >
+                    +
+                  </Button>
                 </td>
                 <td className="gx-cart-total">
                   {/* ✅ SỬA LẠI: Tính thành tiền với giá khuyến mãi */}
