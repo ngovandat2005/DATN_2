@@ -393,6 +393,11 @@ function Cart() {
                         })()
                       }</b>
                     </Link>
+                    {item.sanPhamChiTiet?.ma && (
+                      <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '4px' }}>
+                        Mã SKU: {item.sanPhamChiTiet.ma}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="gx-cart-variant">

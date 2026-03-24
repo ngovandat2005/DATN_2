@@ -58,6 +58,7 @@ const OrderDetail = () => {
             return {
               ...item,
               tenSanPham: productResponse.data?.tenSanPham || '---',
+              ma: productResponse.data?.ma || '',
               anh: productResponse.data?.images || '',
               mauSac: productResponse.data?.mauSac || '---',
               kichThuoc: productResponse.data?.kichThuoc || '---',
@@ -70,6 +71,7 @@ const OrderDetail = () => {
             return {
               ...item,
               tenSanPham: '---',
+              ma: '',
               anh: '',
               mauSac: '---',
               kichThuoc: '---',
@@ -88,6 +90,22 @@ const OrderDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ✅ THÊM: Hàm xử lý đường dẫn ảnh giống như SanPhamPage
+  const getImageUrl = (img) => {
+    if (!img) return '/logo.png';
+    // Nếu là mảng, lấy phần tử đầu
+    if (Array.isArray(img)) img = img[0];
+    // Nếu là chuỗi nhiều ảnh, lấy ảnh đầu
+    if (typeof img === 'string' && img.includes(',')) img = img.split(',')[0];
+    img = img.trim();
+    if (!img) return '/logo.png';
+    if (img.startsWith('http')) return img;
+    if (img.startsWith('/')) return 'http://localhost:8080' + img;
+    
+    // Sử dụng static resource mapping từ WebConfig (/images/**)
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
 
   // Hàm hủy đơn hàng (chỉ cho trạng thái 0)
@@ -705,9 +723,7 @@ const OrderDetail = () => {
               <div style={{ width: 80, height: 80, marginRight: 24 }}>
                 {sp.anh && sp.anh.trim() !== '' ? (
                   <img
-                    src={sp.anh.includes(',')
-                      ? `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`
-                      : `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.trim())}`}
+                    src={getImageUrl(sp.anh)}
                     alt={sp.tenSanPham}
                     style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                     onError={(e) => {
@@ -734,7 +750,14 @@ const OrderDetail = () => {
                   Không có ảnh
                 </div>
               </div>
-              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>{sp.tenSanPham}</div>
+              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
+                <div>{sp.tenSanPham}</div>
+                {sp.ma && (
+                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
+                    Mã: {sp.ma}
+                  </div>
+                )}
+              </div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.mauSac}</div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>

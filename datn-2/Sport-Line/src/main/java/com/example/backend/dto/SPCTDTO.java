@@ -11,6 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SPCTDTO {
     private Integer id;
+    private String ma; // ✅ THÊM: Mã biến thể (SKU)
     private String images;
     private String tenSanPham;
     private Integer soLuong;

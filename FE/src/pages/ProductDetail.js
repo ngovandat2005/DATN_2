@@ -31,6 +31,7 @@ function ProductDetail() {
   const [currentVariant, setCurrentVariant] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cartItems, setCartItems] = useState([]); // ✅ THÊM: Theo dõi giỏ hàng
 
   // ✅ THÊM: Lấy ID khách hàng từ localStorage
   const customerId = getCustomerId();
@@ -100,6 +101,15 @@ function ProductDetail() {
       });
   }, []);
 
+  // ✅ THÊM: Lấy giỏ hàng khi load trang để tính tồn kho khả dụng
+  useEffect(() => {
+    if (isLoggedIn() && customerId) {
+      axios.get(config.getApiUrl(`api/gio-hang-chi-tiet/${customerId}`))
+        .then(res => setCartItems(res.data))
+        .catch(err => console.error("Lỗi khi lấy giỏ hàng:", err));
+    }
+  }, [customerId]);
+
   // Lọc màu sắc và size có sẵn cho sản phẩm này
   const availableColors = colorList.filter(color => {
     // Kiểm tra xem màu này có trong bất kỳ variant nào không
@@ -147,6 +157,14 @@ function ProductDetail() {
   // Lấy số lượng còn lại của biến thể hiện tại
   const stock = currentVariant?.soLuong || 0;
 
+  // ✅ THÊM: Tính số lượng đã có trong giỏ hàng của biến thể này
+  const currentInCart = cartItems.find(item => 
+    (item.sanPhamChiTiet?.id === currentVariant?.id) || 
+    (item.idSanPhamChiTiet === currentVariant?.id)
+  )?.soLuong || 0;
+
+  const availableToBuy = Math.max(0, stock - currentInCart);
+
   // ✅ THÊM: Hàm kiểm tra đăng nhập
   const checkLoginAndRedirect = () => {
     if (!isLoggedIn()) {
@@ -171,12 +189,7 @@ function ProductDetail() {
   const handleBuy = () => {
     if (!checkLoginAndRedirect()) return;
 
-    if (!selectedColor || !selectedSize) {
-      message.warning("Vui lòng chọn đủ màu và size!");
-      return;
-    }
-
-    if (!currentVariant) {
+    if (!selectedColor || !selectedSize || !currentVariant) {
       message.warning("Vui lòng chọn đủ màu và size!");
       return;
     }
@@ -186,8 +199,23 @@ function ProductDetail() {
       return;
     }
 
+    if (quantity <= 0) {
+      message.error("Số lượng không hợp lệ!");
+      return;
+    }
+
+    if (quantity > availableToBuy) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Vượt quá tồn kho',
+        text: availableToBuy > 0 
+          ? `Bạn chỉ có thể mua thêm tối đa ${availableToBuy} sản phẩm (đã có ${currentInCart} trong giỏ)!` 
+          : `Bạn đã đạt giới hạn tối đa trong giỏ hàng (Tồn kho: ${stock})!`,
+      });
+      return;
+    }
+
     // ✅ SỬA: Chuyển đến trang payment thay vì checkout
-    // Giống như thanh toán qua giỏ hàng
     navigate('/payment', {
       state: {
         cart: [{
@@ -210,18 +238,29 @@ function ProductDetail() {
   const handleAddToCart = () => {
     if (!checkLoginAndRedirect()) return;
 
-    if (!selectedColor || !selectedSize) {
-      message.warning("Vui lòng chọn đủ màu và size!");
-      return;
-    }
-
-    if (!currentVariant) {
+    if (!selectedColor || !selectedSize || !currentVariant) {
       message.warning("Vui lòng chọn đủ màu và size!");
       return;
     }
 
     if (stock <= 0) {
       message.warning("Sản phẩm đã hết hàng!");
+      return;
+    }
+
+    if (quantity <= 0) {
+      message.error("Số lượng không hợp lệ!");
+      return;
+    }
+
+    if (quantity > availableToBuy) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Vượt quá tồn kho',
+        text: availableToBuy > 0 
+          ? `Bạn chỉ có thể thêm tối đa ${availableToBuy} sản phẩm (đã có ${currentInCart} trong giỏ)!` 
+          : `Bạn đã đạt giới hạn tối đa trong giỏ hàng (Tồn kho: ${stock})!`,
+      });
       return;
     }
 
@@ -234,14 +273,20 @@ function ProductDetail() {
       cancelButtonText: "Hủy",
     }).then((result) => {
       if (result.isConfirmed) {
-        // ✅ SỬ DỤNG ID KHÁCH HÀNG THỰC TẾ THAY VÌ HARDCODE
         axios
           .post(config.getApiUrl('api/gio-hang-chi-tiet/them'), {
-            idKhachHang: customerId, // ✅ Sử dụng customerId thực tế
+            idKhachHang: customerId,
             idSanPhamChiTiet: currentVariant?.id,
             soLuong: quantity,
           })
           .then(() => {
+            // Cập nhật lại giỏ hàng ảo để tính lại availableToBuy
+            if (customerId) {
+              axios.get(config.getApiUrl(`api/gio-hang-chi-tiet/${customerId}`))
+                .then(res => setCartItems(res.data))
+                .catch(err => console.error("Lỗi khi cập nhật giỏ hàng:", err));
+            }
+
             Swal.fire({
               icon: "success",
               title: "Thành công",
@@ -255,10 +300,11 @@ function ProductDetail() {
           })
           .catch((error) => {
             console.error('❌ Lỗi khi thêm vào giỏ hàng:', error);
+            const errorMsg = error.response?.data?.message || error.message;
             Swal.fire({
               icon: "error",
               title: "Thất bại",
-              text: `Thêm vào giỏ hàng thất bại: ${error.response?.data?.message || error.message}`,
+              text: `Thêm vào giỏ hàng thất bại: ${errorMsg}`,
               toast: true,
               position: 'top-end',
               showConfirmButton: false,
@@ -402,10 +448,12 @@ function ProductDetail() {
               </Tag>
             </div>
             <div style={{ marginBottom: 8 }}>
-              <Tag color={stock > 0 ? "green" : "red"}>
+              <Tag color={stock > 0 ? (availableToBuy > 0 ? "green" : "orange") : "red"}>
                 {selectedColor && selectedSize
                   ? stock > 0
-                    ? `Tình trạng: Màu ${selectedColor}, Size ${selectedSize} còn ${stock} sản phẩm`
+                    ? availableToBuy > 0
+                      ? `Tình trạng: Còn ${availableToBuy} sản phẩm có thể thêm (Tổng kho: ${stock}${currentInCart > 0 ? `, đã có ${currentInCart} trong giỏ` : ""})`
+                      : `Tình trạng: Đã đạt giới hạn tối đa trong giỏ hàng (Tổng kho: ${stock})`
                     : `Tình trạng: Màu ${selectedColor}, Size ${selectedSize} đã hết hàng`
                   : "Vui lòng chọn đủ màu và size"}
               </Tag>
@@ -479,9 +527,8 @@ function ProductDetail() {
                 <span>Số lượng: </span>
                 <InputNumber
                   min={1}
-                  max={stock}
                   value={quantity}
-                  onChange={setQuantity}
+                  onChange={(val) => setQuantity(val)}
                   style={{ width: 80, marginLeft: 8 }}
                 />
               </div>

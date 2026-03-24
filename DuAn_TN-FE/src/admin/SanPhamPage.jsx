@@ -25,6 +25,7 @@ const SanPhamPage = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     tenSanPham: "",
+    ma: "", // ✅ THÊM: Mã sản phẩm
     idDanhMuc: "",
     idThuongHieu: "",
     idChatLieu: "",
@@ -171,6 +172,7 @@ const SanPhamPage = () => {
     setLoading(true);
     const data = {
       tenSanPham: addForm.tenSanPham,
+      ma: addForm.ma, // ✅ THÊM: Mã sản phẩm
       thuongHieu: {
         id: addForm.idThuongHieu,
       },
@@ -240,6 +242,7 @@ const SanPhamPage = () => {
     setEditId(product.id);
     setEditForm({
       tenSanPham: product.tenSanPham || "",
+      ma: product.ma || "", // ✅ THÊM: Mã sản phẩm
       idDanhMuc: product.danhMuc?.id || "",
       idThuongHieu: product.thuongHieu?.id || "",
       idChatLieu: product.chatLieu?.id || "",
@@ -259,6 +262,7 @@ const SanPhamPage = () => {
     setLoading(true);
     const data = {
       tenSanPham: editForm.tenSanPham,
+      ma: editForm.ma, // ✅ THÊM: Mã sản phẩm
       thuongHieu: { id: editForm.idThuongHieu },
       xuatXu: { id: editForm.idXuatXu },
       chatLieu: { id: editForm.idChatLieu },
@@ -703,6 +707,11 @@ const SanPhamPage = () => {
                 value={addForm.tenSanPham}
                 onChange={(e) => setAddForm((f) => ({ ...f, tenSanPham: e.target.value }))}
               />
+              <Input
+                placeholder="Mã sản phẩm (Tùy chọn)"
+                value={addForm.ma}
+                onChange={(e) => setAddForm((f) => ({ ...f, ma: e.target.value }))}
+              />
               {addNameError && <span style={{ color: 'red' }}>{addNameError}</span>}
               <input
                 type="file"
@@ -873,6 +882,11 @@ const SanPhamPage = () => {
                 value={editForm.tenSanPham}
                 onChange={(e) => setEditForm((f) => ({ ...f, tenSanPham: e.target.value }))}
               />
+              <Input
+                placeholder="Mã sản phẩm"
+                value={editForm.ma}
+                onChange={(e) => setEditForm((f) => ({ ...f, ma: e.target.value }))}
+              />
               {editNameError && <span style={{ color: 'red' }}>{editNameError}</span>}
               <input
                 type="file"
@@ -1042,7 +1056,8 @@ const SanPhamPage = () => {
         >
           <thead style={{ background: "#f5f7fb" }}>
             <tr>
-              <th>mã sản phẩm</th>
+              <th>ID</th>
+              <th>Mã sản phẩm</th>
               <th>Ảnh</th>
               <th>Tên sản phẩm</th>
               <th>Danh mục</th>
@@ -1092,6 +1107,7 @@ const SanPhamPage = () => {
                 <React.Fragment key={product.id}>
                   <tr>
                     <td>{product.id}</td>
+                    <td style={{ fontWeight: 'bold', color: '#1976d2' }}>{product.ma || "-"}</td>
                     <td style={{ width: 80, height: 80, textAlign: 'center', verticalAlign: 'middle' }}>
                       <img
                         src={getImageUrl(product.images)}

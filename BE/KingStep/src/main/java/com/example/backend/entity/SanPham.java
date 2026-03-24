@@ -24,6 +24,9 @@ public class SanPham {
     @Column(name = "TenSanPham")
     private String tenSanPham;
 
+    @Column(name = "Ma") // ✅ THÊM: Mã sản phẩm
+    private String ma;
+
     @Column(name = "NgayTao")
     private Date ngayTao;
 

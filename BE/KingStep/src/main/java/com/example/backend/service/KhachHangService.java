@@ -1,7 +1,6 @@
 
 package com.example.backend.service;
 
-
 import com.example.backend.dto.KhachHangReponseDTO;
 
 import com.example.backend.entity.KhachHang;
@@ -12,31 +11,29 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 public class KhachHangService {
 
     @Autowired
     private KhachHangRepository khachHangRepository;
 
-    private KhachHangReponseDTO convertDTO(KhachHang kh){
-      return   new KhachHangReponseDTO(
-              kh.getId(),
-              kh.getTenKhachHang(),
-              kh.getEmail(),
-              kh.getNgaySinh(),
-              kh.getGioiTinh(),
-              kh.getDiaChi(),
-              kh.getSoDienThoai(),
+    private KhachHangReponseDTO convertDTO(KhachHang kh) {
+        return new KhachHangReponseDTO(
+                kh.getId(),
+                kh.getTenKhachHang(),
+                kh.getEmail(),
+                kh.getNgaySinh(),
+                kh.getGioiTinh(),
+                kh.getDiaChi(),
+                kh.getSoDienThoai(),
 
-              kh.getTrangThai(),
-              kh.getMaThongBao(),
-              kh       .getThoiGianThongBao()
-      );
+                kh.getTrangThai(),
+                kh.getMaThongBao(),
+                kh.getThoiGianThongBao());
 
     }
 
-    public List<KhachHangReponseDTO> findAll(){
+    public List<KhachHangReponseDTO> findAll() {
         return khachHangRepository.findAll().stream()
                 .map(khachHang -> new KhachHangReponseDTO(
                         khachHang.getId(),
@@ -49,11 +46,8 @@ public class KhachHangService {
 
                         khachHang.getTrangThai(),
                         khachHang.getMaThongBao(),
-                        khachHang.getThoiGianThongBao()
-                ))
-                .toList()
-                ;
-
+                        khachHang.getThoiGianThongBao()))
+                .toList();
 
     }
 
@@ -70,11 +64,11 @@ public class KhachHangService {
 
                         khachHang.getTrangThai(),
                         khachHang.getMaThongBao(),
-                        khachHang.getThoiGianThongBao()
-                ))
+                        khachHang.getThoiGianThongBao()))
                 .orElse(null);
 
     }
+
     // ham them
     // KhachHangService.java
     public KhachHangReponseDTO create(KhachHangReponseDTO dto) {
@@ -102,10 +96,10 @@ public class KhachHangService {
             khachHangRepository.deleteById(id);
             return true;
         }
-    return      false;
+        return false;
     }
 
-    public KhachHangReponseDTO update( int id,KhachHangReponseDTO dto) {
+    public KhachHangReponseDTO update(int id, KhachHangReponseDTO dto) {
         return khachHangRepository.findById(id)
                 .map(kh -> {
                     kh.setTenKhachHang(dto.getTenKhachHang());

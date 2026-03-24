@@ -48,6 +48,7 @@ const DetailSanPhamPage = () => {
   const [mauSacs, setMauSacs] = useState([]);
   const [kichThuocs, setKichThuocs] = useState([]);
   const [spctForm, setSpctForm] = useState({
+    ma: "", // ✅ THÊM: Mã SKU
     idMauSac: "",
     idKichThuoc: "",
     giaBan: "",
@@ -136,13 +137,14 @@ const DetailSanPhamPage = () => {
 
     try {
       await axios.post(`http://localhost:8080/api/san-pham-chi-tiet/them/${product.id}`, {
+        ma: spctForm.ma, // ✅ THÊM: Mã SKU
         idKichThuoc: spctForm.idKichThuoc,
         idMauSac: spctForm.idMauSac,
         soLuong: Number(spctForm.soLuong),
         giaBan: Number(spctForm.giaBan),
       });
 
-      setSpctForm({ idMauSac: '', idKichThuoc: '', giaBan: '', soLuong: '' });
+      setSpctForm({ ma: '', idMauSac: '', idKichThuoc: '', giaBan: '', soLuong: '' });
       fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
 
       Swal.fire({
@@ -223,6 +225,7 @@ const DetailSanPhamPage = () => {
 
       // Gọi API cập nhật biến thể
       const updateData = {
+        ma: editSpct.ma, // ✅ THÊM: Mã SKU
         giaBan: newPrice,
         soLuong: editSpct.soLuong,
         idMauSac: editSpct.mauSac?.id || editSpct.idMauSac,
@@ -566,6 +569,7 @@ const DetailSanPhamPage = () => {
               <table className="cart-table" style={{ minWidth: 800, width: '100%' }}>
                 <thead>
                   <tr>
+                    <th>Mã SKU</th>
                     <th>Màu sắc</th>
                     <th>Kích thước</th>
                     <th>Giá bán</th>
@@ -585,6 +589,7 @@ const DetailSanPhamPage = () => {
                   ) : (
                     chiTietList.map((ct) => (
                       <tr key={ct.id}>
+                        <td style={{ fontWeight: 'bold', color: '#1976d2' }}>{ct.ma || "-"}</td>
                         <td>{ct.mauSac?.tenMauSac || "-"}</td>
                         <td>{ct.kichThuoc?.tenKichThuoc || "-"}</td>
                         <td>{ct.giaBan?.toLocaleString() || "-"}</td>
@@ -717,6 +722,29 @@ const DetailSanPhamPage = () => {
               </div>
 
               <form onSubmit={handleAddSpct} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                    🆔 Mã SKU
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="Nhập mã SKU (Tùy chọn)..." 
+                    value={spctForm.ma} 
+                    onChange={e => setSpctForm(f => ({ ...f, ma: e.target.value }))} 
+                    style={{
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      background: '#fff',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                  />
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{
                     fontSize: '16px',
@@ -1009,6 +1037,29 @@ const DetailSanPhamPage = () => {
                     </span>
                   </div>
                 )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                    🆔 Mã SKU
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="Nhập mã SKU..." 
+                    value={editSpct.ma} 
+                    onChange={e => setEditSpct(f => ({ ...f, ma: e.target.value }))} 
+                    style={{
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      background: '#fff',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                    onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                  />
+                </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{

@@ -8,6 +8,7 @@ public class FeeRequest {
     private int insuranceValue;
     private int fromDistrict;
     private int toDistrict;
+    private int toProvinceId;
     private String toWardCode;
     private int height;
     private int length;

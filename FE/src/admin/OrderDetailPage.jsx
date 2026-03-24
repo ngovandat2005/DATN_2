@@ -43,6 +43,22 @@ const OrderDetailPage = () => {
   
   // State cho thông tin voucher
   const [voucherInfo, setVoucherInfo] = useState(null);
+
+  // ✅ THÊM: Hàm xử lý đường dẫn ảnh giống như SanPhamPage
+  const getImageUrl = (img) => {
+    if (!img) return '/logo.png';
+    // Nếu là mảng, lấy phần tử đầu
+    if (Array.isArray(img)) img = img[0];
+    // Nếu là chuỗi nhiều ảnh, lấy ảnh đầu
+    if (typeof img === 'string' && img.includes(',')) img = img.split(',')[0];
+    img = img.trim();
+    if (!img) return '/logo.png';
+    if (img.startsWith('http')) return img;
+    if (img.startsWith('/')) return 'http://localhost:8080' + img;
+    
+    // Sử dụng static resource mapping từ WebConfig (/images/**)
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+  };
   
   // 📦 Lấy danh sách sản phẩm có thể thêm
   const fetchAvailableProducts = useCallback(async () => {
@@ -133,11 +149,7 @@ const OrderDetailPage = () => {
                   justifyContent: 'center'
                 }}>
                   <img
-                    src={product.images && product.images.includes(',')
-                      ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.split(',')[0].trim())}`
-                      : product.images
-                        ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.trim())}`
-                        : '/placeholder-image.jpg'}
+                    src={getImageUrl(product.images)}
                     alt={product.tenSanPham}
                     style={{ 
                       width: '100%', 
@@ -313,6 +325,7 @@ const OrderDetailPage = () => {
           return {
             ...item,
             tenSanPham: prod?.tenSanPham || '---',
+            ma: prod?.ma || '',
             anh: prod?.images || '',
             mauSac: prod?.mauSac || '---',
             kichThuoc: prod?.kichThuoc || '---',
@@ -1735,6 +1748,7 @@ const OrderDetailPage = () => {
           return {
             ...item,
             tenSanPham: prod?.tenSanPham || '---',
+            ma: prod?.ma || '',
             anh: prod?.images || '',
             mauSac: prod?.mauSac || '---',
             kichThuoc: prod?.kichThuoc || '---',
@@ -2122,9 +2136,7 @@ const OrderDetailPage = () => {
                 {sp.anh
                   ? (
                     <img
-                      src={sp.anh.includes(',')
-                        ? `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`
-                        : `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.trim())}`}
+                      src={getImageUrl(sp.anh)}
                       alt={sp.tenSanPham}
                       style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                       onError={(e) => {
@@ -2136,7 +2148,14 @@ const OrderDetailPage = () => {
                   : '--'}
                 {sp.anh && <div style={{ display: 'none', width: 100, height: 90, background: '#f0f0f0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#999' }}>Không có ảnh</div>}
               </div>
-              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>{sp.tenSanPham}</div>
+              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
+                <div>{sp.tenSanPham}</div>
+                {sp.ma && (
+                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
+                    Mã: {sp.ma}
+                  </div>
+                )}
+              </div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.mauSac}</div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>

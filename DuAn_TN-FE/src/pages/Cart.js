@@ -326,18 +326,19 @@ function Cart() {
                           imagePath = null;
                         }
                         
-                        // ✅ SỬA: Sử dụng API endpoint thay vì static path
+                        // ✅ SỬA: Sử dụng /images/ trực tiếp để đồng bộ với Payment.js
                         if (imagePath) {
-                          // Xử lý đường dẫn ảnh
-                          if (imagePath.startsWith('http')) {
-                            return imagePath; // URL tuyệt đối
-                                                      } else if (imagePath.startsWith('/')) {
-                              // Đường dẫn tương đối, chuyển thành API endpoint
-                              return config.getApiUrl(`api/images/${encodeURIComponent(imagePath.substring(1))}`);
-                            } else {
-                              // Đường dẫn tương đối, sử dụng API endpoint
-                              return config.getApiUrl(`api/images/${encodeURIComponent(imagePath)}`);
-                            }
+                          // Loại bỏ dấu / hoặc images/ ở đầu nếu có
+                          let cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+                          if (cleanPath.startsWith('images/')) {
+                              cleanPath = cleanPath.substring(7);
+                          }
+                          
+                          // ✅ SỬA: Sử dụng URL tuyệt đối trong phát triển
+                          const encodedImg = encodeURIComponent(cleanPath);
+                          const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+                          const fullUrl = `${baseUrl}/images/${encodedImg}`;
+                          return fullUrl;
                         } else {
                           return 'https://via.placeholder.com/80x80?text=No+Image';
                         }
@@ -396,6 +397,11 @@ function Cart() {
                         })()
                       }</b>
                     </Link>
+                    {item.sanPhamChiTiet?.ma && (
+                      <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '4px' }}>
+                        Mã SKU: {item.sanPhamChiTiet.ma}
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="gx-cart-variant">

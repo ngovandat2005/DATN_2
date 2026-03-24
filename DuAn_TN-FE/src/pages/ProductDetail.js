@@ -267,6 +267,22 @@ function ProductDetail() {
       return;
     }
 
+    if (quantity <= 0) {
+      message.error("Số lượng không hợp lệ!");
+      return;
+    }
+
+    if (quantity > availableToBuy) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Vượt quá tồn kho',
+        text: availableToBuy > 0 
+          ? `Bạn chỉ có thể mua thêm tối đa ${availableToBuy} sản phẩm (đã có ${currentInCart} trong giỏ)!` 
+          : `Bạn đã đạt giới hạn tối đa trong giỏ hàng (Tồn kho: ${stock})!`,
+      });
+      return;
+    }
+
     // ✅ SỬA: Chuyển đến trang payment thay vì checkout
     // Giống như thanh toán qua giỏ hàng
     navigate('/payment', {
@@ -306,13 +322,26 @@ function ProductDetail() {
       return;
     }
 
+    if (quantity <= 0) {
+      message.error("Số lượng không hợp lệ!");
+      return;
+    }
+
     if (availableToBuy <= 0) {
-      message.error(`Bạn đã có ${currentInCart} sản phẩm trong giỏ hàng, đã đạt giới hạn tồn kho (${stock})!`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Hết hàng khả dụng',
+        text: `Bạn đã có ${currentInCart} sản phẩm trong giỏ hàng, đã đạt giới hạn tồn kho (${stock})!`,
+      });
       return;
     }
 
     if (quantity > availableToBuy) {
-      message.warning(`Bạn chỉ có thể thêm tối đa ${availableToBuy} sản phẩm nữa (đã có ${currentInCart} sản phẩm trong giỏ)!`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Vượt quá tồn kho',
+        text: `Bạn chỉ có thể thêm tối đa ${availableToBuy} sản phẩm nữa (đã có ${currentInCart} sản phẩm trong giỏ)!`,
+      });
       return;
     }
 
@@ -617,19 +646,8 @@ function ProductDetail() {
                 <span>Số lượng: </span>
                 <InputNumber
                   min={1}
-                  max={availableToBuy}
                   value={quantity}
-                  disabled={availableToBuy <= 0}
-                  onChange={(val) => {
-                    if (val > availableToBuy) {
-                      message.warning(availableToBuy > 0 
-                        ? `Bạn chỉ có thể thêm tối đa ${availableToBuy} sản phẩm nữa!` 
-                        : "Đã đạt giới hạn tối đa trong giỏ hàng!");
-                      setQuantity(availableToBuy || 1);
-                    } else {
-                      setQuantity(val);
-                    }
-                  }}
+                  onChange={(val) => setQuantity(val)}
                   style={{ width: 80, marginLeft: 8 }}
                 />
               </div>

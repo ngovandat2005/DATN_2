@@ -48,7 +48,7 @@ function Footer() {
   };
 
   return (
-    <AntFooter style={{ 
+    <AntFooter style={{
       background: 'linear-gradient(180deg, #0a1628 0%, #001529 100%)',
       color: '#fff',
       padding: '80px 10% 30px',
@@ -57,8 +57,8 @@ function Footer() {
       <Row gutter={[48, 48]}>
         {/* Thông tin liên hệ */}
         <Col xs={24} sm={12} md={6}>
-          <Title level={4} style={{ 
-            color: '#fff', 
+          <Title level={4} style={{
+            color: '#fff',
             marginBottom: '24px',
             fontSize: '18px',
             fontWeight: '600',
@@ -67,79 +67,79 @@ function Footer() {
             Thông Tin Liên Hệ
           </Title>
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <div style={{ 
-              display: 'flex', 
+            <div style={{
+              display: 'flex',
               alignItems: 'flex-start',
               transition: 'all 0.3s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateX(5px)';
-              e.currentTarget.querySelector('svg').style.color = '#1890ff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(0)';
-              e.currentTarget.querySelector('svg').style.color = '#fff';
-            }}>
-              <EnvironmentOutlined style={{ 
-                marginRight: '12px', 
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateX(5px)';
+                e.currentTarget.querySelector('svg').style.color = '#1890ff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.querySelector('svg').style.color = '#fff';
+              }}>
+              <EnvironmentOutlined style={{
+                marginRight: '12px',
                 fontSize: '18px',
                 marginTop: '4px',
                 color: '#fff',
                 transition: 'color 0.3s ease',
               }} />
-              <Text style={{ 
-                color: 'rgba(255,255,255,0.85)', 
+              <Text style={{
+                color: 'rgba(255,255,255,0.85)',
                 fontSize: '14px',
                 lineHeight: '1.6',
               }}>
-                123 Đường ABC, Quận XYZ, TP. Hồ Chí Minh
+                123 Đường ABC,Quận Ba Đình, TP. Hà Nội
               </Text>
             </div>
-            <div style={{ 
-              display: 'flex', 
+            <div style={{
+              display: 'flex',
               alignItems: 'center',
               transition: 'all 0.3s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateX(5px)';
-              e.currentTarget.querySelector('svg').style.color = '#1890ff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(0)';
-              e.currentTarget.querySelector('svg').style.color = '#fff';
-            }}>
-              <PhoneOutlined style={{ 
-                marginRight: '12px', 
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateX(5px)';
+                e.currentTarget.querySelector('svg').style.color = '#1890ff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.querySelector('svg').style.color = '#fff';
+              }}>
+              <PhoneOutlined style={{
+                marginRight: '12px',
                 fontSize: '18px',
                 color: '#fff',
                 transition: 'color 0.3s ease',
               }} />
-              <Text style={{ 
-                color: 'rgba(255,255,255,0.85)', 
+              <Text style={{
+                color: 'rgba(255,255,255,0.85)',
                 fontSize: '14px',
               }}>0123 456 789</Text>
             </div>
-            <div style={{ 
-              display: 'flex', 
+            <div style={{
+              display: 'flex',
               alignItems: 'center',
               transition: 'all 0.3s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateX(5px)';
-              e.currentTarget.querySelector('svg').style.color = '#1890ff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(0)';
-              e.currentTarget.querySelector('svg').style.color = '#fff';
-            }}>
-              <MailOutlined style={{ 
-                marginRight: '12px', 
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateX(5px)';
+                e.currentTarget.querySelector('svg').style.color = '#1890ff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.querySelector('svg').style.color = '#fff';
+              }}>
+              <MailOutlined style={{
+                marginRight: '12px',
                 fontSize: '18px',
                 color: '#fff',
                 transition: 'color 0.3s ease',
               }} />
-              <Text style={{ 
-                color: 'rgba(255,255,255,0.85)', 
+              <Text style={{
+                color: 'rgba(255,255,255,0.85)',
                 fontSize: '14px',
               }}>contact@kingstep.com</Text>
             </div>
@@ -149,8 +149,8 @@ function Footer() {
         {/* Menu links */}
         {Object.entries(footerLinks).map(([title, links]) => (
           <Col xs={24} sm={12} md={4} key={title}>
-            <Title level={4} style={{ 
-              color: '#fff', 
+            <Title level={4} style={{
+              color: '#fff',
               marginBottom: '24px',
               fontSize: '18px',
               fontWeight: '600',
@@ -160,11 +160,11 @@ function Footer() {
             </Title>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
               {links.map(link => (
-                <Link 
-                  key={link.label} 
+                <Link
+                  key={link.label}
                   to={link.link}
-                  style={{ 
-                    color: 'rgba(255,255,255,0.75)', 
+                  style={{
+                    color: 'rgba(255,255,255,0.75)',
                     display: 'block',
                     fontSize: '14px',
                     textDecoration: 'none',
@@ -187,10 +187,10 @@ function Footer() {
           </Col>
         ))}
 
-       
+
       </Row>
 
-      <Divider style={{ 
+      <Divider style={{
         borderColor: 'rgba(255,255,255,0.1)',
         margin: '40px 0 30px',
       }} />
@@ -198,22 +198,22 @@ function Footer() {
       {/* Social media và copyright */}
       <Row justify="space-between" align="middle" style={{ flexWrap: 'wrap' }}>
         <Col xs={24} sm={24} md={12} style={{ marginBottom: '16px' }}>
-          <Text style={{ 
-            color: 'rgba(255,255,255,0.65)', 
+          <Text style={{
+            color: 'rgba(255,255,255,0.65)',
             fontSize: '14px',
           }}>
             © 2025 KingStep. Tất cả quyền được bảo lưu.
           </Text>
         </Col>
-        <Col xs={24} sm={24} md={12} style={{ 
-          display: 'flex', 
+        <Col xs={24} sm={24} md={12} style={{
+          display: 'flex',
           justifyContent: 'flex-end',
           marginBottom: '16px',
         }}>
           <Space size="large">
-            <Link 
-              to="#" 
-              style={{ 
+            <Link
+              to="#"
+              style={{
                 color: '#fff',
                 display: 'flex',
                 alignItems: 'center',
@@ -235,9 +235,9 @@ function Footer() {
             >
               <FacebookOutlined style={{ fontSize: '20px' }} />
             </Link>
-            <Link 
-              to="#" 
-              style={{ 
+            <Link
+              to="#"
+              style={{
                 color: '#fff',
                 display: 'flex',
                 alignItems: 'center',
@@ -259,9 +259,9 @@ function Footer() {
             >
               <InstagramOutlined style={{ fontSize: '20px' }} />
             </Link>
-            <Link 
-              to="#" 
-              style={{ 
+            <Link
+              to="#"
+              style={{
                 color: '#fff',
                 display: 'flex',
                 alignItems: 'center',

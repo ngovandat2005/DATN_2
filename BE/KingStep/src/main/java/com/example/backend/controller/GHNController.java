@@ -101,8 +101,10 @@ public class GHNController {
     public ResponseEntity<?> calculateFee(@RequestBody FeeRequest feeRequest) {
         int fee = ghnClientService.tinhPhiVanChuyen(
                 feeRequest.getToDistrict(),
+                feeRequest.getToProvinceId(),
                 feeRequest.getToWardCode(),
-                feeRequest.getWeight()
+                feeRequest.getWeight(),
+                feeRequest.getInsuranceValue()
         );
 
         Map<String, Object> result = new HashMap<>();

@@ -101,7 +101,7 @@ const Payment = () => {
   const [addressIsDefault, setAddressIsDefault] = useState(false);
 
   // Áp dụng một địa chỉ từ sổ địa chỉ vào state hiện tại
-  const applyAddressFromBook = (addr) => {
+  const applyAddressFromBook = async (addr) => {
     if (!addr) return;
     setSelectedAddressId(addr.id);
     setCustomerName(addr.name || '');
@@ -109,12 +109,44 @@ const Payment = () => {
     setCustomerEmail(addr.email || '');
     setAddressDetail(addr.addressDetail || '');
 
-    setSelectedProvince(addr.provinceId || null);
-    setSelectedDistrict(addr.districtId || null);
-    setSelectedWard(addr.wardCode || null);
+    let pId = addr.provinceId;
+    let dId = addr.districtId;
+    let wCode = addr.wardCode;
+
+    // Nếu thiếu ID nhưng có fullAddress, thử resolve từ text
+    if (!(pId && dId && wCode) && addr.fullAddress) {
+      console.log('🔍 IDs missing in address book entry, attempting text resolution for:', addr.fullAddress);
+      const resolved = await resolveAddressFromText(addr.fullAddress);
+      if (resolved) {
+        pId = resolved.provinceId;
+        dId = resolved.districtId;
+        wCode = resolved.wardCode;
+        console.log('✅ Resolved IDs from text:', resolved);
+      }
+    }
+
+    setSelectedProvince(pId || null);
+    setSelectedDistrict(dId || null);
+    setSelectedWard(wCode || null);
 
     if (addr.fullAddress) {
       setCustomerAddress(addr.fullAddress);
+    } else {
+      // ✅ THÊM: Nếu thiếu fullAddress, cố gắng xây dựng tạm thời từ IDs/detail
+      const detail = addr.addressDetail || '';
+      if (pId && dId && wCode) {
+        // Cố gắng lấy tên từ list đã load (nếu có)
+        const p = provinces.find(p => Number(p.ProvinceID) === Number(pId));
+        const d = districts.find(d => Number(d.DistrictID) === Number(dId));
+        const w = wards.find(w => String(w.WardCode) === String(wCode));
+        if (p && d && w) {
+          setCustomerAddress(`${detail}, ${w.WardName}, ${d.DistrictName}, ${p.ProvinceName}`);
+        } else {
+          setCustomerAddress(`${detail} (Mã: ${wCode}, ${dId}, ${pId})`);
+        }
+      } else {
+        setCustomerAddress(detail || 'Địa chỉ mới');
+      }
     }
 
     setAddressIsDefault(!!addr.isDefault);
@@ -124,10 +156,7 @@ const Payment = () => {
       // ignore
     }
 
-    // gọi lại tính phí ship dựa trên địa chỉ mới
-    setTimeout(() => {
-      handleAddressChange();
-    }, 200);
+    // handleAddressChange sẽ được useEffect tự động gọi khi states IDs thay đổi
   };
 
   // Load sổ địa chỉ từ localStorage khi vào trang
@@ -164,6 +193,21 @@ const Payment = () => {
           localStorage.setItem(addressStorageKey, JSON.stringify(seeded));
           // chỉ apply để hiển thị, không tự set mặc định
           applyAddressFromBook(seeded[0]);
+
+          // ✅ SỬA: Logic xử lý ảnh ổn định cho Windows (giống DuAn_TN-FE)
+          const buildImageUrl = (raw) => {
+            if (!raw) return 'https://via.placeholder.com/80';
+            if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
+
+            let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+
+            if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
+            if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
+
+            const encodedImg = encodeURIComponent(firstImg);
+            const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+            return `${baseUrl}/images/${encodedImg}`;
+          };
 
           if (isCodeAddressFormat(regAddress)) {
             resolveFullAddressFromCodes(regAddress).then((resolved) => {
@@ -231,7 +275,14 @@ const Payment = () => {
   const buildImageUrl = (raw) => {
     if (!raw) return 'https://via.placeholder.com/80';
     if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
-    return `http://localhost:8080/api/images/${encodeURIComponent(raw)}`;
+
+    let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+    if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
+    if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
+
+    const encodedImg = encodeURIComponent(firstImg);
+    const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+    return `${baseUrl}/images/${encodedImg}`;
   };
 
   const normalizeCartItem = (item) => {
@@ -321,6 +372,7 @@ const Payment = () => {
       imageUrl: item.image || 'https://via.placeholder.com/80',
       name: item.name || 'Sản phẩm',
       variant: [item.color ? `Màu: ${item.color}` : null, item.size ? `Size: ${item.size}` : null].filter(Boolean).join(' • '),
+      ma: item.ma || item.sanPhamChiTiet?.ma || item.sanPhamChiTiet?.sanPham?.ma || '',
       qty,
       unitPrice,
       originalUnitPrice
@@ -771,7 +823,7 @@ const Payment = () => {
   };
 
   // ✅ THÊM: Function tính phí ship từ GHN API với retry mechanism
-  const calculateShippingFee = async (fromDistrict, toDistrict, toWardCode, weight = 500, retryCount = 0) => {
+  const calculateShippingFee = async (fromDistrict, toDistrict, toProvinceId, toWardCode, weight = 500, retryCount = 0) => {
     if (!fromDistrict || !toDistrict || !toWardCode) {
       return;
     }
@@ -783,6 +835,7 @@ const Payment = () => {
       const requestBody = {
         fromDistrict: fromDistrict,
         toDistrict: toDistrict,
+        toProvinceId: parseInt(toProvinceId),
         toWardCode: toWardCode,
         weight: weight
       };
@@ -821,10 +874,19 @@ const Payment = () => {
 
         if (shippingFeeValue > 0) {
           setShippingFee(shippingFeeValue);
-          toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+          // ✅ SỬA: Thông báo theo mức phí 5k/km (giống DuAn_TN-FE)
+          const kmFee = 5000;
+          const possibleDistances = [5, 15, 50];
+          const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
+          if (currentDistance) {
+            toast.info(`Phí ship theo khoảng cách: ${shippingFeeValue.toLocaleString()}₫ (~${currentDistance}km)`);
+          } else {
+            toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+          }
         } else {
-          setShippingFee(0);
-          toast.warning('Không thể tính phí ship, vui lòng thử lại');
+          // Fallback: Ưu tiên zone 50km
+          setShippingFee(250000);
+          console.warn('⚠️ API returned 0 fee, using 250k fallback (50km).');
         }
       } else {
         const errorText = await response.text();
@@ -832,7 +894,7 @@ const Payment = () => {
         // ✅ THÊM: Retry mechanism cho lỗi 403
         if (response.status === 403 && retryCount < 2) {
           setTimeout(() => {
-            calculateShippingFee(fromDistrict, toDistrict, toWardCode, weight, retryCount + 1);
+            calculateShippingFee(fromDistrict, toDistrict, toProvinceId, toWardCode, weight, retryCount + 1);
           }, 2000);
           return;
         }
@@ -1106,6 +1168,48 @@ const Payment = () => {
     return /^\d+$/.test(String(districtId)) && /^\d+$/.test(String(provinceId));
   };
 
+  const resolveAddressFromText = async (addressString) => {
+    if (!addressString) return null;
+    const parts = String(addressString).split(',').map(p => p.trim());
+    if (parts.length < 3) return null;
+
+    // Lấy 3 phần cuối: xã, huyện, tỉnh
+    const pName = parts[parts.length - 1];
+    const dName = parts[parts.length - 2];
+    const wName = parts[parts.length - 3];
+
+    try {
+      const provincesData = provinces.length > 0 ? provinces : await fetchProvinces();
+      const province = provincesData.find(p =>
+        p.ProvinceName.toLowerCase().includes(pName.toLowerCase()) ||
+        pName.toLowerCase().includes(p.ProvinceName.toLowerCase())
+      );
+      if (!province) return null;
+
+      const districtsData = await fetchDistrictsForProvince(province.ProvinceID);
+      const district = districtsData.find(d =>
+        d.DistrictName.toLowerCase().includes(dName.toLowerCase()) ||
+        dName.toLowerCase().includes(d.DistrictName.toLowerCase())
+      );
+      if (!district) return { provinceId: province.ProvinceID };
+
+      const wardsData = await fetchWardsForDistrict(district.DistrictID);
+      const ward = wardsData.find(w =>
+        w.WardName.toLowerCase().includes(wName.toLowerCase()) ||
+        wName.toLowerCase().includes(w.WardName.toLowerCase())
+      );
+
+      return {
+        provinceId: province.ProvinceID,
+        districtId: district.DistrictID,
+        wardCode: ward ? ward.WardCode : null
+      };
+    } catch (e) {
+      console.error("❌ Lỗi resolve address from text:", e);
+      return null;
+    }
+  };
+
   const resolveFullAddressFromCodes = async (addressString) => {
     const parts = String(addressString).split(',').map(p => p.trim());
     if (parts.length < 4) return null;
@@ -1148,31 +1252,33 @@ const Payment = () => {
       return;
     }
 
-    // Đảm bảo đã có đủ dữ liệu tỉnh/quận/phường, nếu chưa thì fetch bổ sung
+    // Đảm bảo đã có đủ dữ liệu tỉnh/quận/phường, nếu chưa thỉ fetch bổ sung
     let provinceList = provinces;
     if (!provinceList || provinceList.length === 0) {
       provinceList = await fetchProvinces();
     }
-    const province = provinceList.find(p => p.ProvinceID === selectedProvince);
+    const province = provinceList.find(p => Number(p.ProvinceID) === Number(selectedProvince));
 
     let districtList = districts;
-    if ((!districtList || districtList.length === 0) && selectedProvince) {
+    // ✅ SỬA: Kiểm tra nếu district ID hiện tại không có trong list hiện tại thì fetch lại list mới
+    if (selectedProvince && (!districtList.find(d => Number(d.DistrictID) === Number(selectedDistrict)))) {
       districtList = await fetchDistrictsForProvince(selectedProvince);
     }
-    const district = districtList.find(d => d.DistrictID === selectedDistrict);
+    const district = districtList.find(d => Number(d.DistrictID) === Number(selectedDistrict));
 
     let wardList = wards;
-    if ((!wardList || wardList.length === 0) && selectedDistrict) {
+    // ✅ SỬA: Kiểm tra nếu ward code hiện tại không có trong list hiện tại thì fetch lại list mới
+    if (selectedDistrict && (!wardList.find(w => String(w.WardCode) === String(selectedWard)))) {
       wardList = await fetchWardsForDistrict(selectedDistrict);
     }
-    const ward = wardList.find(w => w.WardCode === selectedWard);
+    const ward = wardList.find(w => String(w.WardCode) === String(selectedWard));
 
-    console.log('📍 Tìm thấy province:', province);
-    console.log('📍 Tìm thấy district:', district);
-    console.log('📍 Tìm thấy ward:', ward);
+    console.log('📍 Tìm thấy province:', province?.ProvinceName);
+    console.log('📍 Tìm thấy district:', district?.DistrictName);
+    console.log('📍 Tìm thấy ward:', ward?.WardName);
 
     if (!(province && district && ward)) {
-      console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ để tính phí ship');
+      console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ để tính phí ship (vẫn còn thiếu data)');
       return;
     }
 
@@ -1189,12 +1295,13 @@ const Payment = () => {
     console.log('🚚 Gọi calculateShippingFee với params:', {
       fromDistrict: 1484,
       toDistrict: selectedDistrict,
+      toProvinceId: selectedProvince,
       toWardCode: selectedWard,
       weight: totalWeight
     });
 
     // Tính phí ship từ Ba Đình, Hà Nội (district 1484) đến địa chỉ được chọn
-    calculateShippingFee(1484, selectedDistrict, selectedWard, totalWeight);
+    calculateShippingFee(1484, selectedDistrict, selectedProvince, selectedWard, totalWeight);
 
     const fullAddress = `${addressDetail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
     setCustomerAddress(fullAddress);
@@ -1840,11 +1947,11 @@ const Payment = () => {
             </div>
             <div className="gx-payment-address-body">
               <div className="gx-payment-address-name">
-                  {safeText(customerName, 'Chưa có tên')}{' '}
-                  <span className="gx-payment-address-phone">{safeText(formatPhone(customerPhone), 'Chưa có SĐT')}</span>
+                {safeText(customerName, 'Chưa có tên')}{' '}
+                <span className="gx-payment-address-phone">{safeText(formatPhone(customerPhone), 'Chưa có SĐT')}</span>
               </div>
               <div className="gx-payment-address-text">
-                  {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
+                {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
               </div>
             </div>
           </div>
@@ -1987,6 +2094,11 @@ const Payment = () => {
                           />
                           <div className="gx-payment-product-info">
                             <div className="gx-payment-order-name">{item.name}</div>
+                            {item.ma && (
+                              <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '2px' }}>
+                                Mã: {item.ma}
+                              </div>
+                            )}
                             {item.variant ? (
                               <div className="gx-payment-order-variant">{item.variant}</div>
                             ) : null}

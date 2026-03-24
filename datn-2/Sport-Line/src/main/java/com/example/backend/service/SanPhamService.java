@@ -57,7 +57,7 @@ public class SanPhamService {
         }
 
         current.setTenSanPham(sanPham.getTenSanPham());
-//        current.setMaSanPham(sanPham.getMaSanPham());
+        current.setMa(sanPham.getMa()); // ✅ THÊM: Mã sản phẩm
         current.setThuongHieu(sanPham.getThuongHieu());
         current.setDanhMuc(sanPham.getDanhMuc());
         current.setChatLieu(sanPham.getChatLieu());

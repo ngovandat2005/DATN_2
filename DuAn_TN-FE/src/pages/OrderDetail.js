@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { Box, TextField, MenuItem } from '@mui/material';
+import config from '../config/config';
 import { getUserRole } from '../utils/authUtils';
 
 // Thêm mảng trạng thái giống DonHangPage
@@ -14,6 +15,15 @@ const TRANG_THAI = [
   { value: 5, label: 'Đã hủy', color: '#e53935' },
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' }
 ];
+
+const formatImage = (raw) => {
+  if (!raw) return '';
+  if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
+  let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+  if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
+  if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
+  return `images/${firstImg}`;
+};
 
 const OrderDetailPage = () => {
   const { id } = useParams();
@@ -111,7 +121,7 @@ const OrderDetailPage = () => {
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, tableLayout: 'fixed' }}>
         <thead>
           <tr style={{ background: '#1976d2', borderBottom: '2px solid #1565c0' }}>
-            <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#ffffff', width: '80px', whiteSpace: 'nowrap', fontSize: '13px' }}>Ảnh</th>
+            <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#ffffff', width: '100px', whiteSpace: 'nowrap', fontSize: '13px' }}>Mã SKU</th>
             <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#ffffff', width: '200px', whiteSpace: 'nowrap', fontSize: '13px' }}>Tên sản phẩm</th>
             <th style={{ padding: '12px 8px', textAlign: 'left', fontWeight: 700, color: '#ffffff', width: '80px', whiteSpace: 'nowrap', fontSize: '13px' }}>Màu</th>
             <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ffffff', width: '60px', whiteSpace: 'nowrap', fontSize: '13px' }}>Size</th>
@@ -165,6 +175,9 @@ const OrderDetailPage = () => {
                     No img
                   </div>
                 </div>
+              </td>
+              <td style={{ padding: '12px 8px', verticalAlign: 'middle', width: '100px', fontWeight: 'bold', color: '#1976d2' }}>
+                {product.ma}
               </td>
               <td style={{ padding: '12px 8px', verticalAlign: 'middle', fontWeight: 500, width: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {product.tenSanPham}
@@ -319,6 +332,7 @@ const OrderDetailPage = () => {
             anh: prod?.images || '',
             mauSac: prod?.mauSac || '---',
             kichThuoc: prod?.kichThuoc || '---',
+            ma: prod?.ma || '',
             // ✅ SỬA: Sử dụng giá từ DonHangChiTiet thay vì từ sản phẩm
             giaBan: prod?.giaBan,  // Giá gốc từ sản phẩm (để so sánh)
             giaBanGiamGia: item.giaBanGiamGia || item.gia,  // Giá khuyến mãi từ DonHangChiTiet
@@ -1741,6 +1755,7 @@ const OrderDetailPage = () => {
             anh: prod?.images || '',
             mauSac: prod?.mauSac || '---',
             kichThuoc: prod?.kichThuoc || '---',
+            ma: prod?.ma || '',
             // ✅ SỬA: Sử dụng giá từ DonHangChiTiet thay vì từ sản phẩm
             giaBan: prod?.giaBan,  // Giá gốc từ sản phẩm (để so sánh)
             giaBanGiamGia: item.giaBanGiamGia || item.gia,  // Giá khuyến mãi từ DonHangChiTiet
@@ -2121,27 +2136,44 @@ const OrderDetailPage = () => {
         ) : (
           orderProducts.map((sp, idx) => (
             <div key={sp.id} style={{ display: 'flex', alignItems: 'center', borderBottom: idx < orderProducts.length - 1 ? '1px solid #e3e8ee' : 'none', padding: '18px 0' }}>
-              <div style={{ width: 80, height: 80, marginRight: 24 }}>
-                {sp.anh
-                  ? (
-                    <img
-                      src={sp.anh.includes(',')
-                        ? `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`
-                        : `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.trim())}`}
-                      alt={sp.tenSanPham}
-                      style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'block';
-                      }}
-                    />
-                  )
-                  : '--'}
-                {sp.anh && <div style={{ display: 'none', width: 100, height: 90, background: '#f0f0f0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#999' }}>Không có ảnh</div>}
+              <div style={{ width: 100, height: 90, marginRight: 24 }}>
+                {sp.anh && sp.anh.trim() !== '' ? (
+                  <img
+                    src={config.getApiUrl(formatImage(sp.anh))}
+                    alt={sp.tenSanPham}
+                    style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  style={{ 
+                    width: 100, 
+                    height: 90, 
+                    background: '#f0f0f0', 
+                    borderRadius: 8, 
+                    display: (sp.anh && sp.anh.trim() !== '') ? 'none' : 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontSize: 12, 
+                    color: '#999' 
+                  }}
+                >
+                  Không có ảnh
+                </div>
               </div>
-              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>{sp.tenSanPham}</div>
-              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.mauSac}</div>
-              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.kichThuoc}</div>
+              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
+                <div>{sp.tenSanPham}</div>
+                {sp.ma && (
+                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
+                    Mã: {sp.ma}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Màu: {sp.mauSac}</div>
+              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Size: {sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
                 {/* ✅ SỬA: Hiển thị giá gốc và giá khuyến mãi nếu có */}
                 {sp.gia && sp.giaBanGiamGia && sp.giaBanGiamGia > 0 && sp.giaBanGiamGia < sp.giaBan ? (

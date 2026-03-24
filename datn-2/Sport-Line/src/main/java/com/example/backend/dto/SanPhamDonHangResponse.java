@@ -11,6 +11,7 @@ import lombok.Setter;
 @Getter
 public class SanPhamDonHangResponse {
     private String tenSanPham;
+    private String ma; // ✅ THÊM: Mã biến thể (SKU)
     private String tenKichThuoc;
     private String tenMauSac;
     private Integer soLuong;

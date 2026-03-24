@@ -59,8 +59,10 @@ const Payment = () => {
   const addressStorageKey = `savedAddresses_${getCustomerId() || 'guest'}`;
   const selectedAddressStorageKey = `selectedAddressId_${getCustomerId() || 'guest'}`;
   const [cart, setCart] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [finalTotal, setFinalTotal] = useState(0);
+  const [total, setTotal] = useState(0);         // Tổng tiền hàng (GIÁ GỐC)
+  const [itemDiscountTotal, setItemDiscountTotal] = useState(0); // Tổng giảm giá từ sản phẩm (Tiết kiệm)
+  const [orderDiscount, setOrderDiscount] = useState(0);  // Giảm giá từ Voucher
+  const [finalTotal, setFinalTotal] = useState(0);       // Tổng thanh toán CUỐI CÙNG
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
@@ -85,8 +87,7 @@ const Payment = () => {
   // ✅ THÊM: State cho voucher (giống BanHangTaiQuay)
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucherId, setSelectedVoucherId] = useState('');
-  const [orderTotal, setOrderTotal] = useState(0);        // Tổng tiền sau voucher
-  const [orderDiscount, setOrderDiscount] = useState(0);  // Số tiền giảm giá
+  const [orderTotal, setOrderTotal] = useState(0);        // Tổng tiền sau voucher (tạm thời giữ lại nếu cần dùng)
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMessage, setVoucherMessage] = useState('');
 
@@ -99,7 +100,7 @@ const Payment = () => {
   const [addressIsDefault, setAddressIsDefault] = useState(false);
 
   // Áp dụng một địa chỉ từ sổ địa chỉ vào state hiện tại
-  const applyAddressFromBook = (addr) => {
+  const applyAddressFromBook = async (addr) => {
     if (!addr) return;
     setSelectedAddressId(addr.id);
     setCustomerName(addr.name || '');
@@ -107,12 +108,44 @@ const Payment = () => {
     setCustomerEmail(addr.email || '');
     setAddressDetail(addr.addressDetail || '');
 
-    setSelectedProvince(addr.provinceId || null);
-    setSelectedDistrict(addr.districtId || null);
-    setSelectedWard(addr.wardCode || null);
+    let pId = addr.provinceId;
+    let dId = addr.districtId;
+    let wCode = addr.wardCode;
+
+    // Nếu thiếu ID nhưng có fullAddress, thử resolve từ text
+    if (!(pId && dId && wCode) && addr.fullAddress) {
+      console.log('🔍 IDs missing in address book entry, attempting text resolution for:', addr.fullAddress);
+      const resolved = await resolveAddressFromText(addr.fullAddress);
+      if (resolved) {
+        pId = resolved.provinceId;
+        dId = resolved.districtId;
+        wCode = resolved.wardCode;
+        console.log('✅ Resolved IDs from text:', resolved);
+      }
+    }
+
+    setSelectedProvince(pId || null);
+    setSelectedDistrict(dId || null);
+    setSelectedWard(wCode || null);
 
     if (addr.fullAddress) {
       setCustomerAddress(addr.fullAddress);
+    } else {
+      // ✅ THÊM: Nếu thiếu fullAddress, cố gắng xây dựng tạm thời từ IDs/detail
+      const detail = addr.addressDetail || '';
+      if (pId && dId && wCode) {
+        // Cố gắng lấy tên từ list đã load (nếu có)
+        const p = provinces.find(p => Number(p.ProvinceID) === Number(pId));
+        const d = districts.find(d => Number(d.DistrictID) === Number(dId));
+        const w = wards.find(w => String(w.WardCode) === String(wCode));
+        if (p && d && w) {
+          setCustomerAddress(`${detail}, ${w.WardName}, ${d.DistrictName}, ${p.ProvinceName}`);
+        } else {
+          setCustomerAddress(`${detail} (Mã: ${wCode}, ${dId}, ${pId})`);
+        }
+      } else {
+        setCustomerAddress(detail || 'Địa chỉ mới');
+      }
     }
 
     setAddressIsDefault(!!addr.isDefault);
@@ -122,10 +155,7 @@ const Payment = () => {
       // ignore
     }
 
-    // gọi lại tính phí ship dựa trên địa chỉ mới
-    setTimeout(() => {
-      handleAddressChange();
-    }, 200);
+    // handleAddressChange sẽ được useEffect tự động gọi khi states IDs thay đổi
   };
 
   // Load sổ địa chỉ từ localStorage khi vào trang để chọn địa chỉ mặc định
@@ -220,7 +250,28 @@ const Payment = () => {
   const buildImageUrl = (raw) => {
     if (!raw) return 'https://via.placeholder.com/80';
     if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
-    return `http://localhost:8080/api/images/${encodeURIComponent(raw)}`;
+
+    // ✅ SỬA: Lấy ảnh đầu tiên nếu là chuỗi nhiều ảnh (ngăn cách bởi dấu phẩy)
+    let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+
+    // ✅ Xử lý dấu gạch chéo ở đầu hoặc prefix "images/" nếu có
+    if (firstImg.startsWith('/')) {
+      firstImg = firstImg.substring(1);
+    }
+    if (firstImg.startsWith('images/')) {
+      firstImg = firstImg.substring(7);
+    }
+
+    // ✅ SỬA: Sử dụng URL tuyệt đối trong phát triển
+    const encodedImg = encodeURIComponent(firstImg);
+    const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+    const fullUrl = `${baseUrl}/images/${encodedImg}`;
+
+    // Thêm log để người dùng kiểm tra
+    if (firstImg.length > 0) {
+      console.log(`🖼️ Loading image: ${fullUrl}`);
+    }
+    return fullUrl;
   };
 
   const normalizeCartItem = (item) => {
@@ -280,7 +331,10 @@ const Payment = () => {
       return {
         imageUrl: buildImageUrl(rawImg),
         name: item.sanPhamChiTiet?.sanPham?.tenSanPham || item.tenSanPham || 'Sản phẩm',
-        variant: '',
+        variant: [
+          item.sanPhamChiTiet?.mauSac?.tenMauSac ? `Màu: ${item.sanPhamChiTiet.mauSac.tenMauSac}` : null,
+          item.sanPhamChiTiet?.kichThuoc?.tenKichThuoc ? `Size: ${item.sanPhamChiTiet.kichThuoc.tenKichThuoc}` : null
+        ].filter(Boolean).join(' • '),
         qty,
         unitPrice,
         originalUnitPrice
@@ -310,6 +364,7 @@ const Payment = () => {
       imageUrl: item.image || 'https://via.placeholder.com/80',
       name: item.name || 'Sản phẩm',
       variant: [item.color ? `Màu: ${item.color}` : null, item.size ? `Size: ${item.size}` : null].filter(Boolean).join(' • '),
+      ma: item.ma || item.sanPhamChiTiet?.ma || item.sanPhamChiTiet?.sanPham?.ma || '',
       qty,
       unitPrice,
       originalUnitPrice
@@ -334,69 +389,51 @@ const Payment = () => {
     setCart(cartData);
 
     // Tính tổng tiền dựa trên loại data
-    let calculatedTotal = 0;
+    let originalSubtotal = 0;
+    let savingsTotal = 0;
+
     if (cartData.length > 0) {
+      cartData.forEach(item => {
+        let originalPrice = 0;
+        let finalPrice = 0;
+        let qty = item.soLuong || item.quantity || 1;
 
-
-      // Kiểm tra xem data từ giỏ hàng hay mua ngay
-      if (cartData[0].giaBan !== undefined && cartData[0].giaBanGiamGia !== undefined) {
-        // Cấu trúc mới từ backend: item.giaBan, item.giaBanGiamGia, item.soLuong
-        calculatedTotal = cartData.reduce((sum, item) => {
-          // ✅ SỬA: Logic đúng - kiểm tra null trước khi so sánh
-          const hasDiscount = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan;
-          const finalPrice = hasDiscount ? item.giaBanGiamGia : item.giaBan;
-          return sum + (finalPrice * item.soLuong);
-        }, 0);
-      } else if (cartData[0].sanPhamChiTiet) {
-        // Kiểm tra xem có phải cấu trúc mới từ backend không
-        if (cartData[0].giaBan !== undefined) {
-          calculatedTotal = cartData.reduce((sum, item) => {
-            // Thử lấy giá khuyến mãi từ API sản phẩm nếu không có trong dữ liệu giỏ hàng
-            const productPriceInfo = productPrices[item.idSanPhamChiTiet];
-            const giaBanGiamGia = item.giaBanGiamGia || (productPriceInfo?.giaBanGiamGia);
-
-            // ✅ SỬA: Logic đúng - kiểm tra null trước khi so sánh
-            const hasDiscount = giaBanGiamGia && giaBanGiamGia > 0 && giaBanGiamGia < item.giaBan;
-            const giaBan = hasDiscount ? giaBanGiamGia : item.giaBan;
-            return sum + (giaBan * item.soLuong);
-          }, 0);
-        } else {
-          calculatedTotal = cartData.reduce((sum, item) => {
-            // ✅ SỬA: Logic tính tổng tiền cho giỏ hàng
-            const giaBan = item.sanPhamChiTiet.giaBan || 0;
-            const giaBanGiamGia = item.sanPhamChiTiet.giaBanGiamGia;
-            const soLuong = item.soLuong || 1;
-
-            // ✅ SỬA: Logic đúng - kiểm tra null và so sánh chính xác
-            const hasDiscount = giaBanGiamGia && giaBanGiamGia > 0 && giaBanGiamGia < giaBan;
-            const giaBanCuoi = hasDiscount ? giaBanGiamGia : giaBan;
-
-            return sum + (giaBanCuoi * soLuong);
-          }, 0);
+        if (item.giaBan !== undefined && item.idSanPhamChiTiet) {
+          // Cấu trúc mới từ backend
+          originalPrice = item.giaBan || 0;
+          const hasDiscount = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalPrice;
+          finalPrice = hasDiscount ? item.giaBanGiamGia : originalPrice;
+        } else if (item.sanPhamChiTiet) {
+          // Cấu trúc từ giỏ hàng
+          originalPrice = item.sanPhamChiTiet.giaBan || item.giaBan || 0;
+          const discountCandidate = item.giaBanGiamGia ?? item.sanPhamChiTiet.giaBanGiamGia;
+          const hasDiscount = discountCandidate && discountCandidate > 0 && discountCandidate < originalPrice;
+          finalPrice = hasDiscount ? discountCandidate : originalPrice;
+        } else if (item.price !== undefined) {
+          // Cấu trúc mua ngay
+          originalPrice = item.originalPrice || item.price || 0;
+          const hasDiscount = item.discountPrice && item.discountPrice < originalPrice;
+          finalPrice = hasDiscount ? item.discountPrice : originalPrice;
+        } else if (item.gia !== undefined) {
+          originalPrice = item.gia;
+          finalPrice = item.gia;
         }
-      } else if (cartData[0].price !== undefined) {
-        calculatedTotal = cartData.reduce((sum, item) => {
-          const finalPrice = item.discountPrice && item.discountPrice < item.originalPrice
-            ? item.discountPrice
-            : item.price;
-          return sum + (finalPrice * item.quantity);
-        }, 0);
-      } else {
-        // Thử xử lý với cấu trúc có thể có
-        if (cartData[0].gia !== undefined) {
-          calculatedTotal = cartData.reduce((sum, item) => {
-            return sum + (item.gia * item.soLuong);
-          }, 0);
-        }
-      }
+
+        originalSubtotal += (originalPrice * qty);
+        savingsTotal += ((originalPrice - finalPrice) * qty);
+      });
     }
 
-    setTotal(calculatedTotal);
-    // ✅ SỬA: Khởi tạo finalTotal = total (chưa có phí ship, sẽ tính sau)
-    setFinalTotal(calculatedTotal);
-
-
+    setTotal(originalSubtotal);
+    setItemDiscountTotal(savingsTotal);
   }, [location, navigate]);
+
+  // ✅ THÊM: Tự động đồng bộ finalTotal khi các thành phần thay đổi
+  useEffect(() => {
+    const newFinalTotal = total - itemDiscountTotal - orderDiscount + shippingFee;
+    setFinalTotal(newFinalTotal);
+    console.log('💰 Recalculated final total:', { originalTotal: total, savings: itemDiscountTotal, voucher: orderDiscount, ship: shippingFee, final: newFinalTotal });
+  }, [total, itemDiscountTotal, orderDiscount, shippingFee]);
 
   // ✅ THÊM: Fetch voucher khả dụng từ API mới
   useEffect(() => {
@@ -645,20 +682,23 @@ const Payment = () => {
       console.log('🎫 Voucher được chọn:', voucher);
 
       if (voucher) {
+        // ✅ SỬA: Tính dựa trên giá sau khi đã giảm giá sản phẩm (effectiveTotal)
+        const effectiveTotal = total - itemDiscountTotal;
+
         // Kiểm tra điều kiện áp dụng voucher
-        if (total >= voucher.donToiThieu) {
+        if (effectiveTotal >= voucher.donToiThieu) {
           // ✅ TÍNH TOÁN GIẢM GIÁ NGAY KHI CHỌN VOUCHER
           let discount = 0;
           if (voucher.loaiVoucher === 'Giảm giá %') {
-            discount = (total * voucher.giaTri) / 100;
+            discount = (effectiveTotal * voucher.giaTri) / 100;
             console.log('🎯 Voucher %: giaTri=', voucher.giaTri, '%, discount=', discount);
           } else if (voucher.loaiVoucher === 'Giảm giá số tiền') {
             discount = voucher.giaTri;
             console.log('🎯 Voucher số tiền: giaTri=', voucher.giaTri, 'discount=', discount);
           }
 
-          // Không cho giảm quá tổng tiền (giống backend)
-          const finalDiscount = Math.min(discount, total);
+          // Không cho giảm quá tổng tiền hiện tại
+          const finalDiscount = Math.min(discount, effectiveTotal);
           console.log('🎯 Giảm giá cuối cùng:', finalDiscount);
 
           setOrderDiscount(finalDiscount);
@@ -703,20 +743,20 @@ const Payment = () => {
   };
 
   // ✅ THÊM: Function tính phí ship từ GHN API với retry mechanism
-  const calculateShippingFee = async (fromDistrict, toDistrict, toWardCode, weight = 500, retryCount = 0) => {
+  const calculateShippingFee = async (fromDistrict, toDistrict, toProvinceId, toWardCode, weight = 800, insuranceValue = 0, retryCount = 0) => {
     if (!fromDistrict || !toDistrict || !toWardCode) {
       return;
     }
 
     setShippingFeeLoading(true);
     try {
-
-
       const requestBody = {
         fromDistrict: fromDistrict,
         toDistrict: toDistrict,
+        toProvinceId: parseInt(toProvinceId),
         toWardCode: toWardCode,
-        weight: weight
+        weight: weight,
+        insuranceValue: insuranceValue
       };
 
       const response = await fetch(config.getApiUrl('api/ghn/calculate-fee'), {
@@ -727,8 +767,11 @@ const Payment = () => {
         body: JSON.stringify(requestBody)
       });
 
+      console.log('🚚 GHN Fee Request Body:', requestBody);
+
       if (response.ok) {
         const feeData = await response.json();
+        console.log('🚚 GHN Fee Response Data:', feeData);
 
         // ✅ SỬA: Kiểm tra nhiều cấu trúc response có thể có
         let shippingFeeValue = 0;
@@ -753,10 +796,21 @@ const Payment = () => {
 
         if (shippingFeeValue > 0) {
           setShippingFee(shippingFeeValue);
-          toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+          // ✅ SỬA: Thông báo theo mức phí 5k/km của khách hàng
+          const kmFee = 5000;
+          const possibleDistances = [5, 15, 50];
+          const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
+
+          if (currentDistance) {
+            toast.info(`Phí ship theo khoảng cách: ${formatVnd(shippingFeeValue)} (~${currentDistance}km)`);
+          } else {
+            toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+          }
         } else {
-          setShippingFee(0);
-          toast.warning('Không thể tính phí ship, vui lòng thử lại');
+          // Fallback nếu có lỗi: Giả định liên tỉnh 50km
+          const fallbackFee = 250000;
+          setShippingFee(fallbackFee);
+          console.warn('⚠️ Backend returned 0 fee, using initial zone fallback.');
         }
       } else {
         const errorText = await response.text();
@@ -764,17 +818,14 @@ const Payment = () => {
         // ✅ THÊM: Retry mechanism cho lỗi 403
         if (response.status === 403 && retryCount < 2) {
           setTimeout(() => {
-            calculateShippingFee(fromDistrict, toDistrict, toWardCode, weight, retryCount + 1);
+            calculateShippingFee(fromDistrict, toDistrict, selectedProvince, toWardCode, weight, retryCount + 1);
           }, 2000);
           return;
         }
 
-        setShippingFee(0);
-        if (response.status === 403) {
-          toast.error('Lỗi xác thực API. Vui lòng liên hệ admin để kiểm tra cấu hình GHN!');
-        } else {
-          toast.warning('Không thể tính phí ship, vui lòng thử lại');
-        }
+        // ✅ SỬA: Nếu API lỗi, dùng phí mặc định để không block người dùng
+        setShippingFee(30000);
+        toast.info('Sử dụng phí ship mặc định (ước tính): 30.000₫');
       }
     } catch (error) {
       // ✅ THÊM: Retry mechanism cho lỗi network
@@ -785,12 +836,11 @@ const Payment = () => {
         return;
       }
 
-      setShippingFee(0);
-      toast.warning('Lỗi kết nối, vui lòng thử lại');
+      // ✅ SỬA: Nếu lỗi kết nối, dùng phí mặc định
+      setShippingFee(30000);
+      toast.info('Lỗi kết nối GHN, sử dụng phí ship tạm tính: 30.000₫');
     } finally {
-      if (retryCount === 0) {
-        setShippingFeeLoading(false);
-      }
+      setShippingFeeLoading(false);
     }
   };
 
@@ -1038,6 +1088,48 @@ const Payment = () => {
     return /^\d+$/.test(String(districtId)) && /^\d+$/.test(String(provinceId));
   };
 
+  const resolveAddressFromText = async (addressString) => {
+    if (!addressString) return null;
+    const parts = String(addressString).split(',').map(p => p.trim());
+    if (parts.length < 3) return null;
+
+    // Lấy 3 phần cuối: xã, huyện, tỉnh
+    const pName = parts[parts.length - 1];
+    const dName = parts[parts.length - 2];
+    const wName = parts[parts.length - 3];
+
+    try {
+      const provincesData = provinces.length > 0 ? provinces : await fetchProvinces();
+      const province = provincesData.find(p =>
+        p.ProvinceName.toLowerCase().includes(pName.toLowerCase()) ||
+        pName.toLowerCase().includes(p.ProvinceName.toLowerCase())
+      );
+      if (!province) return null;
+
+      const districtsData = await fetchDistrictsForProvince(province.ProvinceID);
+      const district = districtsData.find(d =>
+        d.DistrictName.toLowerCase().includes(dName.toLowerCase()) ||
+        dName.toLowerCase().includes(d.DistrictName.toLowerCase())
+      );
+      if (!district) return { provinceId: province.ProvinceID };
+
+      const wardsData = await fetchWardsForDistrict(district.DistrictID);
+      const ward = wardsData.find(w =>
+        w.WardName.toLowerCase().includes(wName.toLowerCase()) ||
+        wName.toLowerCase().includes(w.WardName.toLowerCase())
+      );
+
+      return {
+        provinceId: province.ProvinceID,
+        districtId: district.DistrictID,
+        wardCode: ward ? ward.WardCode : null
+      };
+    } catch (e) {
+      console.error("❌ Lỗi resolve address from text:", e);
+      return null;
+    }
+  };
+
   const resolveFullAddressFromCodes = async (addressString) => {
     const parts = String(addressString).split(',').map(p => p.trim());
     if (parts.length < 4) return null;
@@ -1080,53 +1172,61 @@ const Payment = () => {
       return;
     }
 
-    // Đảm bảo đã có đủ dữ liệu tỉnh/quận/phường, nếu chưa thì fetch bổ sung
+    // Đảm bảo đã có đủ dữ liệu tỉnh/quận/phường, nếu chưa thỉ fetch bổ sung
     let provinceList = provinces;
     if (!provinceList || provinceList.length === 0) {
       provinceList = await fetchProvinces();
     }
-    const province = provinceList.find(p => p.ProvinceID === selectedProvince);
+    const province = provinceList.find(p => Number(p.ProvinceID) === Number(selectedProvince));
 
     let districtList = districts;
-    if ((!districtList || districtList.length === 0) && selectedProvince) {
+    // ✅ SỬA: Kiểm tra nếu district ID hiện tại không có trong list hiện tại thì fetch lại list mới
+    if (selectedProvince && (!districtList.find(d => Number(d.DistrictID) === Number(selectedDistrict)))) {
       districtList = await fetchDistrictsForProvince(selectedProvince);
     }
-    const district = districtList.find(d => d.DistrictID === selectedDistrict);
+    const district = districtList.find(d => Number(d.DistrictID) === Number(selectedDistrict));
 
     let wardList = wards;
-    if ((!wardList || wardList.length === 0) && selectedDistrict) {
+    // ✅ SỬA: Kiểm tra nếu ward code hiện tại không có trong list hiện tại thì fetch lại list mới
+    if (selectedDistrict && (!wardList.find(w => String(w.WardCode) === String(selectedWard)))) {
       wardList = await fetchWardsForDistrict(selectedDistrict);
     }
-    const ward = wardList.find(w => w.WardCode === selectedWard);
+    const ward = wardList.find(w => String(w.WardCode) === String(selectedWard));
 
-    console.log('📍 Tìm thấy province:', province);
-    console.log('📍 Tìm thấy district:', district);
-    console.log('📍 Tìm thấy ward:', ward);
+    console.log('📍 Tìm thấy province:', province?.ProvinceName);
+    console.log('📍 Tìm thấy district:', district?.DistrictName);
+    console.log('📍 Tìm thấy ward:', ward?.WardName);
 
     if (!(province && district && ward)) {
-      console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ để tính phí ship');
+      console.log('❌ Không tìm thấy thông tin địa chỉ đầy đủ để tính phí ship (vẫn còn thiếu data)');
       return;
     }
 
-    // ✅ Tính cân nặng từ cart
+    // ✅ Tính cân nặng từ cart (mỗi đôi giày + hộp ≈ 800g)
     let totalWeight = 0;
     cart.forEach(item => {
-      const itemWeight = 500; // gram
+      const itemWeight = 800; // gram (tăng lên để chuẩn hơn)
       const quantity = item.soLuong || item.quantity || 1;
       totalWeight += itemWeight * quantity;
     });
-    totalWeight = Math.max(totalWeight, 500);
+    totalWeight = Math.max(totalWeight, 800);
+
+    // ✅ Tính giá trị bảo hiểm (tổng tiền hàng)
+    const insuranceValue = Math.min(total, 5000000); // GHN tối đa 5tr cho bảo hiểm cơ bản
 
     console.log('📦 Cân nặng tính toán:', totalWeight, 'g');
+    console.log('🛡️ Giá trị bảo hiểm:', insuranceValue, '₫');
     console.log('🚚 Gọi calculateShippingFee với params:', {
       fromDistrict: 1484,
       toDistrict: selectedDistrict,
+      toProvinceId: selectedProvince,
       toWardCode: selectedWard,
-      weight: totalWeight
+      weight: totalWeight,
+      insuranceValue: insuranceValue
     });
 
-    // Tính phí ship từ Ba Đình, Hà Nội (district 1484) đến địa chỉ được chọn
-    calculateShippingFee(1484, selectedDistrict, selectedWard, totalWeight);
+    // Tính phí ship với cân nặng và bảo hiểm
+    calculateShippingFee(1484, selectedDistrict, selectedProvince, selectedWard, totalWeight, insuranceValue);
 
     const fullAddress = `${addressDetail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
     setCustomerAddress(fullAddress);
@@ -1501,9 +1601,10 @@ const Payment = () => {
         idnhanVien: null,
         idgiamGia: selectedVoucherId || null,
         ngayTao: null,
-        // ✅ QUAN TRỌNG: Gửi finalTotal (đã bao gồm phí ship)
-        tongTien: finalTotal, // 660k (630k + 30k ship) - Frontend đã tính xong
-        tongTienGiamGia: orderDiscount, // 70k (nếu có voucher)
+        // ✅ QUAN TRỌNG: Gửi tổng tiền hàng sau khi giảm sản phẩm nhưng TRƯỚC khi trừ Voucher
+        // Vì Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
+        tongTien: total - itemDiscountTotal,
+        tongTienGiamGia: orderDiscount, // Thông tin voucher đã giảm
         phiVanChuyen: shippingFee, // Phí ship từ GHN API
         tenNguoiNhan: customerName,
         soDienThoaiGiaoHang: customerPhone,
@@ -1743,10 +1844,13 @@ const Payment = () => {
         }, 3000);
       }
 
-    } catch (err) {
-      console.error('Lỗi trong quá trình đặt hàng:', err);
+    } catch (error) {
+      console.error('Lỗi trong quá trình đặt hàng:', error);
+      // Fallback khi lỗi kết nối: Giả định liên tỉnh 50km (250k)
+      setShippingFee(250000); // Assuming this is a state setter for shipping fee
+      setShippingFeeLoading(false); // Assuming this is a state setter for shipping fee loading
       setLoading(false);
-      toast.error(`Đặt hàng thất bại: ${err.message}`);
+      toast.error(`Đặt hàng thất bại: ${error.message}`);
     }
   };
 
@@ -1927,8 +2031,31 @@ const Payment = () => {
                           />
                           <div className="gx-payment-product-info">
                             <div className="gx-payment-order-name">{item.name}</div>
+                            {item.ma && (
+                              <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '2px' }}>
+                                Mã: {item.ma}
+                              </div>
+                            )}
                             {item.variant ? (
-                              <div className="gx-payment-order-variant">{item.variant}</div>
+                              <div className="gx-payment-order-variant" style={{
+                                fontSize: '12px',
+                                color: '#888',
+                                marginTop: '4px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px'
+                              }}>
+                                {item.variant.split(' • ').map((v, i) => (
+                                  <span key={i} className="gx-payment-variant-tag" style={{
+                                    backgroundColor: '#f5f5f5',
+                                    padding: '2px 8px',
+                                    borderRadius: '4px',
+                                    width: 'fit-content'
+                                  }}>
+                                    {v}
+                                  </span>
+                                ))}
+                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -1959,75 +2086,23 @@ const Payment = () => {
             )}
           </div>
           <div className="gx-payment-summary gx-payment-card">
+            {/* ✅ Tóm tắt chi phí (breakdown rõ ràng) */}
             <div className="gx-payment-summary-row">
-              <span className="gx-payment-label">Tạm tính:</span>
+              <span className="gx-payment-label">Tạm tính (Giá gốc):</span>
               <span className="gx-payment-value">{formatVnd(total)}</span>
             </div>
 
-            {/* ✅ THÊM: Hiển thị giảm giá voucher */}
-            {selectedVoucherId && (
-              <div className="gx-payment-summary-row" style={{ color: '#52c41a' }}>
-                <span className="gx-payment-label">🎫 Giảm giá voucher:</span>
-                <span className="gx-payment-value">
-                  -{formatVnd(orderDiscount)}
-                </span>
+            {itemDiscountTotal > 0 && (
+              <div className="gx-payment-summary-row" style={{ color: '#e74c3c' }}>
+                <span className="gx-payment-label">💰 Tiết kiệm từ khuyến mãi:</span>
+                <span className="gx-payment-value">-{formatVnd(itemDiscountTotal)}</span>
               </div>
             )}
 
-            {/* ✅ THÊM: Hiển thị tiết kiệm từ khuyến mãi sản phẩm */}
-            {(() => {
-              let totalTietKiem = 0;
-              cart.forEach(item => {
-                if (item.giaBan !== undefined && item.giaBanGiamGia !== undefined) {
-                  // Cấu trúc mới từ backend
-                  // ✅ SỬA: Logic đúng - kiểm tra null trước khi so sánh
-                  if (item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan) {
-                    totalTietKiem += (item.giaBan - item.giaBanGiamGia) * item.soLuong;
-                  }
-                } else if (item.sanPhamChiTiet) {
-                  if (item.giaBan !== undefined) {
-                    // Cấu trúc mới từ backend
-                    // ✅ SỬA: Logic đúng - kiểm tra null trước khi so sánh
-                    if (item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan) {
-                      totalTietKiem += (item.giaBan - item.giaBanGiamGia) * item.soLuong;
-                    }
-                  } else {
-                    // Cấu trúc cũ
-                    // ✅ SỬA: Logic đúng - kiểm tra null trước khi so sánh
-                    if (item.sanPhamChiTiet.giaBanGiamGia && item.sanPhamChiTiet.giaBanGiamGia > 0 && item.sanPhamChiTiet.giaBanGiamGia < item.sanPhamChiTiet.giaBan) {
-                      totalTietKiem += (item.sanPhamChiTiet.giaBan - item.sanPhamChiTiet.giaBanGiamGia) * item.soLuong;
-                    }
-                  }
-                } else if (item.discountPrice && item.discountPrice < item.originalPrice) {
-                  // Mua ngay
-                  totalTietKiem += (item.originalPrice - item.discountPrice) * item.quantity;
-                }
-              });
-
-              if (totalTietKiem > 0) {
-                return (
-                  <div className="gx-payment-summary-row" style={{ color: '#e74c3c' }}>
-                    <span className="gx-payment-label">💰 Tiết kiệm từ khuyến mãi:</span>
-                    <span className="gx-payment-value">
-                      -{totalTietKiem.toLocaleString('vi-VN').replaceAll(',', '.')} ₫
-                    </span>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            {/* ✅ THÊM: Hiển thị tổng tiền sau khi áp dụng voucher */}
-            {selectedVoucherId && orderDiscount > 0 && (
-              <div className="gx-payment-summary-row" style={{
-                fontSize: '16px',
-                fontWeight: 'bold',
-                color: '#52c41a',
-                borderTop: '1px solid #f0f0f0',
-                paddingTop: '8px'
-              }}>
-                <span className="gx-payment-label">Tổng tiền sau voucher:</span>
-                <span className="gx-payment-value">{formatVnd(total - orderDiscount)}</span>
+            {selectedVoucherId && (
+              <div className="gx-payment-summary-row" style={{ color: '#52c41a' }}>
+                <span className="gx-payment-label">🎫 Giảm giá voucher:</span>
+                <span className="gx-payment-value">-{formatVnd(orderDiscount)}</span>
               </div>
             )}
 
@@ -2036,16 +2111,14 @@ const Payment = () => {
               <span className="gx-payment-value">
                 {shippingFeeLoading ? (
                   <span style={{ color: '#1890ff' }}>Đang tính...</span>
-                ) : shippingFee > 0 ? (
-                  formatVnd(shippingFee)
                 ) : (
-                  <span style={{ color: '#ff4d4f' }}>Chưa tính phí</span>
+                  <span>{formatVnd(shippingFee)}</span>
                 )}
               </span>
             </div>
 
-            {/* Thông báo hướng dẫn tính phí vận chuyển */}
-            {!selectedProvince || !selectedDistrict || !selectedWard ? (
+            {/* Thông báo hướng dẫn tính phí vận chuyển - Chỉ hiện khi chưa có đủ thông tin địa chỉ */}
+            {(!selectedProvince || !selectedDistrict || !selectedWard) && (
               <div style={{
                 background: '#fff7e6',
                 border: '1px solid #ffd591',
@@ -2056,23 +2129,6 @@ const Payment = () => {
                 color: '#d46b08'
               }}>
                 💡 Vui lòng chọn địa chỉ giao hàng để tính phí vận chuyển chính xác
-              </div>
-            ) : (
-              <div style={{
-                background: '#f6ffed',
-                border: '1px solid #b7eb8f',
-                borderRadius: '6px',
-                padding: '8px 12px',
-                marginTop: '8px',
-                fontSize: '14px',
-                color: '#52c41a'
-              }}>
-                ✅ Đã chọn địa chỉ giao hàng
-                {shippingFee > 0 && (
-                  <span style={{ marginLeft: '8px' }}>
-                    - Phí vận chuyển: {shippingFee.toLocaleString()}₫
-                  </span>
-                )}
               </div>
             )}
 
@@ -2091,10 +2147,10 @@ const Payment = () => {
           <button
             className="gx-payment-btn"
             onClick={handlePayment}
-            disabled={loading || !selectedProvince || !selectedDistrict || !selectedWard || shippingFee <= 0}
+            disabled={loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)}
             style={{
-              opacity: (!selectedProvince || !selectedDistrict || !selectedWard || shippingFee <= 0) ? 0.6 : 1,
-              cursor: (!selectedProvince || !selectedDistrict || !selectedWard || shippingFee <= 0) ? 'not-allowed' : 'pointer'
+              opacity: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 0.6 : 1,
+              cursor: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 'not-allowed' : 'pointer'
             }}
           >
             {loading ? 'Đang xử lý...' :
@@ -2128,52 +2184,55 @@ const Payment = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {vouchers.map(v => (
-                <TableRow
-                  key={v.id}
-                  selected={String(selectedVoucherId) === String(v.id)}
-                  style={
-                    total < v.donToiThieu
-                      ? { background: '#f5f5f5', color: '#aaa' }
-                      : String(selectedVoucherId) === String(v.id)
-                        ? { background: '#e3f2fd' }
-                        : {}
-                  }
-                >
-                  <TableCell>
-                    {String(selectedVoucherId) === String(v.id) && (
-                      <CheckCircleIcon color="primary" />
-                    )}
-                  </TableCell>
-                  <TableCell>{v.maVoucher}</TableCell>
-                  <TableCell>{v.tenVoucher}</TableCell>
-                  <TableCell>{v.loaiVoucher}</TableCell>
-                  <TableCell>{v.soLuong}</TableCell>
-                  <TableCell>
-                    {v.loaiVoucher?.toLowerCase().includes('%') ? `${v.giaTri}%` : v.giaTri?.toLocaleString() + ' ₫'}
-                  </TableCell>
-                  <TableCell>{v.donToiThieu?.toLocaleString() || 0} ₫</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      onClick={() => {
-                        setShowVoucherModal(false);
-                        handleVoucherChange(v.id);
-                      }}
-                      disabled={total < v.donToiThieu}
-                    >
-                      Chọn
-                    </Button>
-                    {total < v.donToiThieu && (
-                      <span style={{ color: 'red', fontSize: 12, marginLeft: 8 }}>
-                        Không đủ điều kiện
-                      </span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {vouchers.map(v => {
+                const effectiveTotal = total - itemDiscountTotal;
+                return (
+                  <TableRow
+                    key={v.id}
+                    selected={String(selectedVoucherId) === String(v.id)}
+                    style={
+                      effectiveTotal < v.donToiThieu
+                        ? { background: '#f5f5f5', color: '#aaa' }
+                        : String(selectedVoucherId) === String(v.id)
+                          ? { background: '#e3f2fd' }
+                          : {}
+                    }
+                  >
+                    <TableCell>
+                      {String(selectedVoucherId) === String(v.id) && (
+                        <CheckCircleIcon color="primary" />
+                      )}
+                    </TableCell>
+                    <TableCell>{v.maVoucher}</TableCell>
+                    <TableCell>{v.tenVoucher}</TableCell>
+                    <TableCell>{v.loaiVoucher}</TableCell>
+                    <TableCell>{v.soLuong}</TableCell>
+                    <TableCell>
+                      {v.loaiVoucher?.toLowerCase().includes('%') ? `${v.giaTri}%` : v.giaTri?.toLocaleString() + ' ₫'}
+                    </TableCell>
+                    <TableCell>{v.donToiThieu?.toLocaleString() || 0} ₫</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        onClick={() => {
+                          setShowVoucherModal(false);
+                          handleVoucherChange(v.id);
+                        }}
+                        disabled={(total - itemDiscountTotal) < v.donToiThieu}
+                      >
+                        Chọn
+                      </Button>
+                      {(total - itemDiscountTotal) < v.donToiThieu && (
+                        <span style={{ color: 'red', fontSize: 12, marginLeft: 8 }}>
+                          Không đủ điều kiện
+                        </span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </DialogContent>

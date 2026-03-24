@@ -102,16 +102,18 @@ public class GHNController {
      */
     @PostMapping("/calculate-fee")
     public ResponseEntity<?> calculateFee(@RequestBody FeeRequest feeRequest) {
-        if (feeRequest == null || feeRequest.getToDistrict() == 0 || feeRequest.getToWardCode() == null) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("total_fee", 30000); // Trả về phí mặc định thay vì lỗi
-            return ResponseEntity.ok(error);
+        if (feeRequest == null || feeRequest.getToDistrict() == 0) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("total_fee", 250000); // Mặc định liên tỉnh nếu thiếu thông tin
+            return ResponseEntity.ok(result);
         }
 
         int fee = ghnClientService.tinhPhiVanChuyen(
                 feeRequest.getToDistrict(),
+                feeRequest.getToProvinceId(),
                 feeRequest.getToWardCode(),
-                feeRequest.getWeight()
+                feeRequest.getWeight(),
+                feeRequest.getInsuranceValue()
         );
 
         Map<String, Object> result = new HashMap<>();

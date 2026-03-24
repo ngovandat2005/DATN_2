@@ -49,8 +49,8 @@ package com.example.backend.controller;
         }
         @GetMapping("/donhang/don-online")
         public ResponseEntity<List<DonHangDTO>> donOnline() {
-            // Ví dụ: chỉ lấy trạng thái=1, loaiDonHang="online"
-            return ResponseEntity.ok(donHangService.filterByTrangThaiAndLoai(null, "Bán hàng tại quầy"));
+            // Lấy tất cả đơn hàng có loaiDonHang="online"
+            return ResponseEntity.ok(donHangService.filterByTrangThaiAndLoai(null, "online"));
         }
 
 

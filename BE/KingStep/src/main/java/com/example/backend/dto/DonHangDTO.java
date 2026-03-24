@@ -93,6 +93,7 @@ import java.util.stream.Collectors;
             this.soDienThoaiGiaoHang = dh.getSoDienThoaiGiaoHang();
             this.emailGiaoHang = dh.getEmailGiaoHang();
             this.tenNguoiNhan = dh.getTenNguoiNhan();
+            this.phiVanChuyen = dh.getPhiVanChuyen();
 
 
             if (dh.getDonHangChiTiets() != null) {

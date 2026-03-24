@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import config from '../config/config';
 
 const TRANG_THAI = [
   { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
@@ -12,6 +13,15 @@ const TRANG_THAI = [
   { value: 5, label: 'Đã hủy', color: '#e53935' },
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' }
 ];
+
+const formatImage = (raw) => {
+  if (!raw) return '';
+  if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
+  let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+  if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
+  if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
+  return `images/${firstImg}`;
+};
 
 const OrderDetail = () => {
   const { id } = useParams();
@@ -61,6 +71,7 @@ const OrderDetail = () => {
               anh: productResponse.data?.images || '',
               mauSac: productResponse.data?.mauSac || '---',
               kichThuoc: productResponse.data?.kichThuoc || '---',
+              ma: productResponse.data?.ma || '',
               // ✅ SỬA: Giống hệt OrderDetailPOSPage
               giaBan: productResponse.data?.giaBan,                // Giá gốc từ sản phẩm
               giaBanGiamGia: item.gia,                             // Giá đã lưu trong DonHangChiTiet
@@ -565,12 +576,10 @@ const OrderDetail = () => {
               borderBottom: idx < orderProducts.length - 1 ? '1px solid #e3e8ee' : 'none', 
               padding: '18px 0' 
             }}>
-              <div style={{ width: 80, height: 80, marginRight: 24 }}>
+              <div style={{ width: 100, height: 90, marginRight: 24 }}>
                 {sp.anh && sp.anh.trim() !== '' ? (
                   <img
-                    src={sp.anh.includes(',')
-                      ? `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.split(',')[0].trim())}`
-                      : `http://localhost:8080/api/images/${encodeURIComponent(sp.anh.trim())}`}
+                   src={config.getApiUrl(formatImage(sp.anh))}
                     alt={sp.tenSanPham}
                     style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                     onError={(e) => {
@@ -597,9 +606,16 @@ const OrderDetail = () => {
                   Không có ảnh
                 </div>
               </div>
-              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>{sp.tenSanPham}</div>
-              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.mauSac}</div>
-              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>{sp.kichThuoc}</div>
+              <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
+                <div>{sp.tenSanPham}</div>
+                {sp.ma && (
+                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
+                    Mã: {sp.ma}
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Màu: {sp.mauSac}</div>
+              <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Size: {sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
                 {/* ✅ SỬA: Hiển thị giá gốc và giá khuyến mãi nếu có (giống OrderDetailPOSPage) */}
                 {sp.giaBanGiamGia < sp.giaBan ? (

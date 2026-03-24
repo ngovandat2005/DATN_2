@@ -76,6 +76,7 @@ const CheckPayment = () => {
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const hasProcessed = useRef(false); // ✅ Guard against double processing
+  const [completedOrderInfo, setCompletedOrderInfo] = useState(null);
 
   // ✅ Function xử lý cart item
   const processCartItem = (item, index) => {
@@ -432,6 +433,7 @@ const CheckPayment = () => {
             try {
               const orderInfo = JSON.parse(pendingOrderInfo);
               console.log('📋 Thông tin đơn hàng chờ:', orderInfo);
+              setCompletedOrderInfo(orderInfo); // ✅ Lưu vào state để hiển thị sau khi xóa localStorage
 
               toast.info('⚙️ Đang tạo đơn hàng...', {
                 position: "top-center",
@@ -576,12 +578,91 @@ const CheckPayment = () => {
     <>
       <Result
         status={status}
-        title={title} start
+        title={title}
+        subTitle={status === 'success' ? 'Cảm ơn bạn đã tin tưởng và mua sắm tại cửa hàng của chúng tôi!' : 'Rất tiếc, đã có lỗi xảy ra trong quá trình thanh toán.'}
         extra={[
           <Button key="orders" type="primary" onClick={() => navigate("/orders")}>Xem đơn hàng</Button>,
           <Button key="home" onClick={() => navigate("/")}>Về trang chủ</Button>,
         ]}
-      />
+      >
+        {status === 'success' && completedOrderInfo && (
+          <div style={{ marginTop: '30px', textAlign: 'left', padding: '20px', backgroundColor: '#fafafa', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
+            <h3 style={{ fontSize: '18px', marginBottom: '20px', borderBottom: '1px solid #e8e8e8', paddingBottom: '10px' }}>Chi tiết đơn hàng vừa thanh toán</h3>
+            <div className="order-summary-list">
+              {completedOrderInfo.cart?.map((rawItem, index) => {
+                const item = {
+                  name: rawItem.tenSanPham || rawItem.name || rawItem.sanPhamChiTiet?.sanPham?.tenSanPham || 'Sản phẩm',
+                  imageUrl: rawItem.hinhAnh || rawItem.image || rawItem.images || rawItem.sanPhamChiTiet?.sanPham?.images?.split(',')[0],
+                  qty: rawItem.soLuong || rawItem.quantity || 1,
+                  price: rawItem.giaBanGiamGia || rawItem.giaBan || rawItem.gia || rawItem.price || rawItem.sanPhamChiTiet?.giaBan,
+                  variant: [
+                    rawItem.mauSac || rawItem.tenMauSac || rawItem.sanPhamChiTiet?.mauSac?.tenMauSac ? `Màu: ${rawItem.mauSac || rawItem.tenMauSac || rawItem.sanPhamChiTiet?.mauSac?.tenMauSac}` : null,
+                    rawItem.kichThuoc || rawItem.tenKichThuoc || rawItem.sanPhamChiTiet?.kichThuoc?.tenKichThuoc ? `Size: ${rawItem.kichThuoc || rawItem.tenKichThuoc || rawItem.sanPhamChiTiet?.kichThuoc?.tenKichThuoc}` : null
+                  ].filter(Boolean).join(' • ')
+                };
+
+                const buildImgUrl = (raw) => {
+                  if (!raw) return 'https://via.placeholder.com/60';
+                  if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
+                  
+                  // ✅ SỬA: Lấy ảnh đầu tiên nếu là chuỗi nhiều ảnh (ngăn cách bởi dấu phẩy)
+                  let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
+                  
+                  // ✅ Xử lý dấu gạch chéo ở đầu hoặc prefix "images/" nếu có
+                  if (firstImg.startsWith('/')) {
+                    firstImg = firstImg.substring(1);
+                  }
+                  if (firstImg.startsWith('images/')) {
+                    firstImg = firstImg.substring(7);
+                  }
+                  
+                  // ✅ SỬA: Sử dụng URL tuyệt đối trong phát triển
+                  const encodedImg = encodeURIComponent(firstImg);
+                  const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : '';
+                  const fullUrl = `${baseUrl}/images/${encodedImg}`;
+                  return fullUrl;
+                };
+
+                return (
+                  <div key={index} style={{ display: 'flex', alignItems: 'center', marginBottom: '15px', padding: '10px', backgroundColor: 'white', borderRadius: '4px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                    <img 
+                      src={buildImgUrl(item.imageUrl)} 
+                      alt={item.name} 
+                      style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} 
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600', fontSize: '15px' }}>{item.name}</div>
+                      <div style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>
+                        {item.variant && (
+                          <span style={{ backgroundColor: '#f0f0f0', padding: '2px 8px', borderRadius: '10px', marginRight: '8px' }}>
+                            {item.variant}
+                          </span>
+                        )}
+                        <span>Số lượng: {item.qty}</span>
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: '600', color: '#e74c3c' }}>
+                      {(item.price * item.qty).toLocaleString('vi-VN')}₫
+                    </div>
+                  </div>
+                );
+              })}
+              
+              <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px dashed #d9d9d9', textAlign: 'right' }}>
+                <div style={{ marginBottom: '5px' }}>
+                  <span style={{ color: '#888' }}>Số tiền đã thanh toán: </span>
+                  <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#e74c3c' }}>
+                    {Number(completedOrderInfo.tongTien).toLocaleString('vi-VN')}₫
+                  </span>
+                </div>
+                <div style={{ fontSize: '13px', color: '#1890ff' }}>
+                  Phương thức: {completedOrderInfo.paymentMethod === 'bank' ? 'VNPAY' : 'COD'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </Result>
       <ToastContainer />
     </>
   );

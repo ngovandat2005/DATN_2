@@ -24,6 +24,9 @@ public class SanPhamChiTiet {
     @Column(name = "SoLuong")
     private Integer soLuong;
 
+    @Column(name = "Ma") // ✅ THÊM: Mã biến thể (SKU)
+    private String ma;
+
     @Column(name = "NgaySanXuat")
     private Date ngaySanXuat;
 

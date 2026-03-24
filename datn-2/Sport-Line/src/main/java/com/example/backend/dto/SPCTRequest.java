@@ -14,6 +14,7 @@ import java.sql.Date;
 
 public class SPCTRequest {
     private Integer idSanPham;
+    private String ma; // ✅ THÊM: Mã biến thể (SKU)
     private Integer idKichThuoc;
     private Integer idMauSac;
     private Integer soLuong;

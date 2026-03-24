@@ -17,6 +17,23 @@ const TRANG_THAI = [
 
 const DonHangPage = () => {
   const navigate = useNavigate();
+
+  // ✅ THÊM: Hàm xử lý đường dẫn ảnh giống như SanPhamPage
+  const getImageUrl = (img) => {
+    if (!img) return '/logo.png';
+    // Nếu là mảng, lấy phần tử đầu
+    if (Array.isArray(img)) img = img[0];
+    // Nếu là chuỗi nhiều ảnh, lấy ảnh đầu
+    if (typeof img === 'string' && img.includes(',')) img = img.split(',')[0];
+    img = img.trim();
+    if (!img) return '/logo.png';
+    if (img.startsWith('http')) return img;
+    if (img.startsWith('/')) return 'http://localhost:8080' + img;
+    
+    // Sử dụng static resource mapping từ WebConfig (/images/**)
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+  };
+
   // --- ONLINE ---
   const [activeTab, setActiveTab] = useState('ONLINE');
   const [ordersOnline, setOrdersOnline] = useState([]);
@@ -307,6 +324,8 @@ const DonHangPage = () => {
           tenSanPham: prod?.tenSanPham || '-',
           mauSac: prod?.mauSac || '-',
           kichThuoc: prod?.kichThuoc || '-',
+          ma: prod?.ma || '',
+          anh: prod?.images || '',
           // Sử dụng giá tại thời điểm mua hàng, KHÔNG lấy giá hiện tại
           giaBan: item.gia || 0,
           giaBanGiamGia: null, // Không áp dụng khuyến mãi hiện tại cho đơn hàng cũ
@@ -333,6 +352,7 @@ const DonHangPage = () => {
           tenSanPham: prod?.tenSanPham || '-',
           mauSac: prod?.mauSac || '-',
           kichThuoc: prod?.kichThuoc || '-',
+          ma: prod?.ma || '',
           // Sử dụng giá tại thời điểm mua hàng, KHÔNG lấy giá hiện tại
           giaBan: item.gia || 0,
           giaBanGiamGia: null, // Không áp dụng khuyến mãi hiện tại cho đơn hàng cũ
@@ -355,6 +375,12 @@ const DonHangPage = () => {
     if (!id) return 'Khách vãng lai';
     const kh = customers.find(c => c.id === id || c.id === Number(id));
     return kh?.tenKhachHang || 'Khách vãng lai';
+  };
+
+  const getSdtKhachHang = (id) => {
+    if (!id) return '---';
+    const kh = customers.find(c => c.id === id || c.id === Number(id));
+    return kh?.soDienThoai || '---';
   };
 
   // Hàm xử lý hủy đơn hàng online
@@ -819,6 +845,7 @@ const DonHangPage = () => {
           <th style={{ padding: 12 }}>Mã đơn</th>
           <th style={{ padding: 12 }}>Nhân viên</th>
           <th style={{ padding: 12 }}>Khách hàng</th>
+          <th style={{ padding: 12 }}>SĐT</th>
           <th style={{ padding: 12 }}>Ngày tạo</th>
           <th style={{ padding: 12 }}>Ngày Thanh Toán</th>
           <th style={{ padding: 12 }}>Tổng tiền</th>
@@ -828,13 +855,14 @@ const DonHangPage = () => {
       </thead>
       <tbody>
         {orders.length === 0 ? (
-          <tr><td colSpan={8} style={{ textAlign: 'center', color: '#888', padding: 24 }}>Không có đơn hàng nào</td></tr>
+          <tr><td colSpan={9} style={{ textAlign: 'center', color: '#888', padding: 24 }}>Không có đơn hàng nào</td></tr>
         ) : (
           orders.map(order => (
             <tr key={order.id} style={{ borderBottom: '1px solid #e3e8ee', fontSize: 16 }}>
               <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>#{order.id}</td>
               <td style={{ padding: 12 }}>{order.tenNhanVien || '-'}</td>
               <td style={{ padding: 12 }}>{getTenKhachHang(order.idkhachHang)}</td>
+              <td style={{ padding: 12 }}>{getSdtKhachHang(order.idkhachHang)}</td>
               <td style={{ padding: 12 }}>{order.ngayTao || '-'}</td>
               <td style={{ padding: 12 }}>{order.ngayMua || '-'}</td>
               <td style={{ padding: 12, color: '#1976d2', fontWeight: 700 }}>{order.tongTien?.toLocaleString()} đ</td>
@@ -881,6 +909,7 @@ const DonHangPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#e3f0ff' }}>
+                  <th style={{ padding: 8 }}>Ảnh</th>
                   <th style={{ padding: 8 }}>Tên</th>
                   <th style={{ padding: 8 }}>Màu</th>
                   <th style={{ padding: 8 }}>Size</th>
@@ -892,7 +921,22 @@ const DonHangPage = () => {
               <tbody>
                 {chiTietSanPham.map((sp, idx) => (
                   <tr key={idx}>
-                    <td style={{ padding: 8 }}>{sp.tenSanPham || '-'}</td>
+                    <td style={{ padding: 8, textAlign: 'center' }}>
+                      <img 
+                        src={getImageUrl(sp.anh)} 
+                        alt={sp.tenSanPham} 
+                        style={{ width: 50, height: 45, objectFit: 'cover', borderRadius: 4, border: '1px solid #eee' }} 
+                        onError={(e) => { e.target.src = '/logo.png'; }}
+                      />
+                    </td>
+                    <td style={{ padding: 8 }}>
+                      <div>{sp.tenSanPham || '-'}</div>
+                      {sp.ma && (
+                        <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '4px' }}>
+                          Mã: {sp.ma}
+                        </div>
+                      )}
+                    </td>
                     <td style={{ padding: 8 }}>{sp.mauSac || '-'}</td>
                     <td style={{ padding: 8 }}>{sp.kichThuoc || '-'}</td>
                     <td style={{ padding: 8 }}>

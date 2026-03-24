@@ -60,6 +60,9 @@ public class DonHang {
     @Column(name="TenNguoiNhan")
     private String tenNguoiNhan;
 
+    @Column(name="PhiVanChuyen")
+    private Integer phiVanChuyen = 0;
+
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<DonHangChiTiet> donHangChiTiets;
 }

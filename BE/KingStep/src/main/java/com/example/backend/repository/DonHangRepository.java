@@ -12,8 +12,14 @@ import java.util.List;
 @Repository
 public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 //    List<DonHang> getAllByTrangThai(Integer id);
-@Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai) AND (:loai IS NULL OR LOWER(d.loaiDonHang) LIKE LOWER(CONCAT('%', :loai, '%')))")
-List<DonHang> findByTrangThaiAndLoaiDonHang(@Param("trangThai") Integer trangThai, @Param("loai") String loaiDonHang);
+    @Query("SELECT d FROM DonHang d WHERE (:trangThai IS NULL OR d.trangThai = :trangThai) AND (:loai IS NULL OR LOWER(d.loaiDonHang) LIKE LOWER(CONCAT('%', :loai, '%')))")
+    List<DonHang> findByTrangThaiAndLoaiDonHang(@Param("trangThai") Integer trangThai, @Param("loai") String loaiDonHang);
+
+    @Query("SELECT d FROM DonHang d WHERE LOWER(d.loaiDonHang) = LOWER(:loai)")
+    List<DonHang> findByLoaiDonHangOnly(@Param("loai") String loaiDonHang);
+
+    @Query("SELECT d FROM DonHang d WHERE d.trangThai = :trangThai AND LOWER(d.loaiDonHang) = LOWER(:loai)")
+    List<DonHang> findByTrangThaiAndLoaiDonHangOnly(@Param("trangThai") Integer trangThai, @Param("loai") String loaiDonHang);
 
     List<DonHang> findByKhachHangIdOrderByNgayTaoDesc(Integer idKhachHang);
 

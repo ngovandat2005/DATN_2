@@ -79,6 +79,7 @@ const OrderDetailPOSPage = () => {
               giaBan: prod.giaBan,  // Giá gốc từ sản phẩm
               giaBanGiamGia: item.gia,  // Giá đã lưu trong DonHangChiTiet (có thể là giá gốc hoặc giá khuyến mãi)
               anh: prod.images,
+              ma: prod.ma || '',
             };
           })
         );
@@ -111,8 +112,8 @@ const OrderDetailPOSPage = () => {
     if (img.startsWith('http')) return img;
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
     
-    // Sử dụng API endpoint thay vì static resource
-    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
+    // Sử dụng static resource mapping từ WebConfig (/images/**)
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
 
   return (
@@ -171,7 +172,14 @@ const OrderDetailPOSPage = () => {
                   <div style={{ flex: 1, textAlign: 'center', fontFamily: 'monospace', fontWeight: 'bold', color: '#666', fontSize: 14 }}>
                     {sp.idSanPhamChiTiet}
                   </div>
-                  <div style={{ flex: 2, fontWeight: 700, fontSize: 18 }}>{sp.tenSanPham}</div>
+                  <div style={{ flex: 2, fontWeight: 700, fontSize: 18 }}>
+                    <div>{sp.tenSanPham}</div>
+                    {sp.ma && (
+                      <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '14px', marginTop: '4px' }}>
+                        Mã: {sp.ma}
+                      </div>
+                    )}
+                  </div>
                   <div style={{ flex: 1, color: '#555', fontSize: 16 }}>{sp.mauSac}</div>
                   <div style={{ flex: 1, color: '#555', fontSize: 16 }}>{sp.kichThuoc}</div>
                   <div style={{ flex: 1, textAlign: 'right' }}>

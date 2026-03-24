@@ -63,6 +63,7 @@ public class SPCTService {
         spct.setSanPham(sanPham);
         spct.setKichThuoc(kichThuoc);
         spct.setMauSac(mauSac);
+        spct.setMa(request.getMa()); // ✅ THÊM: Mã SKU
         spct.setSoLuong(request.getSoLuong());
         spct.setGiaBan(request.getGiaBan());
         spct.setNgaySanXuat((Date) request.getNgaySanXuat());
@@ -104,6 +105,9 @@ public class SPCTService {
             MauSac mauSac = msi.findById(request.getIdMauSac())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy màu sắc"));
             spct.setMauSac(mauSac);
+        }
+        if (request.getMa() != null) { // ✅ THÊM: Mã SKU
+            spct.setMa(request.getMa());
         }
         if (request.getSoLuong() != null) {
             spct.setSoLuong(request.getSoLuong());
