@@ -280,3 +280,48 @@ INSERT INTO [dbo].[DanhGia] ([IdKhachHang], [IdSanPham], [SoSao], [BinhLuan], [N
 (10, 10, 1, N'Hàng không giống hình cho lắm, hơi thất vọng.', GETDATE(), 1);
 
 PRINT 'Thêm dữ liệu vào các Bảng thành công!'
+
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[TraHang]') AND type in (N'U'))
+CREATE TABLE [dbo].[TraHang] (
+    [Id] INT IDENTITY(1,1) PRIMARY KEY,
+    [IdDonHang] INT,
+    [IdKhachHang] INT,
+    [NgayYeuCau] DATETIME,
+    [LyDo] NVARCHAR(MAX),
+    [TrangThai] INT, -- 0: chờ duyệt, 1: đã duyệt, 2: từ chối, 3: đã hoàn tiền
+    [TongTienHoan] FLOAT,
+
+    FOREIGN KEY ([IdDonHang]) REFERENCES [dbo].[DonHang]([id]),
+    FOREIGN KEY ([IdKhachHang]) REFERENCES [dbo].[KhachHang]([id])
+);
+GO
+
+
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[TraHangChiTiet]') AND type in (N'U'))
+CREATE TABLE [dbo].[TraHangChiTiet] (
+    [Id] INT IDENTITY(1,1) PRIMARY KEY,
+    [IdTraHang] INT,
+    [IdDonHangChiTiet] INT,
+    [SoLuongTra] INT,
+    [GiaHoan] FLOAT,
+
+    FOREIGN KEY ([IdTraHang]) REFERENCES [dbo].[TraHang]([Id]),
+    FOREIGN KEY ([IdDonHangChiTiet]) REFERENCES [dbo].[donHangChiTiet]([id])
+);
+GO
+
+
+
+INSERT INTO [dbo].[TraHang] ([IdDonHang], [IdKhachHang], [NgayYeuCau], [LyDo], [TrangThai], [TongTienHoan]) VALUES
+(1, 1, GETDATE(), N'Lỗi sản phẩm', 1, 1350000),
+(2, 2, GETDATE(), N'Không đúng size', 0, 1700000),
+(3, 3, GETDATE(), N'Không thích nữa', 2, 960000);
+
+INSERT INTO [dbo].[TraHangChiTiet] ([IdTraHang], [IdDonHangChiTiet], [SoLuongTra], [GiaHoan]) VALUES
+(1, 1, 1, 1350000),
+(2, 2, 1, 1700000),
+(3, 3, 1, 960000);
+
+
