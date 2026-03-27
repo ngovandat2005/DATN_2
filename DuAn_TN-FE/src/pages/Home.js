@@ -309,8 +309,10 @@ function Home() {
 
         // Fetch tất cả sản phẩm một lần
         const productsResponse = await fetch(config.getApiUrl('api/san-pham/getAll'));
+        let allProducts = [];
+        let saleProductsWithPrices = [];
         if (productsResponse.ok) {
-          let allProducts = await productsResponse.json();
+          allProducts = await productsResponse.json();
 
           // Đảm bảo allProducts là array
           if (!Array.isArray(allProducts)) {
@@ -415,6 +417,12 @@ function Home() {
           );
 
           setFeaturedProducts(featuredWithPrices);
+          
+          // LƯU DATA LÊN LOCALSTORAGE CHO AI CHATBOT ĐỌC NGẦM
+          try {
+             const featuredNames = featuredWithPrices.slice(0, 4).map(p => p.ten || p.tenSanPham);
+             localStorage.setItem('bot_featured', JSON.stringify(featuredNames));
+          } catch(e){}
 
 
 
@@ -423,8 +431,12 @@ function Home() {
             .filter(product => {
               if (product.trangThai !== 1) return false;
 
+              // Kiểm tra nếu có phần trăm giảm từ API mới
+              if (product.phanTramGiam && product.phanTramGiam > 0) return true;
+
               // Kiểm tra nếu có khuyến mãi
               if (product.khuyenMai && product.khuyenMai.id) return true;
+              if (product.idKhuyenMai) return true;
 
               // Kiểm tra nếu có giá gốc và giá bán khác nhau
               if (product.giaBanGoc && product.giaBan && product.giaBanGoc > product.giaBan) return true;
@@ -466,14 +478,13 @@ function Home() {
           console.log('✅ Sản phẩm giảm giá (từ getAllOnline):', saleProducts.length);
 
           // ✅ THÊM: Fetch giá từ biến thể cho từng sản phẩm giảm giá
-          const saleProductsWithPrices = await Promise.all(
+          saleProductsWithPrices = await Promise.all(
             saleProducts.map(async (product) => {
               try {
                 const variantsResponse = await fetch(config.getApiUrl(`api/san-pham-chi-tiet/${product.id}`));
                 if (variantsResponse.ok) {
                   const variants = await variantsResponse.json();
                   if (variants && variants.length > 0) {
-                    // Tìm giá thấp nhất từ tất cả biến thể (hoặc giá đầu tiên nếu không có giá hợp lệ)
                     let minPrice = null;
                     let minDiscountPrice = null;
 
@@ -481,11 +492,9 @@ function Home() {
                       const variantPrice = variant.giaBan;
                       const variantDiscountPrice = variant.giaBanGiamGia;
 
-                      // Chỉ lấy giá > 0
                       if (variantPrice && variantPrice > 0) {
                         if (minPrice === null || variantPrice < minPrice) {
                           minPrice = variantPrice;
-                          // Nếu biến thể này có giá giảm, lấy giá giảm
                           if (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice) {
                             minDiscountPrice = variantDiscountPrice;
                           } else {
@@ -495,7 +504,6 @@ function Home() {
                       }
                     }
 
-                    // Nếu tìm thấy giá hợp lệ, cập nhật vào product
                     if (minPrice !== null && minPrice > 0) {
                       return {
                         ...product,
@@ -514,31 +522,51 @@ function Home() {
             })
           );
 
-          setOnSaleProducts(saleProductsWithPrices);
+          // TRÍCH XUẤT chính xác các sản phẩm giảm giá thực tế sau khi đã quét qua biến thể
+          const allProcessed = [...featuredWithPrices, ...saleProductsWithPrices];
+          const uniqueProcessed = Array.from(new Set(allProcessed.map(a => a.id))).map(id => allProcessed.find(a => a.id === id));
+          
+          let trueDiscounted = uniqueProcessed.filter(p => {
+            if (p.phanTramGiam && p.phanTramGiam > 0) return true;
+            if (p.khuyenMai && p.khuyenMai.id) return true;
+            if (p.idKhuyenMai) return true;
+            if (p.giaBanGoc && p.giaBanSauGiam && p.giaBanSauGiam < p.giaBanGoc) return true;
+            if (p.giaBan && p.giaBanGiamGia && p.giaBanGiamGia < p.giaBan) return true;
+            if (p.giaBanGoc && p.giaBan && p.giaBan < p.giaBanGoc) return true;
+            return false;
+          }).slice(0, 8);
+
+          setOnSaleProducts(trueDiscounted);
+
+          // LƯU DATA CHO AI
+          try {
+             const saleNames = trueDiscounted.slice(0, 4).map(p => p.ten || p.tenSanPham);
+             localStorage.setItem('bot_sales', JSON.stringify(saleNames));
+          } catch(e){}
 
         } else {
           console.error('❌ Lỗi fetch sản phẩm:', productsResponse.status);
           throw new Error('Không thể tải dữ liệu sản phẩm');
         }
 
-        // Fetch sản phẩm khuyến mãi từ API mới
+        // Fetch sản phẩm khuyến mãi từ API mới (Ưu tiên)
         try {
           const promotionResponse = await fetch(config.getApiUrl('api/san-pham/sp-co-khuyen-mai'));
           if (promotionResponse.ok) {
             const promotionProducts = await promotionResponse.json();
-            console.log('✅ Sản phẩm khuyến mãi từ API mới:', promotionProducts.length);
-
-            // Nếu có sản phẩm khuyến mãi từ API mới, sử dụng nó
             if (promotionProducts && promotionProducts.length > 0) {
-              setOnSaleProducts(promotionProducts);
-              console.log('✅ Đã cập nhật sản phẩm giảm giá từ API khuyến mãi');
+              setOnSaleProducts(prev => {
+                const combined = [...promotionProducts, ...prev];
+                const res = Array.from(new Set(combined.map(a => a.id))).map(id => combined.find(a => a.id === id)).slice(0, 8);
+                try {
+                    localStorage.setItem('bot_sales', JSON.stringify(res.slice(0, 4).map(p => p.ten || p.tenSanPham)));
+                } catch(e){}
+                return res;
+              });
             }
-          } else {
-            console.warn('⚠️ Không thể fetch sản phẩm khuyến mãi, sử dụng dữ liệu từ getAllOnline');
           }
         } catch (error) {
-          console.warn('⚠️ Lỗi khi fetch sản phẩm khuyến mãi:', error);
-          console.log('ℹ️ Sử dụng dữ liệu sản phẩm giảm giá từ getAllOnline');
+          console.warn('⚠️ Lỗi API khuyến mãi:', error);
         }
 
 
@@ -589,13 +617,22 @@ function Home() {
         <div className="home-wrapper">
           <Divider orientation="left"><Title level={3}>Sản phẩm nổi bật</Title></Divider>
           {featuredProducts.length > 0 ? (
-            <Row gutter={[24, 24]}>
-              {featuredProducts.slice(0, 4).map(product => (
-                <Col xs={24} sm={12} md={12} lg={6} key={product.id || Math.random()}>
-                  <ProductCard product={product} />
-                </Col>
-              ))}
-            </Row>
+            <>
+              <Row gutter={[24, 24]}>
+                {featuredProducts.slice(0, 4).map(product => (
+                  <Col xs={24} sm={12} md={12} lg={6} key={product.id || Math.random()}>
+                    <ProductCard product={product} />
+                  </Col>
+                ))}
+              </Row>
+              <div style={{ textAlign: 'center', marginTop: '24px', marginBottom: '30px' }}>
+                <Link to="/products">
+                  <Button type="default" size="large" shape="round">
+                    Xem tất cả Sản phẩm nổi bật
+                  </Button>
+                </Link>
+              </div>
+            </>
           ) : (
             <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
               <p>Chưa có sản phẩm nổi bật</p>
