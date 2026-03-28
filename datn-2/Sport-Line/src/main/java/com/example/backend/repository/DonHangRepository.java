@@ -40,4 +40,19 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
     // Đếm đơn theo trạng thái
     List<DonHang> findAllByGiamGia_Id(Integer idVoucher);
 
+    // Thống kê Queries
+    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua = :date")
+    Integer countOrdersByDate(@Param("date") java.time.LocalDate date);
+
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua = :date")
+    Double sumRevenueByDate(@Param("date") java.time.LocalDate date);
+
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    Double sumRevenueByMonthAndYear(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    Integer countOrdersCompletedByMonthAndYear(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND UPPER(d.loaiDonHang) = UPPER(:channel) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    Double sumRevenueByChannelAndMonthAndYear(@Param("channel") String channel, @Param("month") int month, @Param("year") int year);
 }
