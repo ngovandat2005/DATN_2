@@ -14,4 +14,5 @@ public class FeeRequest {
     private int length;
     private int weight;
     private int width;
+    private Double actualDistance;
 }

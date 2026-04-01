@@ -78,11 +78,6 @@ function OrderHistory() {
       
       let filteredOrders = response.data || [];
       
-             // ✅ SỬA: Tab "Tất cả" chỉ hiển thị đơn hàng có trạng thái 0,1,2,3 (không bao gồm trạng thái 7)
-       if (filterStatus === -1) {
-         filteredOrders = filteredOrders.filter(order => [0, 1, 2, 3].includes(order.trangThai));
-       }
-      
       // ✅ THÊM: Sắp xếp theo ID từ cao xuống thấp
       filteredOrders.sort((a, b) => (b.id || 0) - (a.id || 0));
       
@@ -233,7 +228,7 @@ function OrderHistory() {
               {totalStats.totalOrders}
             </div>
             <div style={{ color: '#666' }}>
-              {filterStatus === -1 ? 'Đơn hàng đang xử lý' : 'Tổng đơn hàng'}
+              Tổng đơn hàng
             </div>
           </div>
           
@@ -315,7 +310,7 @@ function OrderHistory() {
                   alignItems: 'center',
                   gap: 8
                 }}>
-                  📋 Hiển thị đơn hàng đang xử lý (Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Đang giao)
+                  📋 Hiển thị tất cả đơn hàng
                   <span style={{ marginLeft: 'auto', fontSize: 12 }}>
                     Tìm thấy {orders.length} đơn hàng
                   </span>

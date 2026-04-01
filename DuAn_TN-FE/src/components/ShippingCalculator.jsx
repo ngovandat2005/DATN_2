@@ -19,11 +19,12 @@ import {
   TruckOutlined, 
   CalculatorOutlined, 
   DollarOutlined, 
-  ClockCircleOutlined,
-  InfoCircleOutlined,
+  GlobalOutlined,
   ReloadOutlined
 } from '@ant-design/icons';
+import axios from 'axios';
 import AddressSelector from './AddressSelector';
+import MapSelector from './MapSelector';
 import config from '../config/config';
 
 const { Title, Text, Paragraph } = Typography;
@@ -37,8 +38,15 @@ const ShippingCalculator = ({
   const [selectedProvince, setSelectedProvince] = useState(null);
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedWard, setSelectedWard] = useState(null);
+  
+  // New state for names (for Map Search)
+  const [provinceName, setProvinceName] = useState('');
+  const [districtName, setDistrictName] = useState('');
+  const [wardName, setWardName] = useState('');
+
   const [weight, setWeight] = useState(defaultWeight);
   const [shippingFee, setShippingFee] = useState(null);
+  const [actualDistance, setActualDistance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastCalculation, setLastCalculation] = useState(null);
@@ -49,7 +57,7 @@ const ShippingCalculator = ({
     setError(null);
   }, [selectedProvince, selectedDistrict, selectedWard, weight]);
 
-  const calculateShippingFee = async (useShop = true) => {
+  const calculateShippingFee = async () => {
     if (!selectedDistrict || !selectedWard || !weight) {
       message.error('Vui lòng chọn đầy đủ địa chỉ giao hàng và cân nặng!');
       return;
@@ -59,88 +67,44 @@ const ShippingCalculator = ({
     setError(null);
 
     try {
-      const endpoint = useShop ? 'api/ghn/calculate-fee-shop' : 'api/ghn/calculate-fee';
-      const params = new URLSearchParams({
+      const response = await axios.post(config.getApiUrl('api/ghn/calculate-fee'), {
         toDistrict: selectedDistrict,
+        toProvinceId: selectedProvince,
         toWardCode: selectedWard,
-        weight: weight
+        weight: weight,
+        actualDistance: actualDistance > 0 ? actualDistance : null
       });
 
-      // Add fromDistrict for custom calculation
-      if (!useShop) {
-        params.append('fromDistrict', '1454'); // Default from Hà Nội
-      }
-
-      const response = await fetch(`${config.getApiUrl(endpoint)}?${params}`, {
-        method: 'POST'
-      });
-
-      if (response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        const textBody = await response.text();
-        const data = textBody && contentType.includes('application/json') ? JSON.parse(textBody) : (textBody ? { raw: textBody } : {});
-        setShippingFee(data);
+      if (response.status === 200) {
+        setShippingFee(response.data);
         setLastCalculation({
           timestamp: new Date(),
-          address: `${selectedProvince}, ${selectedDistrict}, ${selectedWard}`,
+          address: `${wardName}, ${districtName}, ${provinceName}`,
           weight: weight,
-          useShop: useShop
+          distance: response.data.distance_km
         });
 
-        // Callback to parent component
         if (onShippingFeeCalculated) {
-          onShippingFeeCalculated(data);
+          onShippingFeeCalculated(response.data);
         }
 
         message.success('Tính phí vận chuyển thành công!');
-      } else {
-        const contentType = response.headers.get('content-type') || '';
-        const errorText = await response.text();
-        let errorMessage = 'Không thể tính phí vận chuyển';
-        if (errorText) {
-          if (contentType.includes('application/json')) {
-            try {
-              const errJson = JSON.parse(errorText);
-              errorMessage = errJson.message || errorMessage;
-            } catch {
-              errorMessage = errorText;
-            }
-          } else {
-            errorMessage = errorText;
-          }
-        }
-        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ Lỗi tính phí vận chuyển:', error);
-      setError(error.message);
+      setError(error.response?.data?.message || error.message);
       message.error(`Lỗi: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
-
-  const formatDeliveryTime = (timeString) => {
-    if (!timeString) return 'Chưa xác định';
-    
-    try {
-      const date = new Date(timeString);
-      return date.toLocaleDateString('vi-VN', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    } catch {
-      return timeString;
-    }
+  const getFullAddress = () => {
+    const parts = [];
+    if (wardName) parts.push(wardName);
+    if (districtName) parts.push(districtName);
+    if (provinceName) parts.push(provinceName);
+    return parts.join(', ');
   };
 
   const getAddressDisplay = () => {
@@ -168,14 +132,9 @@ const ShippingCalculator = ({
           </Space>
         }
         style={{ marginTop: 16 }}
-        extra={
-          <Tag color="green">
-            <ClockCircleOutlined /> {formatDeliveryTime(shippingFee.expected_delivery_time)}
-          </Tag>
-        }
       >
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={12}>
             <Statistic
               title="Tổng phí vận chuyển"
               value={shippingFee.total_fee}
@@ -184,22 +143,13 @@ const ShippingCalculator = ({
               suffix="VNĐ"
             />
           </Col>
-          <Col span={8}>
+          <Col span={12}>
             <Statistic
-              title="Phí dịch vụ"
-              value={shippingFee.service_fee}
-              precision={0}
+              title="Khoảng cách tính phí"
+              value={shippingFee.distance_km}
+              precision={1}
               valueStyle={{ color: '#1890ff' }}
-              suffix="VNĐ"
-            />
-          </Col>
-          <Col span={8}>
-            <Statistic
-              title="Phí bảo hiểm"
-              value={shippingFee.insurance_fee}
-              precision={0}
-              valueStyle={{ color: '#722ed1' }}
-              suffix="VNĐ"
+              suffix="km"
             />
           </Col>
         </Row>
@@ -210,12 +160,10 @@ const ShippingCalculator = ({
             <div style={{ fontSize: '14px', color: '#666' }}>
               <Text strong>Thông tin chi tiết:</Text>
               <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-                <li>Địa chỉ giao hàng: {getAddressDisplay()}</li>
+                <li>Địa chỉ: {getAddressDisplay()}</li>
+                <li>Phân loại: {shippingFee.status === 'calculated_by_distance' ? 'Tính theo KM thực tế' : 'Ước tính theo vùng'}</li>
                 <li>Cân nặng: {weight}g</li>
-                <li>Thời gian giao hàng dự kiến: {formatDeliveryTime(shippingFee.expected_delivery_time)}</li>
-                {shippingFee.service_type && (
-                  <li>Loại dịch vụ: {shippingFee.service_type}</li>
-                )}
+                <li>Công thức: Phí phân tầng (Tiered Pricing)</li>
               </ul>
             </div>
           </>
@@ -229,38 +177,9 @@ const ShippingCalculator = ({
 
     return (
       <Alert
-        message="Lỗi tính phí vận chuyển"
+        message="Lỗi tính phí"
         description={error}
         type="error"
-        showIcon
-        style={{ marginTop: 16 }}
-        action={
-          <Button 
-            size="small" 
-            danger 
-            onClick={() => setError(null)}
-          >
-            Đóng
-          </Button>
-        }
-      />
-    );
-  };
-
-  const renderLastCalculation = () => {
-    if (!lastCalculation) return null;
-
-    return (
-      <Alert
-        message="Lần tính cuối"
-        description={
-          <div>
-            <div>Địa chỉ: {lastCalculation.address}</div>
-            <div>Cân nặng: {lastCalculation.weight}g</div>
-            <div>Thời gian: {lastCalculation.timestamp.toLocaleString('vi-VN')}</div>
-          </div>
-        }
-        type="info"
         showIcon
         style={{ marginTop: 16 }}
       />
@@ -271,14 +190,9 @@ const ShippingCalculator = ({
     <Card
       title={
         <Space>
-          <TruckOutlined style={{ color: '#1890ff' }} />
-          <span>Tính phí vận chuyển GHN</span>
+          <GlobalOutlined style={{ color: '#1890ff' }} />
+          <span>Vận chuyển KingStep - Tính phí theo bản đồ</span>
         </Space>
-      }
-      extra={
-        <Tooltip title="Thông tin API">
-          <InfoCircleOutlined style={{ color: '#666' }} />
-        </Tooltip>
       }
       style={{ marginBottom: 16 }}
     >
@@ -290,12 +204,20 @@ const ShippingCalculator = ({
             selectedProvince={selectedProvince}
             selectedDistrict={selectedDistrict}
             selectedWard={selectedWard}
-            onProvinceChange={setSelectedProvince}
-            onDistrictChange={setSelectedDistrict}
-            onWardChange={setSelectedWard}
+            onProvinceChange={(id, name) => { setSelectedProvince(id); setProvinceName(name); }}
+            onDistrictChange={(id, name) => { setSelectedDistrict(id); setDistrictName(name); }}
+            onWardChange={(id, name) => { setSelectedWard(id); setWardName(name); }}
             showWard={true}
           />
         </div>
+
+        {/* Map Display and Distance Calculation */}
+        {(provinceName || districtName) && (
+          <MapSelector 
+            address={getFullAddress()} 
+            onDistanceCalculated={(km) => setActualDistance(km)} 
+          />
+        )}
 
         {/* Weight Input */}
         <div>
@@ -309,73 +231,49 @@ const ShippingCalculator = ({
               max={30000}
               addonAfter="gram"
               style={{ width: 150 }}
-              placeholder="Nhập cân nặng"
             />
-            <Text type="secondary">(1-30,000g)</Text>
           </Space>
         </div>
 
         {/* Action Buttons */}
         <div>
-          <Title level={5}>💰 Tính phí vận chuyển</Title>
           <Space>
             <Button
               type="primary"
+              size="large"
               icon={<CalculatorOutlined />}
-              onClick={() => calculateShippingFee(true)}
+              onClick={calculateShippingFee}
               loading={loading}
-              disabled={!selectedDistrict || !selectedWard || !weight}
+              disabled={!selectedDistrict || !selectedWard || !actualDistance}
+              style={{ paddingLeft: 40, paddingRight: 40 }}
             >
-              Tính phí từ Shop
-            </Button>
-            <Button
-              icon={<CalculatorOutlined />}
-              onClick={() => calculateShippingFee(false)}
-              loading={loading}
-              disabled={!selectedDistrict || !selectedWard || !weight}
-            >
-              Tính phí tùy chỉnh
+              Xác nhận và tính phí ship
             </Button>
             <Button
               icon={<ReloadOutlined />}
               onClick={() => {
                 setShippingFee(null);
+                setActualDistance(0);
                 setError(null);
               }}
-              disabled={!shippingFee && !error}
             >
               Làm mới
             </Button>
           </Space>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <Spin size="large" />
-            <div style={{ marginTop: 8 }}>Đang tính phí vận chuyển...</div>
-          </div>
-        )}
-
         {/* Results */}
         {renderShippingFeeDetails()}
         {renderError()}
-        {renderLastCalculation()}
 
-        {/* Info */}
         <Alert
-          message="Thông tin"
+          message="Chính sách phí vận chuyển KingStep (Shopee-style)"
           description={
-            <div>
-              <Paragraph style={{ marginBottom: 8 }}>
-                • <strong>Tính phí từ Shop:</strong> Sử dụng shop ID 5951434 làm điểm gửi hàng
-              </Paragraph>
-              <Paragraph style={{ marginBottom: 8 }}>
-                • <strong>Tính phí tùy chỉnh:</strong> Cho phép chọn điểm gửi hàng bất kỳ
-              </Paragraph>
-              <Paragraph style={{ marginBottom: 0 }}>
-                • <strong>Phí bảo hiểm:</strong> Tự động tính dựa trên giá trị hàng hóa
-              </Paragraph>
+            <div style={{ fontSize: '13px' }}>
+              • <b>Miễn phí vận chuyển</b> cho đơn hàng trên <b>2.000.000đ</b>.<br/>
+              • <b>Nội thành Hà Nội</b>: 15.000đ — 22.000đ.<br/>
+              • <b>Các tỉnh Miền Bắc</b>: Đồng giá <b>35.000đ</b>.<br/>
+              • <b>Miền Trung & Miền Nam</b>: Tối đa <b>55.000đ</b> (Áp dụng toàn quốc).
             </div>
           }
           type="info"

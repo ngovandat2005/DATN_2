@@ -196,6 +196,15 @@ package com.example.backend.controller;
             List<DonHangDTO> dtoList = list.stream().map(DonHangDTO::new).toList();
             return ResponseEntity.ok(dtoList);
         }
+
+        @GetMapping("/donhang/khach/{idKhach}/trangthai/{trangthai}")
+        public ResponseEntity<List<DonHangDTO>> lichSuKhachTheoTrangThai(
+                @PathVariable Integer idKhach,
+                @PathVariable Integer trangthai) {
+            List<DonHang> list = donHangService.layDonTheoKhachVaTrangThai(idKhach, trangthai);
+            List<DonHangDTO> dtoList = list.stream().map(DonHangDTO::new).toList();
+            return ResponseEntity.ok(dtoList);
+        }
         // 📦 6. Chi tiết đơn hàng (admin hoặc khách)
         @GetMapping("/donhang/chi-tiet/{id}")
         public ResponseEntity<DonHangDTO> chiTietDon(@PathVariable Integer id) {

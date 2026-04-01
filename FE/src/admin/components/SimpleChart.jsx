@@ -1,9 +1,11 @@
 import React from 'react';
 import { Card, Typography, Row, Col, Progress } from 'antd';
 import { RiseOutlined, FallOutlined } from '@ant-design/icons';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const { Text, Title } = Typography;
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 const SimpleChart = ({ data, title, type = 'bar' }) => {
   if (!data || data.length === 0) {
@@ -14,11 +16,11 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
     );
   }
 
-  const maxValue = Math.max(...data.map(item => item.value || 0));
+  const maxValue = type === 'bar' ? Math.max(...data.map(item => item.value || 0)) : 0;
 
   if (type === 'bar') {
     return (
-      <div style={{ position: 'relative', padding: '20px' }}>
+      <div style={{ position: 'relative', padding: '10px' }}>
         <Title level={5} style={{ marginBottom: '16px', textAlign: 'center' }}>{title}</Title>
         
         <div style={{ height: '300px', width: '100%' }}>
@@ -39,15 +41,15 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
                 textAnchor="end"
                 height={60}
                 interval={0}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 10 }}
               />
               <YAxis 
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 10 }}
                 domain={[0, maxValue]}
               />
               <Tooltip 
-                formatter={(value, name) => [value, 'Số Đơn Hàng']}
-                labelFormatter={(label) => `${label}`}
+                formatter={(value) => [value, 'Số lượng']}
+                labelStyle={{ fontWeight: 'bold' }}
               />
               <Bar 
                 dataKey="value" 
@@ -61,11 +63,42 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
     );
   }
 
+  if (type === 'pie') {
+    return (
+      <div style={{ position: 'relative', padding: '10px' }}>
+        <Title level={5} style={{ marginBottom: '16px', textAlign: 'center' }}>{title}</Title>
+        <div style={{ height: '300px', width: '100%' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                nameKey="label"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value) => [value.toLocaleString('vi-VN'), '']} />
+              <Legend verticalAlign="bottom" height={36}/>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  }
+
   // Fallback cho type khác (giữ nguyên logic cũ)
   return (
-    <div>
+    <div style={{ padding: '10px' }}>
       <Title level={5} style={{ marginBottom: '16px' }}>{title}</Title>
-      <div style={{ height: '200px', overflowY: 'auto' }}>
+      <div style={{ height: '220px', overflowY: 'auto' }}>
         {data.map((item, index) => (
           <div key={index} style={{ marginBottom: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -75,7 +108,7 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
               </Text>
             </div>
             <Progress
-              percent={Math.round(((item.value || 0) / maxValue) * 100)}
+              percent={maxValue > 0 ? Math.round(((item.value || 0) / maxValue) * 100) : 0}
               size="small"
               strokeColor={{
                 '0%': '#108ee9',

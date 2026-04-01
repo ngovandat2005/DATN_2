@@ -145,15 +145,18 @@ const AddressSelector = ({
   }, [selectedDistrict]);
 
   const handleProvinceChange = (value) => {
-    onProvinceChange?.(value);
+    const province = provinces.find(p => p.ProvinceID === value);
+    onProvinceChange?.(value, province ? province.ProvinceName : null);
   };
 
   const handleDistrictChange = (value) => {
-    onDistrictChange?.(value);
+    const district = districts.find(d => d.DistrictID === value);
+    onDistrictChange?.(value, district ? district.DistrictName : null);
   };
 
   const handleWardChange = (value) => {
-    onWardChange?.(value);
+    const ward = wards.find(w => w.WardCode === value);
+    onWardChange?.(value, ward ? ward.WardName : null);
   };
 
   // Hiển thị lỗi nếu có

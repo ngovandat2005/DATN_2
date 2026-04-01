@@ -32,37 +32,77 @@ public class GHNClientService {
     @Value("${ghn.fromDistrictId}")
     private Integer fromDistrictId;
 
-    public int tinhPhiVanChuyen(Integer toDistrictId, Integer toProvinceId, String toWardCode, int weightGram, int insuranceValue) {
-        // ✅ THỰC HIỆN: Tính phí ship THEO KHOẢNG CÁCH (5k/km) như yêu cầu
-        int fromDistrict = (fromDistrictId != null) ? fromDistrictId : 1484;
-        int distanceKm = 50; // Mặc định liên tỉnh 50km
+    /**
+     * Tính phí vận chuyển dựa trên khoảng cách (km) và các thông số khác.
+     * Nếu actualDistance != null, sẽ dùng khoảng cách này để tính phí theo công thức.
+     * Nếu actualDistance == null, sẽ tự ước tính dựa trên DistrictID/ProvinceID.
+     */
+    public Map<String, Object> tinhPhiVanChuyen(Integer toDistrictId, Integer toProvinceId, String toWardCode, int weightGram, int insuranceValue, Double actualDistance) {
+        int fromDistrict = (fromDistrictId != null) ? fromDistrictId : 1484; // Mặc định Ba Đình
+        double distanceKm = 50.0; // Mặc định liên tỉnh 50km
         
-        if (toDistrictId != null) {
+        if (actualDistance != null && actualDistance > 0) {
+            distanceKm = actualDistance;
+        } else if (toDistrictId != null) {
+            // Logic ước tính cũ (Fallback)
             if (toDistrictId.equals(fromDistrict)) {
-                distanceKm = 5; // Cùng quận: 5km
+                distanceKm = 5.0; // Cùng quận
             } else if (toProvinceId != null && toProvinceId != 0) {
-                Integer fromProvinceId = getProvinceIdByDistrictId(fromDistrict); // Lấy tỉnh của shop
-                
-                if (fromProvinceId != null && toProvinceId.equals(fromProvinceId)) {
-                    distanceKm = 10; // Cùng tỉnh: 10km
-                }
-            } else {
-                // Fallback nếu không có toProvinceId (không khuyến khích)
-                Integer lookupProvinceId = getProvinceIdByDistrictId(toDistrictId);
                 Integer fromProvinceId = getProvinceIdByDistrictId(fromDistrict);
-                if (lookupProvinceId != null && fromProvinceId != null && lookupProvinceId.equals(fromProvinceId)) {
-                    distanceKm = 15;
+                if (fromProvinceId != null && toProvinceId.equals(fromProvinceId)) {
+                    distanceKm = 15.0; // Cùng tỉnh
                 }
             }
         }
 
-        int finalFee = distanceKm * 5000;
-        System.out.println("🚚 Zone-based Distance Logic:");
-        System.out.println("   - From District: " + fromDistrict);
-        System.out.println("   - To District: " + toDistrictId + " (Province: " + toProvinceId + ")");
-        System.out.println("   - Assigned Distance: " + distanceKm + "km");
-        System.out.println("   - Final Fee (5k/km): " + finalFee);
-        return finalFee;
+        // --- CÔNG THỨC TÍNH PHÍ ĐÃ ĐIỀU CHỈNH (THÂN THIỆN HƠN) ---
+        // 0km - 5km: 15.000 VNĐ (Base - Ưu đãi nội thành)
+        // 5km - 20km: +2.500 VNĐ/km
+        // > 20km: +2.000 VNĐ/km
+        
+        double totalFee = 15000.0; // Base fee (0-5km)
+        
+        if (distanceKm > 5) {
+            if (distanceKm <= 20) {
+                totalFee += (distanceKm - 5) * 2500;
+            } else {
+                totalFee += (15 * 2500) + (distanceKm - 20) * 2000;
+            }
+        }
+
+        // Làm tròn lên hàng nghìn
+        int finalFee = (int) (Math.ceil(totalFee / 1000) * 1000);
+
+        // --- GIỚI HẠN PHÍ SHIP THEO VÙNG (KIỂU SHOPEE - 63 TỈNH THÀNH) ---
+        // Nhận diện vùng miền qua toProvinceId chuẩn xác theo provinces_utf8.json
+        boolean isHanoi = (toProvinceId != null && (toProvinceId == 201 || toProvinceId == 2002));
+        
+        // Danh sách đầy đủ 25 tỉnh Miền Bắc (theo GHN ProvinceID chính xác từ dữ liệu gốc)
+        List<Integer> mienBacIds = java.util.List.of(
+            221, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 244, 
+            245, 246, 247, 248, 249, 263, 264, 265, 266, 267, 268, 269
+        );
+        boolean isMienBac = mienBacIds.contains(toProvinceId);
+
+        int maxFee = 55000; // Mặc định cho toàn quốc (Miền Trung / Miền Nam)
+        if (isHanoi) {
+            maxFee = 22000; 
+        } else if (isMienBac) {
+            maxFee = 35000;
+        }
+
+        // Nếu phí tính theo KM thực tế vượt mức trần của vùng, lấy mức trần
+        if (finalFee > maxFee) {
+            finalFee = maxFee;
+        }
+
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("total_fee", finalFee);
+        result.put("distance_km", Math.round(distanceKm * 10.0) / 10.0);
+        result.put("from_district", fromDistrict);
+        result.put("status", "capped_by_region");
+
+        return result;
     }
 
     // Cận thận: Map.of không nhận null

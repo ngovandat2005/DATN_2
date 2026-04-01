@@ -82,7 +82,7 @@ import java.util.List;
             this.idgiamGia = dh.getGiamGia() != null ? dh.getGiamGia().getId() : null;
 
             this.ngayMua = dh.getNgayMua();
-            this.ngayTao = dh.getNgayTao();
+            this.ngayTao = (dh.getNgayTao() != null) ? dh.getNgayTao() : (dh.getNgayMua() != null ? dh.getNgayMua() : LocalDate.now());
             this.loaiDonHang = dh.getLoaiDonHang();
 
             this.trangThai = dh.getTrangThai();

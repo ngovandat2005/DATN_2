@@ -21,42 +21,40 @@ public class ChatbotService {
     @Value("${gemini.api.key:AIzaSyCip5f5SHPpiX0sE7VjXqGzPSLSAQz50dk}")
     private String geminiApiKey;
 
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public String askGemini(String userMessage, String contextInfo) {
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("YOUR_KEY")) {
-            return "Tính năng Chatbot AI chưa được cấu hình. Vui lòng thêm gemini.api.key vào file cấu hình hệ thống.";
+            return "Tính năng Chatbot AI chưa được cấu hình. Vui lòng thêm gemini.api.key vào file application.properties.";
         }
 
         try {
-            String url = GEMINI_API_URL + geminiApiKey;
+            // Sử dụng gemini-flash-latest để tối ưu giới hạn lượt gọi (Quotas)
+            String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + geminiApiKey.trim();
 
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> content = new HashMap<>();
-            
-            String systemPrompt = "Bạn là trợ lý ảo AI cao cấp của hệ thống cửa hàng giày thể thao chính hãng KingStep. " +
-                                  "Nhiệm vụ của bạn là tư vấn cho khách hàng về các mẫu giày (Nike, Adidas, Puma, v.v.), size giày, chính sách bảo hành, giao hàng. " +
-                                  "Quy tắc trả lời:\n" +
-                                  "1. Luôn xưng 'tôi' và gọi khách là 'bạn' hoặc 'quý khách'.\n" +
-                                  "2. Trả lời ngắn gọn (dưới 150 chữ), chia các ý bằng gạch đầu dòng cho dễ đọc.\n" +
-                                  "3. Địa chỉ: 'Số 10, ngõ 20, Ba Đình, Hà Nội'.\n" +
-                                  "4. Liên hệ: Hotline/Zalo phản ánh dịch vụ: 0987.654.321. Email: support@kingstep.vn.\n" +
-                                  "5. Phí Ship: Nội thành Hà Nội 30.000đ; Ngoại thành và tỉnh khác 50.000đ. Miễn phí ship (Freeship) cho đơn hàng từ 2.000.000đ trở lên.\n" +
-                                  "6. Chính sách: Đổi trả trong 30 ngày. Bảo hành 1 năm.\n" +
-                                  "7. Chỉ tư vấn về giày thể thao và mua sắm.\n\n";
+            // System prompt thiết lập cá tính cho KingStep
+            String systemInstructions = "Bạn là trợ lý ảo AI của hệ thống giày thể thao KingStep (KingStep.vn). " +
+                                       "Nhiệm vụ: Tư vấn giày (Nike, Adidas, Puma, v.v.), size giày, thanh toán. " +
+                                       "QUY TẮC CỐT LÕI: " +
+                                       "1. Trả lời cực kỳ ngắn gọn, tập trung đúng vào câu hỏi của khách. " +
+                                       "2. CHỈ cung cấp địa chỉ, hotline hoặc chính sách đổi trả KHI khách hàng thực sự hỏi về những điều đó. Đừng lặp lại chúng ở mọi câu trả lời. " +
+                                       "3. Xưng 'Shop', gọi khách là 'Quý khách'. " +
+                                       "4. Thông tin cửa hàng (khi được hỏi): Địa chỉ 'Số 10, Ngõ 20, Ba Đình, Hà Nội', Hotline '0987.654.321'. " +
+                                       "5. Chính sách: Miễn phí vận chuyển đơn trên 2.000.000đ. Đổi trả 30 ngày. ";
 
             if (contextInfo != null && !contextInfo.trim().isEmpty()) {
-                systemPrompt += "THÔNG TIN CẬP NHẬT TRỰC TIẾP TỪ HỆ THỐNG (" + contextInfo + "). Hãy sử dụng thông tin này để trả lời nếu khách hàng hỏi về sản phẩm nổi bật hoặc giảm giá.\n\n";
+                systemInstructions += "Bối cảnh hiện tại: " + contextInfo + ". ";
             }
-            String fullMessage = systemPrompt + "Khách hỏi: " + userMessage;
 
-            Map<String, String> part = new HashMap<>();
-            part.put("text", fullMessage);
-
-            content.put("parts", new Object[]{part});
-            requestBody.put("contents", new Object[]{content});
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> part = new HashMap<>();
+            part.put("text", systemInstructions + "\nKhách hỏi: " + userMessage);
+            
+            Map<String, Object> contents = new HashMap<>();
+            contents.put("parts", new Object[]{part});
+            
+            requestBody.put("contents", new Object[]{contents});
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -67,21 +65,26 @@ public class ChatbotService {
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 JsonNode rootNode = objectMapper.readTree(response.getBody());
-                JsonNode candidates = rootNode.path("candidates");
-                if (candidates.isArray() && candidates.size() > 0) {
-                    JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
-                    if (!textNode.isMissingNode()) {
-                        return textNode.asText().replaceAll("(?i)\\*\\*", "");
-                    }
+                JsonNode textNode = rootNode.path("candidates").get(0).path("content").path("parts").get(0).path("text");
+                if (!textNode.isMissingNode()) {
+                    String reply = textNode.asText().replaceAll("(?i)\\*\\*", ""); // Xóa dấu format đậm
+                    return reply.trim();
                 }
             }
-            return "Xin lỗi, tôi không thể lấy được câu trả lời lúc này.";
+            return "Xin lỗi, tôi không thể tìm thấy câu trả lời phù hợp lúc này.";
         } catch (HttpClientErrorException e) {
-            System.err.println("Lỗi gọi Gemini API: " + e.getResponseBodyAsString());
-            return "Lỗi cấu hình AI hoặc API Key bị giới hạn. Vui lòng liên hệ Admin.";
+            String errorBody = e.getResponseBodyAsString();
+            System.err.println("Gemini API Error [" + e.getStatusCode() + "]: " + errorBody);
+            
+            if (e.getStatusCode().value() == 403) {
+                return "Lỗi: API Key Gemini không hợp lệ hoặc đã bị khóa. Vui lòng kiểm tra lại file application.properties.";
+            } else if (e.getStatusCode().value() == 429) {
+                return "Hệ thống AI đang quá tải (vượt giới hạn lượt gọi). Quý khách vui lòng thử lại sau 1 phút!";
+            }
+            return "Dịch vụ AI đang gặp sự cố kết nối (Code: " + e.getStatusCode().value() + ").";
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Hệ thống AI đang bảo trì. Vui lòng thử lại sau vài phút.";
+            System.err.println("Chatbot Service Internal Error: " + e.getMessage());
+            return "Hệ thống AI đang bảo trì kỹ thuật. Chúng tôi sẽ sớm quay trở lại hỗ trợ Quý khách!";
         }
     }
 }

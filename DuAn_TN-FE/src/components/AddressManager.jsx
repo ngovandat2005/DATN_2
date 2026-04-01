@@ -29,6 +29,9 @@ const AddressManager = ({
     const [provinceId, setProvinceId] = useState(null);
     const [districtId, setDistrictId] = useState(null);
     const [wardCode, setWardCode] = useState(null);
+    const [provinceName, setProvinceName] = useState('');
+    const [districtName, setDistrictName] = useState('');
+    const [wardName, setWardName] = useState('');
     const [addressDetail, setAddressDetail] = useState('');
     const [isDefault, setIsDefault] = useState(false);
 
@@ -58,6 +61,9 @@ const AddressManager = ({
             setProvinceId(addr.provinceId || null);
             setDistrictId(addr.districtId || null);
             setWardCode(addr.wardCode || null);
+            setProvinceName(addr.provinceName || '');
+            setDistrictName(addr.districtName || '');
+            setWardName(addr.wardName || '');
             setAddressDetail(addr.addressDetail || '');
             setIsDefault(!!addr.isDefault);
         } else {
@@ -68,6 +74,9 @@ const AddressManager = ({
             setProvinceId(null);
             setDistrictId(null);
             setWardCode(null);
+            setProvinceName('');
+            setDistrictName('');
+            setWardName('');
             setAddressDetail('');
             setIsDefault(savedAddresses.length === 0);
         }
@@ -96,7 +105,11 @@ const AddressManager = ({
             provinceId,
             districtId,
             wardCode,
+            provinceName,
+            districtName,
+            wardName,
             addressDetail,
+            fullAddress: `${addressDetail}, ${wardName}, ${districtName}, ${provinceName}`,
             isDefault
         };
 
@@ -133,6 +146,9 @@ const AddressManager = ({
     const prettyAddress = (addr) => {
         if (!addr) return '';
         if (addr.fullAddress) return addr.fullAddress;
+        if (addr.provinceName && addr.districtName && addr.wardName) {
+            return `${addr.addressDetail}, ${addr.wardName}, ${addr.districtName}, ${addr.provinceName}`;
+        }
         return `${addr.addressDetail} (Mã: ${addr.wardCode}, ${addr.districtId}, ${addr.provinceId})`;
     };
 
@@ -254,9 +270,9 @@ const AddressManager = ({
                             selectedProvince={provinceId}
                             selectedDistrict={districtId}
                             selectedWard={wardCode}
-                            onProvinceChange={setProvinceId}
-                            onDistrictChange={setDistrictId}
-                            onWardChange={setWardCode}
+                            onProvinceChange={(id, name) => { setProvinceId(id); setProvinceName(name); }}
+                            onDistrictChange={(id, name) => { setDistrictId(id); setDistrictName(name); }}
+                            onWardChange={(id, name) => { setWardCode(id); setWardName(name); }}
                         />
                         <input 
                             placeholder="Số nhà, tên đường..." 

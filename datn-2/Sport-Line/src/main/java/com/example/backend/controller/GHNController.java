@@ -108,17 +108,15 @@ public class GHNController {
             return ResponseEntity.ok(result);
         }
 
-        int fee = ghnClientService.tinhPhiVanChuyen(
+        Map<String, Object> result = ghnClientService.tinhPhiVanChuyen(
                 feeRequest.getToDistrict(),
                 feeRequest.getToProvinceId(),
                 feeRequest.getToWardCode(),
                 feeRequest.getWeight(),
-                feeRequest.getInsuranceValue()
+                feeRequest.getInsuranceValue(),
+                feeRequest.getActualDistance()
         );
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("total_fee", fee);
-
+        
         return ResponseEntity.ok(result);
     }
 }
