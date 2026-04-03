@@ -82,7 +82,7 @@ const QRCodePayment = ({
               >
                 {/* Sử dụng ảnh QR Code cố định */}
                 <img 
-                  src="/qr.png" 
+                  src="/qrcode.png" 
                   alt="QR Code thanh toán"
                   style={{ 
                     width: '100%', 
