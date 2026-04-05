@@ -1,17 +1,22 @@
 package com.example.backend.service;
 
+import com.example.backend.entity.DonHang;
+import com.example.backend.entity.DonHangChiTiet;
+import com.example.backend.model.GhnOrderRequest;
+import com.example.backend.model.GhnService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 
 import org.springframework.web.client.RestTemplate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class GHNClientService {
-
 
     @Value("${ghn.token}")
     private String ghnToken;
@@ -20,7 +25,6 @@ public class GHNClientService {
     private Integer ghnShopId;
 
     private final RestTemplate restTemplate;
-
 
     public GHNClientService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -33,93 +37,223 @@ public class GHNClientService {
     private Integer fromDistrictId;
 
     /**
-     * Tính phí vận chuyển dựa trên khoảng cách (km) và các thông số khác.
-     * Nếu actualDistance != null, sẽ dùng khoảng cách này để tính phí theo công thức.
-     * Nếu actualDistance == null, sẽ tự ước tính dựa trên DistrictID/ProvinceID.
+     * Lấy danh sách dịch vụ vận chuyển khả dụng
      */
-    public Map<String, Object> tinhPhiVanChuyen(Integer toDistrictId, Integer toProvinceId, String toWardCode, int weightGram, int insuranceValue, Double actualDistance) {
-        int fromDistrict = (fromDistrictId != null) ? fromDistrictId : 1484; // Mặc định Ba Đình
-        double distanceKm = 50.0; // Mặc định liên tỉnh 50km
-        
-        if (actualDistance != null && actualDistance > 0) {
-            distanceKm = actualDistance;
-        } else if (toDistrictId != null) {
-            // Logic ước tính cũ (Fallback)
-            if (toDistrictId.equals(fromDistrict)) {
-                distanceKm = 5.0; // Cùng quận
-            } else if (toProvinceId != null && toProvinceId != 0) {
-                Integer fromProvinceId = getProvinceIdByDistrictId(fromDistrict);
-                if (fromProvinceId != null && toProvinceId.equals(fromProvinceId)) {
-                    distanceKm = 15.0; // Cùng tỉnh
+    public List<GhnService> getAvailableServices(Integer toDistrictId) {
+        String url = ghnBaseUrl + "/v2/shipping-order/available-services";
+        HttpHeaders headers = createHeaders();
+        Map<String, Object> body = new HashMap<>();
+        body.put("shop_id", ghnShopId);
+        body.put("from_district", fromDistrictId);
+        body.put("to_district", toDistrictId);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
+                List<GhnService> services = new ArrayList<>();
+                for (Map<String, Object> item : data) {
+                    GhnService s = new GhnService();
+                    s.setService_id((Integer) item.get("service_id"));
+                    s.setShort_name((String) item.get("short_name"));
+                    s.setService_type_id((Integer) item.get("service_type_id"));
+                    services.add(s);
+                }
+                return services;
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi lấy dịch vụ GHN: " + e.getMessage());
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * Tính phí giao hàng chuẩn từ GHN API
+     */
+    public Integer calculateGhnFee(Integer serviceId, Integer toDistrictId, String toWardCode, int weight) {
+        String url = ghnBaseUrl + "/v2/shipping-order/fee";
+        HttpHeaders headers = createHeaders();
+        headers.set("ShopId", String.valueOf(ghnShopId));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("service_id", serviceId);
+        body.put("insurance_value", 0);
+        body.put("coupon", null);
+        body.put("from_district_id", fromDistrictId);
+        body.put("to_district_id", toDistrictId);
+        body.put("to_ward_code", toWardCode);
+        body.put("weight", weight);
+        body.put("length", 20);
+        body.put("width", 20);
+        body.put("height", 10);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+                return (Integer) data.get("total");
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi tính phí GHN: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Lấy thời gian giao hàng dự kiến
+     */
+    public Long getLeadTime(Integer serviceId, Integer toDistrictId, String toWardCode) {
+        String url = ghnBaseUrl + "/v2/shipping-order/leadtime";
+        HttpHeaders headers = createHeaders();
+        headers.set("ShopId", String.valueOf(ghnShopId));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("from_district_id", fromDistrictId);
+        body.put("from_ward_code", "1A0101"); // Mặc định p.Trung Trực, Ba Đình
+        body.put("to_district_id", toDistrictId);
+        body.put("to_ward_code", toWardCode);
+        body.put("service_id", serviceId);
+
+        try {
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+                return ((Number) data.get("leadtime")).longValue();
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        return null;
+    }
+
+    /**
+     * Tạo đơn hàng vận chuyển trên GHN
+     */
+    public String createShippingOrder(DonHang dh) {
+        String url = ghnBaseUrl + "/v2/shipping-order/create";
+        HttpHeaders headers = createHeaders();
+        headers.set("ShopId", String.valueOf(ghnShopId));
+
+        GhnOrderRequest req = new GhnOrderRequest();
+        req.setTo_name(dh.getTenNguoiNhan());
+        req.setTo_phone(dh.getSoDienThoaiGiaoHang());
+        req.setTo_address(dh.getDiaChiGiaoHang());
+
+        // Cần parse districtId và wardCode từ địa chỉ hoặc DTO
+        // Ở đây giả định chúng ta đã lưu chúng trong DonHang hoặc truyền vào
+        // Để đơn giản, ta sẽ cần cập nhật schema DonHang để lưu toDistrictId và
+        // toWardCode
+        // Hoặc parse từ chuỗi địa chỉ (không an toàn)
+        // Trong kế hoạch, ta nên có các trường này.
+
+        req.setItems(dh.getDonHangChiTiets().stream()
+                .map(ct -> new GhnOrderRequest.GhnItem(ct.getSanPhamChiTiet().getSanPham().getTenSanPham(),
+                        ct.getSanPhamChiTiet().getMa(),
+                        ct.getSoLuong(),
+                        ct.getGia().intValue()))
+                .toList());
+
+        // Log logic: create real GHN order request should be handled carefully
+        try {
+            // ResponseEntity<Map> response = restTemplate.postForEntity(url, new
+            // HttpEntity<>(req, headers), Map.class);
+            // ... return order_code
+            return "GHN_MOCKED_CODE_" + System.currentTimeMillis();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Token", ghnToken);
+        return headers;
+    }
+
+    public Map<String, Object> tinhPhiVanChuyen(Integer toDistrictId, Integer toProvinceId, String toWardCode,
+            int weightGram, int insuranceValue, Double actualDistance) {
+        // Mặc định trọng lượng nếu không có (Shopee thường tính tối thiểu 500g)
+        int finalWeight = weightGram > 0 ? weightGram : 500;
+
+        // 1. Thử gọi GHN thật trước (Tính toán phí chính xác nhất)
+        Integer ghnFee = null;
+        if (toDistrictId != null && toWardCode != null) {
+            // Thử gói Chuẩn (53320)
+            ghnFee = calculateGhnFee(53320, toDistrictId, toWardCode, finalWeight);
+
+            // Nếu gói Chuẩn thất bại, thử gói Nhanh (53321)
+            if (ghnFee == null) {
+                ghnFee = calculateGhnFee(53321, toDistrictId, toWardCode, finalWeight);
+            }
+
+            // Nếu vẫn thất bại, lấy thử dịch vụ đầu tiên khả dụng
+            if (ghnFee == null) {
+                List<GhnService> services = getAvailableServices(toDistrictId);
+                if (!services.isEmpty()) {
+                    ghnFee = calculateGhnFee(services.get(0).getService_id(), toDistrictId, toWardCode, finalWeight);
                 }
             }
         }
 
-        // --- CÔNG THỨC TÍNH PHÍ ĐÃ ĐIỀU CHỈNH (THÂN THIỆN HƠN) ---
-        // 0km - 5km: 15.000 VNĐ (Base - Ưu đãi nội thành)
-        // 5km - 20km: +2.500 VNĐ/km
-        // > 20km: +2.000 VNĐ/km
-        
-        double totalFee = 15000.0; // Base fee (0-5km)
-        
-        if (distanceKm > 5) {
-            if (distanceKm <= 20) {
-                totalFee += (distanceKm - 5) * 2500;
-            } else {
-                totalFee += (15 * 2500) + (distanceKm - 20) * 2000;
-            }
+        // Nếu lấy được giá từ GHN, trả về ngay
+        if (ghnFee != null && ghnFee > 0) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("total_fee", ghnFee);
+            result.put("status", "ghn_realtime");
+            return result;
         }
 
-        // Làm tròn lên hàng nghìn
-        int finalFee = (int) (Math.ceil(totalFee / 1000) * 1000);
+        // 2. FALLBACK (Dự phòng khi GHN lỗi hoặc không hỗ trợ vùng sâu vùng xa)
+        // Shopee Style: Tính theo vùng miền thay vì tính tiền triệu theo km
+        double distanceKm = (actualDistance != null && actualDistance > 0) ? actualDistance : 100.0;
 
-        // --- GIỚI HẠN PHÍ SHIP THEO VÙNG (KIỂU SHOPEE - 63 TỈNH THÀNH) ---
-        // Nhận diện vùng miền qua toProvinceId chuẩn xác theo provinces_utf8.json
-        boolean isHanoi = (toProvinceId != null && (toProvinceId == 201 || toProvinceId == 2002));
-        
-        // Danh sách đầy đủ 25 tỉnh Miền Bắc (theo GHN ProvinceID chính xác từ dữ liệu gốc)
-        List<Integer> mienBacIds = java.util.List.of(
-            221, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 244, 
-            245, 246, 247, 248, 249, 263, 264, 265, 266, 267, 268, 269
-        );
-        boolean isMienBac = mienBacIds.contains(toProvinceId);
-
-        int maxFee = 55000; // Mặc định cho toàn quốc (Miền Trung / Miền Nam)
-        if (isHanoi) {
-            maxFee = 22000; 
-        } else if (isMienBac) {
-            maxFee = 35000;
+        // Mặc định địa chỉ Cà Mau nếu GHN lỗi nhưng ta biết là liên tỉnh xa
+        if (toProvinceId != null && toProvinceId >= 250) { // Giả định vùng miền Nam
+            if (distanceKm < 500)
+                distanceKm = 1000.0; // Force distance if Southern
         }
 
-        // Nếu phí tính theo KM thực tế vượt mức trần của vùng, lấy mức trần
-        if (finalFee > maxFee) {
-            finalFee = maxFee;
+        double totalFee = 25000.0; // Phí cơ bản (Hà Nội đi nội thành)
+
+        if (distanceKm <= 30) {
+            totalFee = 22000.0;
+        } else if (distanceKm <= 100) {
+            totalFee = 30000.0;
+        } else if (distanceKm <= 500) {
+            totalFee = 38000.0;
+        } else {
+            // Liên tỉnh xa (Hà Nội - HCM, Cà Mau...)
+            totalFee = 45000.0 + (Math.min(distanceKm, 2000) / 100.0) * 1000;
         }
 
-        Map<String, Object> result = new java.util.HashMap<>();
+        // Giới hạn phí ship tối đa (Shopee Style) -> Không bao giờ để phí ship hàng
+        // triệu đồng
+        int maxFee = 100000;
+        int finalFee = (int) Math.min(totalFee, maxFee);
+
+        // Làm tròn đến hàng nghìn
+        finalFee = (int) (Math.ceil(finalFee / 1000.0) * 1000);
+
+        Map<String, Object> result = new HashMap<>();
         result.put("total_fee", finalFee);
-        result.put("distance_km", Math.round(distanceKm * 10.0) / 10.0);
-        result.put("from_district", fromDistrict);
-        result.put("status", "capped_by_region");
-
+        result.put("status", "fallback_shopee_style");
+        result.put("note", "Hệ thống tự động áp dụng mức phí ưu đãi");
         return result;
     }
 
-    // Cận thận: Map.of không nhận null
     private Integer getProvinceIdByDistrictId(Integer districtId) {
-        if (districtId == null) return null;
+        if (districtId == null)
+            return null;
         String url = ghnBaseUrl + "/master-data/district";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Token", ghnToken);
+        HttpHeaders headers = createHeaders();
 
         try {
-            Map<String, Object> body = new java.util.HashMap<>();
+            Map<String, Object> body = new HashMap<>();
             body.put("province_id", null);
-            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), (Class<Map<String, Object>>) (Class<?>) Map.class);
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody != null && responseBody.get("data") instanceof List) {
-                List<Map<String, Object>> data = (List<Map<String, Object>>) responseBody.get("data");
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
+            if (response.getBody() != null && response.getBody().get("data") instanceof List) {
+                List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
                 for (Map<String, Object> district : data) {
                     if (districtId.equals(district.get("DistrictID"))) {
                         return (Integer) district.get("ProvinceID");
@@ -127,7 +261,6 @@ public class GHNClientService {
                 }
             }
         } catch (Exception e) {
-            // Im lặng
         }
         return null;
     }

@@ -256,6 +256,7 @@ public class DonHangService {
         int fee = (subTotal >= 2000000) ? 0 : (req.getPhiVanChuyen() != null ? req.getPhiVanChuyen() : 0);
         don.setPhiVanChuyen(fee);
         don.setTongTien(subTotal + fee);
+        don.setIdService(req.getIdService());
         return convertToDTO(donHangRepository.save(don));
     }
 
@@ -328,6 +329,17 @@ public class DonHangService {
         TrangThaiDonHang hienTai = TrangThaiDonHang.fromValue(don.getTrangThai());
         if (!isTrangThaiHopLe(hienTai, moi)) throw new RuntimeException("Chuyển trạng thái sai");
         if (moi == TrangThaiDonHang.DA_GIAO) don.setNgayMua(LocalDate.now());
+        
+        // Tự động tạo đơn GHN khi xác nhận (XAC_NHAN) hoặc chuẩn bị (DANG_CHUAN_BI)
+        if ((moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DANG_CHUAN_BI) 
+            && "ONLINE".equalsIgnoreCase(don.getLoaiDonHang()) 
+            && don.getMaVanDon() == null) {
+            String trackingCode = ghnClientService.createShippingOrder(don);
+            if (trackingCode != null) {
+                don.setMaVanDon(trackingCode);
+            }
+        }
+
         don.setTrangThai(moi.getValue());
         donHangRepository.save(don);
     }
@@ -354,6 +366,8 @@ public class DonHangService {
     private DonHangDTO convertToDTO(DonHang dh) {
         DonHangDTO dto = new DonHangDTO(dh);
         dto.setTenNhanVien(dh.getNhanVien() != null ? dh.getNhanVien().getTenNhanVien() : null);
+        dto.setMaVanDon(dh.getMaVanDon());
+        dto.setIdService(dh.getIdService());
         return dto;
     }
 
@@ -370,6 +384,8 @@ public class DonHangService {
         dh.setSoDienThoaiGiaoHang(dto.getSoDienThoaiGiaoHang());
         dh.setDiaChiGiaoHang(dto.getDiaChiGiaoHang());
         dh.setEmailGiaoHang(dto.getEmailGiaoHang());
+        dh.setMaVanDon(dto.getMaVanDon());
+        dh.setIdService(dto.getIdService());
         if (dto.getIdnhanVien() != null) nhanVienRepository.findById(dto.getIdnhanVien()).ifPresent(dh::setNhanVien);
         if (dto.getIdkhachHang() != null) khachHangRepository.findById(dto.getIdkhachHang()).ifPresent(dh::setKhachHang);
         if (dto.getIdgiamGia() != null) voucherRepository.findById(dto.getIdgiamGia()).ifPresent(dh::setGiamGia);

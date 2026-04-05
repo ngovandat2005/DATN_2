@@ -69,9 +69,11 @@ import java.util.List;
 
         private String tenNguoiNhan;
 
-
         private List<DonHangChiTietDTO> donHangChiTiets;
 
+        private String maVanDon;
+
+        private Integer idService;
 
         public DonHangDTO(DonHang dh) {
             if (dh == null) return;
@@ -103,6 +105,8 @@ import java.util.List;
             this.emailGiaoHang = dh.getEmailGiaoHang();
             this.tenNguoiNhan = dh.getTenNguoiNhan();
             this.phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0;
+            this.maVanDon = dh.getMaVanDon();
+            this.idService = dh.getIdService();
 
 
             if (dh.getDonHangChiTiets() != null) {

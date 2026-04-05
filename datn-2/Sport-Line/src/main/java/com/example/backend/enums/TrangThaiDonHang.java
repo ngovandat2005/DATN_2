@@ -7,7 +7,8 @@ public enum TrangThaiDonHang {
     DANG_GIAO(3),
     DA_GIAO(4),
     DA_HUY(5),
-    TRA_HANG_HOAN_TIEN(6);
+    TRA_HANG_HOAN_TIEN(6),
+    GIAO_HANG_THAT_BAI(7);
 
     private final int value;
 
@@ -36,6 +37,7 @@ public enum TrangThaiDonHang {
             case DA_GIAO -> "Đã giao";
             case DA_HUY -> "Đã hủy";
             case TRA_HANG_HOAN_TIEN -> "Trả hàng / Hoàn tiền";
+            case GIAO_HANG_THAT_BAI -> "Giao hàng thất bại";
         };
     }
 }

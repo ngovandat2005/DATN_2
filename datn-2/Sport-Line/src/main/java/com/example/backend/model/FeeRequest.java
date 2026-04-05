@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class FeeRequest {
     private int serviceTypeId;
+    private Integer serviceId;
     private int insuranceValue;
     private int fromDistrict;
     private int toDistrict;

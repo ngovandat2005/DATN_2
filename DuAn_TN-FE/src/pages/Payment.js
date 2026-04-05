@@ -84,6 +84,11 @@ const Payment = () => {
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
+  // ✅ THÊM: States cho dịch vụ GHN
+  const [ghnServices, setGhnServices] = useState([]);
+  const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [estimatedDate, setEstimatedDate] = useState(null);
+
   // ✅ THÊM: State cho voucher (giống BanHangTaiQuay)
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucherId, setSelectedVoucherId] = useState('');
@@ -512,6 +517,9 @@ const Payment = () => {
     setSelectedDistrict(null);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi tỉnh
+    setGhnServices([]);
+    setSelectedServiceId(null);
+    setEstimatedDate(null);
 
     // Load districts cho province này
     if (provinceId) {
@@ -523,6 +531,9 @@ const Payment = () => {
     setSelectedDistrict(districtId);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi quận
+    setGhnServices([]);
+    setSelectedServiceId(null);
+    setEstimatedDate(null);
 
     // Load wards cho district này
     if (districtId) {
@@ -532,6 +543,58 @@ const Payment = () => {
 
   const handleWardChange = (wardId) => {
     setSelectedWard(wardId);
+  };
+
+  // ✅ THÊM: Fetch dịch vụ GHN
+  const fetchGhnServices = async (districtId) => {
+    if (!districtId) return;
+    try {
+      const response = await fetch(config.getApiUrl(`api/ghn/services?toDistrictId=${districtId}`));
+      if (response.ok) {
+        const services = await response.json();
+        // ✅ SỬA: Chỉ lấy 1 dịch vụ duy nhất để đơn giản hóa giao diện (theo yêu cầu người dùng)
+        // Ưu tiên lấy dịch vụ Chuẩn (service_type_id = 2) nếu có
+        let filteredServices = services || [];
+        if (filteredServices.length > 1) {
+          const standardService = filteredServices.find(s => s.service_type_id === 2 || s.short_name?.includes('Chuẩn'));
+          filteredServices = standardService ? [standardService] : [filteredServices[0]];
+        }
+        
+        // Đổi tên hiển thị cho đồng nhất
+        if (filteredServices.length > 0) {
+          filteredServices[0].short_name = "Giao hàng tiêu chuẩn";
+        }
+
+        setGhnServices(filteredServices);
+
+        // Tự động chọn dịch vụ duy nhất này
+        if (filteredServices.length > 0) {
+          const defaultService = filteredServices[0].service_id;
+          setSelectedServiceId(defaultService);
+          return defaultService;
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy dịch vụ GHN:', error);
+    }
+    return null;
+  };
+
+  // ✅ THÊM: Fetch ngày giao hàng dự kiến
+  const fetchLeadTime = async (serviceId, districtId, wardCode) => {
+    if (!serviceId || !districtId || !wardCode) return;
+    try {
+      const response = await fetch(config.getApiUrl(`api/ghn/leadtime?serviceId=${serviceId}&toDistrictId=${districtId}&toWardCode=${wardCode}`));
+      if (response.ok) {
+        const leadtimeTimestamp = await response.json();
+        if (leadtimeTimestamp) {
+          const date = new Date(leadtimeTimestamp * 1000);
+          setEstimatedDate(date.toLocaleDateString('vi-VN'));
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy ngày giao hàng:', error);
+    }
   };
 
   // ✅ THÊM: Tự động điền thông tin khách hàng và select địa chỉ
@@ -682,11 +745,26 @@ const Payment = () => {
       // Đợi một chút để đảm bảo state đã được cập nhật hoàn toàn
       const timer = setTimeout(() => {
         handleAddressChange();
+        if (selectedServiceId) {
+            fetchLeadTime(selectedServiceId, selectedDistrict, selectedWard);
+        }
       }, 200);
 
       return () => clearTimeout(timer);
     }
-  }, [selectedProvince, selectedDistrict, selectedWard]);
+  }, [selectedProvince, selectedDistrict, selectedWard, selectedServiceId]);
+
+  // ✅ THÊM: Tự động fetch dịch vụ GHN khi Quận/Huyện thay đổi
+  useEffect(() => {
+    if (selectedDistrict) {
+      console.log('🚚 Quận/Huyện thay đổi -> Fetching GHN services cho:', selectedDistrict);
+      fetchGhnServices(selectedDistrict);
+    } else {
+      setGhnServices([]);
+      setSelectedServiceId(null);
+      setEstimatedDate(null);
+    }
+  }, [selectedDistrict]);
 
   // ✅ THÊM: Function xử lý voucher (TÍNH TOÁN GIẢM GIÁ NGAY KHI CHỌN)
   const handleVoucherChange = async (voucherId) => {
@@ -773,7 +851,8 @@ const Payment = () => {
         toWardCode: toWardCode,
         weight: weight,
         insuranceValue: insuranceValue,
-        actualDistance: distance // ✅ THÊM: Gửi khoảng cách thực tế
+        serviceId: selectedServiceId, // ✅ THÊM: Gửi serviceId đã chọn
+        actualDistance: distance 
       };
 
       const response = await fetch(config.getApiUrl('api/ghn/calculate-fee'), {
@@ -1592,6 +1671,7 @@ const Payment = () => {
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
         diaChiGiaoHang: customerAddress,
+        idService: selectedServiceId, // ✅ THÊM: Gửi idService
         loaiDonHang: 'online', 
         trangThai: 0 // Chờ xác nhận / Chờ thanh toán
       };
@@ -1860,6 +1940,57 @@ const Payment = () => {
                 {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
               </div>
             </div>
+          </div>
+
+          {/* ✅ THÊM: Khối chọn phương thức vận chuyển (Shopee Style) */}
+          <div className="gx-payment-shipping-card gx-payment-card">
+            <div className="gx-payment-card-header">
+              <span className="gx-payment-card-title">🚚 Phương thức vận chuyển</span>
+            </div>
+            
+            {ghnServices && ghnServices.length > 0 ? (
+              <div className="gx-payment-shipping-list">
+                {ghnServices.map((service) => (
+                  <label 
+                    key={service.service_id} 
+                    className={`gx-payment-shipping-item ${selectedServiceId === service.service_id ? 'active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="shippingService"
+                      value={service.service_id}
+                      checked={selectedServiceId === service.service_id}
+                      onChange={() => setSelectedServiceId(service.service_id)}
+                      style={{ display: 'none' }}
+                    />
+                    <div className="gx-payment-shipping-info">
+                      <div className="gx-payment-shipping-name">
+                        {service.short_name || 'Giao hàng tiêu chuẩn'}
+                      </div>
+                      {estimatedDate && selectedServiceId === service.service_id && (
+                        <div className="gx-payment-shipping-date">
+                          Giao hàng dự kiến: <strong>{estimatedDate}</strong>
+                        </div>
+                      )}
+                    </div>
+                    <div className="gx-payment-shipping-fee">
+                      {selectedServiceId === service.service_id && shippingFee > 0 ? shippingFee.toLocaleString() + '₫' : '---'}
+                    </div>
+                    {selectedServiceId === service.service_id && (
+                      <div className="gx-payment-shipping-check">✓</div>
+                    )}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="gx-payment-no-shipping">
+                {selectedDistrict ? 'Đang lấy thông tin vận chuyển...' : 'Vui lòng chọn địa chỉ để xem phương thức vận chuyển'}
+              </div>
+            )}
+            
+            {shippingFeeLoading && (
+              <div className="gx-payment-shipping-loading">Đang tính phí vận chuyển từ GHN...</div>
+            )}
           </div>
 
           {/* <div className="gx-payment-form-group">
