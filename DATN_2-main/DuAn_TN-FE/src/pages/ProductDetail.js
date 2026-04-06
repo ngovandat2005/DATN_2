@@ -10,6 +10,7 @@ import {
   message,
   Modal,
   App,
+  Upload,
 } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -18,6 +19,7 @@ import { getCustomerId, isLoggedIn } from "../utils/authUtils";
 import config from '../config/config';
 import '../styles/Home.css';
 import { Rate, List, Avatar, Input } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
 
@@ -35,11 +37,17 @@ function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { message } = App.useApp();
-  // ⭐ SẢN PHẨM LIÊN QUAN
+  const [filterRating, setFilterRating] = useState(0); // 0 = tất cả, 1-5 = lọc theo số sao
+  // Thêm state này
+  const [canReview, setCanReview] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false); // đã mua hàng chưa
+  // SẢN PHẨM LIÊN QUAN
   const [relatedProducts, setRelatedProducts] = useState([]);
-  // ⭐ REVIEW
+  const [isSubmitting, setIsSubmitting] = useState(false); // Thêm dòng này
+  const [remainingReviews, setRemainingReviews] = useState(0); // Để hiện số lượt còn lại (nếu muốn)
+  // REVIEW
   const [reviews, setReviews] = useState([]);
-
+  const [fileList, setFileList] = useState([]);
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [cartItems, setCartItems] = useState([]); // ✅ THÊM: Theo dõi giỏ hàng để tính tồn kho thực tế
@@ -49,6 +57,31 @@ function ProductDetail() {
   // ✅ THÊM: Lấy ID khách hàng từ localStorage
   const customerId = getCustomerId();
 
+  const filteredReviews = reviews.filter(review => {
+    if (filterRating === 0) return true;           // Hiển thị tất cả
+    return review.soSao === filterRating;          // Lọc theo số sao chính xác
+  });
+
+  // Kiểm tra xem khách hàng đã mua sản phẩm này chưa (Trạng thái Đã giao - 4)
+  const checkPurchaseStatus = async () => {
+    if (!isLoggedIn() || !customerId || !id) return;
+    try {
+      const res = await axios.get(config.getApiUrl(`api/donhang/check-danh-gia`), {
+        params: { idKhachHang: customerId, idSanPham: id }
+      });
+
+      // Sửa ở đây: res.data bây giờ là Object { canReview: ..., remainingReviews: ... }
+      setCanReview(res.data.canReview);
+      setRemainingReviews(res.data.remainingReviews);
+    } catch (err) {
+      console.error("Lỗi check review:", err);
+    }
+  };
+  useEffect(() => {
+
+
+    checkPurchaseStatus();
+  }, [customerId, id]);
   // Lấy chi tiết sản phẩm và biến thể từ API
   useEffect(() => {
     let isMounted = true; // Phòng trường hợp người dùng click chuyển trang liên tục
@@ -118,8 +151,8 @@ function ProductDetail() {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // ✅ SỬA: Dùng config.getApiUrl để trỏ đúng về port 8080
-        const res = await axios.get(`http://localhost:8080/api/danh-gia/san-pham/${id}`);
+        // Dùng config.getApiUrl để đồng bộ port và domain
+        const res = await axios.get(config.getApiUrl(`api/danh-gia/san-pham/${id}`));
         setReviews(res.data);
       } catch (err) {
         console.error("Lỗi khi load đánh giá:", err);
@@ -130,7 +163,7 @@ function ProductDetail() {
       fetchReviews();
     }
   }, [id]);
-  // ⭐ LẤY SẢN PHẨM KHÁC (THÊM NGAY DƯỚI ĐÂY)
+  //  LẤY SẢN PHẨM KHÁC  
   useEffect(() => {
     const loadProducts = async () => {
       try {
@@ -405,82 +438,85 @@ function ProductDetail() {
 
   // Hàm lấy ảnh từ biến thể - sử dụng cùng logic như admin
   // Thay thế hàm getProductImage cũ của bạn bằng hàm này
-  // Thay thế hàm getProductImage cũ bằng hàm này
-  // Thay thế hàm getProductImage cũ bằng hàm này
+
   const getProductImage = (data) => {
-    if (!data) return '/logo.png'; // Ảnh mặc định nếu không có dữ liệu
+    // 1. Kiểm tra nếu data hoặc thuộc tính ảnh không tồn tại
+    const rawImages = data?.hinhAnh || data?.images;
 
-    // 1. Lấy chuỗi hình ảnh từ object
-    // Ưu tiên lấy hinhAnh của biến thể (currentVariant), sau đó đến images của sản phẩm gốc (product)
-    let rawImages = data.hinhAnh || data.images || "";
-
-    if (!rawImages) return '/logo.png'; // Ảnh mặc định nếu trường hình ảnh trống
-
-    // 2. Xử lý nếu dữ liệu là mảng hoặc chuỗi JSON hoặc chuỗi phân cách bởi dấu phẩy
-    let firstImage = "";
-    if (Array.isArray(rawImages)) {
-      firstImage = rawImages[0];
-    } else if (typeof rawImages === 'string') {
-      if (rawImages.startsWith('[')) {
-        try {
-          const imagesArray = JSON.parse(rawImages);
-          firstImage = imagesArray[0];
-        } catch (e) {
-          firstImage = rawImages.split(',')[0].trim();
-        }
-      } else {
-        firstImage = rawImages.split(',')[0].trim();
-      }
+    if (!rawImages) {
+      // Trả về một link ảnh mẫu từ internet để test xem UI có lên không
+      return "https://via.placeholder.com/150?text=No+Image";
     }
 
-    if (!firstImage) return '/logo.png';
+    let fileName = "";
+    try {
+      // 2. Xử lý nếu là mảng hoặc chuỗi JSON
+      if (Array.isArray(rawImages)) {
+        fileName = rawImages[0];
+      } else if (typeof rawImages === 'string') {
+        const parsed = rawImages.startsWith('[') ? JSON.parse(rawImages) : rawImages.split(',');
+        fileName = Array.isArray(parsed) ? parsed[0] : parsed;
+      }
+    } catch (e) {
+      fileName = String(rawImages).split(',')[0];
+    }
 
-    // 3. Cắt lấy tên file cuối cùng (loại bỏ C:\path\...)
-    const fileName = firstImage.split('\\').pop().split('/').pop();
-
-    // 4. Trả về URL tuyệt đối qua Port 8080 (ví dụ: http://localhost:8080/images/giay.jpg)
-    return config.getApiUrl(`images/${fileName}`);
+    // 3. Làm sạch tên file và nối với URL API
+    const cleanName = fileName?.replace(/^.*[\\\/]/, '').trim();
+    return cleanName ? config.getApiUrl(`images/${cleanName}`) : "https://via.placeholder.com/150";
   };
   const handleSubmitReview = async () => {
-    // 1. Kiểm tra đăng nhập
     if (!isLoggedIn()) {
       return Swal.fire("Thông báo", "Vui lòng đăng nhập để đánh giá!", "warning");
     }
-
-    // 2. Kiểm tra customerId (Tránh lỗi 400 id must not be null)
-    if (!customerId) {
-      console.error("Lỗi: customerId lấy từ authUtils bị null");
-      return message.error("Không tìm thấy thông tin khách hàng. Vui lòng đăng nhập lại!");
+    if (!newReview.trim()) {
+      return message.warning("Nội dung đánh giá không được để trống!");
     }
 
-    // 3. Kiểm tra nội dung
-    if (!newReview || newReview.trim() === "") {
-      return message.warning("Vui lòng nhập nội dung bình luận!");
-    }
+    // 1. Chặn người dùng bấm liên tiếp (Spam)
+    setIsSubmitting(true);
 
-    // 4. Chuẩn bị Payload (ép kiểu số để chắc chắn)
-    const reviewPayload = {
-      idKhachHang: Number(customerId),
-      idSanPham: Number(id),
-      soSao: newRating,
-      binhLuan: newReview.trim()
-    };
+    const formData = new FormData();
+    formData.append("idKhachHang", customerId);
+    formData.append("idSanPham", id);
+    formData.append("soSao", newRating);
+    formData.append("binhLuan", newReview.trim());
+    fileList.forEach(file => {
+      if (file.originFileObj) {
+        formData.append("images", file.originFileObj);
+      }
+    });
 
     try {
-      // Gọi API (Đảm bảo URL port 8080)
-      await axios.post("http://localhost:8080/api/danh-gia/them", reviewPayload);
+      const response = await axios.post(config.getApiUrl("api/danh-gia/them"), formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
 
-      message.success("Cảm ơn bạn đã đánh giá!");
-      setNewReview("");
-      setNewRating(5);
+      if (response.status === 200 || response.status === 201) {
+        message.success("Cảm ơn bạn đã đánh giá sản phẩm!");
 
-      // 5. Load lại danh sách đánh giá sau khi thêm thành công
-      const res = await axios.get(`http://localhost:8080/api/danh-gia/san-pham/${id}`);
-      setReviews(res.data);
+        // Xóa trắng form
+        setNewReview("");
+        setFileList([]);
+        setNewRating(5);
+
+        // 2. Load lại danh sách review mới nhất
+        const resReviews = await axios.get(config.getApiUrl(`api/danh-gia/san-pham/${id}`));
+        setReviews(resReviews.data);
+
+        // 3. QUAN TRỌNG: Gọi lại hàm check quyền đánh giá
+        // Hàm này sẽ cập nhật lại setCanReview(false) nếu đã hết lượt
+        if (typeof checkPurchaseStatus === 'function') {
+          await checkPurchaseStatus();
+        }
+      }
     } catch (error) {
-      console.error("Lỗi gửi đánh giá:", error.response?.data);
-      const backendError = error.response?.data;
-      message.error(typeof backendError === 'string' ? backendError : "Không thể gửi đánh giá!");
+      console.error("Lỗi khi gửi đánh giá:", error);
+      message.error(error.response?.data?.message || "Không thể gửi đánh giá, vui lòng thử lại!");
+    } finally {
+      // Mở khóa nút bấm (chỉ khi có lỗi mới cần bấm lại, 
+      // nếu thành công thì canReview đã về false và form bị ẩn)
+      setIsSubmitting(false);
     }
   };
   // ✅ THÊM: Helper function để xác định giá hiển thị
@@ -499,7 +535,67 @@ function ProductDetail() {
       hasDiscount
     };
   };
+  // ===== FIX ẢNH REVIEW + ANTI CRASH =====
+  // Thay thế hàm getReviewImages bằng hàm này
+  const getReviewImages = (danhSachAnh) => {
+    if (!danhSachAnh) {
+      console.log("RAW danhSachAnh:", danhSachAnh);
+      return [];
+    }
 
+    try {
+      console.log("🔍 RAW danhSachAnh:", danhSachAnh);
+
+      let images = [];
+
+      if (typeof danhSachAnh === "string") {
+        const trimmed = danhSachAnh.trim();
+
+        // Nếu là JSON array
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+          images = JSON.parse(trimmed);
+        }
+        // Nếu là chuỗi tên file (có thể có nhiều file cách nhau bởi dấu phẩy hoặc chỉ 1 file)
+        else {
+          // Tách theo dấu phẩy nếu có
+          images = trimmed.split(",")
+            .map(name => name.trim())
+            .filter(name => name.length > 0);
+        }
+      } else if (Array.isArray(danhSachAnh)) {
+        images = danhSachAnh;
+      }
+
+      console.log("✅ PARSED images:", images);
+      return images;
+    } catch (e) {
+      console.error("❌ Lỗi parse danhSachAnh:", e);
+      return [];
+    }
+  };
+
+  // Hàm build URL giữ nguyên (hoặc dùng phiên bản này để ngắn gọn hơn)
+  const buildReviewImageUrl = (img) => {
+    if (!img) return "";
+
+    const fileName = String(img)
+      .replace(/\\/g, "/")
+      .split("/")
+      .pop()
+      .trim();
+
+    const url = `${window.location.origin}/review-images/${fileName}`;
+    console.log("🖼️ Built Review URL:", url);
+    return url;
+  };
+  const formatDate = (date) => {
+    if (!date) return "Vừa xong";
+    try {
+      return new Date(date).toLocaleString("vi-VN");
+    } catch {
+      return "Vừa xong";
+    }
+  };
   // Hiển thị loading
   if (loading) {
     return (
@@ -732,62 +828,213 @@ function ProductDetail() {
         </Row>
 
         {/* ⭐ PHẦN ĐÁNH GIÁ */}
-        <div className="product-review-section">
+        {/* ⭐ PHẦN ĐÁNH GIÁ */}
+        <div className="product-review-section" style={{ marginTop: 50, borderTop: '1px solid #eee', paddingTop: 30 }}>
+          <Title level={3}>Đánh giá từ khách hàng ({reviews.length})</Title>
+          {/* Tiêu đề + Bộ lọc sao */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
 
-          <Title level={3}>Đánh giá sản phẩm</Title>
 
-          {/* FORM REVIEW */}
-          <div className="review-form">
-
-            <div style={{ marginBottom: 10 }}>
-              <span>Đánh giá của bạn: </span>
-              <Rate value={newRating} onChange={setNewRating} />
+            <div>
+              <Text strong style={{ marginRight: 8 }}>Lọc theo sao: </Text>
+              <Button.Group>
+                <Button
+                  type={filterRating === 0 ? "primary" : "default"}
+                  onClick={() => setFilterRating(0)}
+                >
+                  Tất cả
+                </Button>
+                {[5, 4, 3, 2, 1].map(star => (
+                  <Button
+                    key={star}
+                    type={filterRating === star ? "primary" : "default"}
+                    onClick={() => setFilterRating(star)}
+                    style={{ minWidth: 50 }}
+                  >
+                    {star} <Rate disabled value={1} count={1} style={{ fontSize: 12, marginLeft: 4 }} />
+                  </Button>
+                ))}
+              </Button.Group>
             </div>
-
-            <TextArea
-              rows={3}
-              placeholder="Viết đánh giá của bạn..."
-              value={newReview}
-              onChange={(e) => setNewReview(e.target.value)}
-            />
-
-            <Button
-              type="primary"
-              style={{ marginTop: 10 }}
-              onClick={handleSubmitReview}
-            >
-              Gửi đánh giá
-            </Button>
-
           </div>
+          {/* FORM REVIEW - Chỉ hiển thị khi đã đăng nhập VÀ đã mua hàng */}
+          {isLoggedIn() ? (
+            canReview ? (
+              /* === FORM REVIEW BÌNH THƯỜNG === */
+              <div className="review-form" style={{ marginBottom: 40, padding: 20, background: '#f9f9f9', borderRadius: 8 }}>
+                <div style={{ marginBottom: 10 }}>
+                  <Text strong>Đánh giá của bạn: </Text>
+                  <Rate value={newRating} onChange={setNewRating} />
+                </div>
+
+                <TextArea
+                  rows={3}
+                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
+                  value={newReview}
+                  onChange={(e) => setNewReview(e.target.value)}
+                  style={{ borderRadius: 6, marginBottom: 15 }}
+                />
+
+                <div style={{ marginBottom: 15 }}>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                    Thêm hình ảnh thực tế (tối đa 5 ảnh):
+                  </Text>
+                  <Upload
+                    listType="picture-card"
+                    fileList={fileList}
+                    onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                    beforeUpload={() => false}
+                    multiple={true}
+                    accept="image/*"
+                  >
+                    {fileList.length >= 5 ? null : (
+                      <div>
+                        <PlusOutlined />
+                        <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                      </div>
+                    )}
+                  </Upload>
+                </div>
+
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={handleSubmitReview}
+                  // Thêm 2 thuộc tính quan trọng này để chặn spam
+                  loading={isSubmitting}
+                  disabled={isSubmitting || !newReview.trim()}
+                  style={{
+                    backgroundColor: '#000',
+                    borderColor: '#000',
+                    height: '45px',
+                    padding: '0 40px',
+                    borderRadius: 6
+                  }}
+                >
+                  {isSubmitting ? "Đang gửi..." : "Gửi đánh giá ngay"}
+                </Button>
+              </div>
+            ) : (
+              /* === THÔNG BÁO CHƯA ĐƯỢC REVIEW === */
+              <div style={{
+                marginBottom: 40,
+                padding: 20,
+                background: hasPurchased ? '#e6f7ff' : '#fff7e6',
+                border: hasPurchased ? '1px solid #91d5ff' : '1px solid #ffe58f',
+                borderRadius: 8,
+                textAlign: 'center'
+              }}>
+                <Text strong style={{ fontSize: 16 }}>
+                  {hasPurchased
+                    ? "Hệ thống đã ghi nhận đơn hàng của bạn. Vui lòng đợi trạng thái đơn hàng chuyển sang 'Hoàn thành' để đánh giá."
+                    : "Bạn cần mua sản phẩm này trước khi có thể viết đánh giá."
+                  }
+                </Text>
+
+                {!hasPurchased && (
+                  <div style={{ marginTop: 12 }}>
+                    <Button type="primary" onClick={() => navigate('/')}>
+                      Về trang chủ mua hàng
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )
+          ) : (
+            /* Chưa đăng nhập */
+            <div style={{ marginBottom: 30, padding: 15, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 4 }}>
+              <Text>
+                Bạn cần <a onClick={() => navigate('/login')} style={{ fontWeight: 'bold' }}>đăng nhập</a> để gửi đánh giá.
+              </Text>
+            </div>
+          )}
 
           {/* DANH SÁCH REVIEW */}
-          {/* DANH SÁCH REVIEW - Tìm đến dòng này trong code của bạn */}
           <List
-            itemLayout="horizontal"
-            dataSource={reviews}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  /* SỬA TẠI ĐÂY: Đổi hoTen thành tenKhachHang */
-                  avatar={<Avatar>{item.khachHang?.tenKhachHang ? item.khachHang.tenKhachHang[0] : "U"}</Avatar>}
-                  title={
-                    <div>
-                      {/* SỬA TẠI ĐÂY: Đổi hoTen thành tenKhachHang */}
-                      <Text strong>{item.khachHang?.tenKhachHang || "Người dùng"}</Text>
-                      <Rate disabled value={item.soSao} style={{ marginLeft: 10, fontSize: 12 }} />
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 11 }}>
-                        {item.ngayDanhGia ? new Date(item.ngayDanhGia).toLocaleString('vi-VN') : "Vừa xong"}
-                      </Text>
-                    </div>
-                  }
-                  description={item.binhLuan}
-                />
-              </List.Item>
-            )}
-          />
+            dataSource={filteredReviews}     // ← dùng filteredReviews
+            locale={{
+              emptyText: filterRating === 0
+                ? "Chưa có đánh giá nào cho sản phẩm này."
+                : `Chưa có đánh giá ${filterRating} sao nào.`
+            }}
+            renderItem={(item) => {
+              console.log("RAW:", item.danhSachAnh);
 
+              const images = getReviewImages(item.danhSachAnh);
+
+              console.log("PARSED:", images);
+
+              return (
+                <List.Item style={{ padding: '20px 0', display: 'block' }}>
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar
+                        src={item.khachHang?.hinhAnh}
+                        style={{ backgroundColor: '#1890ff' }}
+                      >
+                        {item.khachHang?.tenKhachHang
+                          ? item.khachHang.tenKhachHang[0].toUpperCase()
+                          : "U"}
+                      </Avatar>
+                    }
+
+                    title={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Text strong>
+                          {item.khachHang?.tenKhachHang || "Khách hàng"}
+                        </Text>
+                        <Rate disabled value={item.soSao} style={{ fontSize: 12 }} />
+                      </div>
+                    }
+
+                    description={
+                      <div>
+                        {/* Nội dung */}
+                        <div style={{ marginTop: 6 }}>{item.binhLuan}</div>
+
+                        {/* ===== ẢNH REVIEW ===== */}
+                        {images.length > 0 && (
+                          <div style={{ marginTop: 10 }}>
+                            <Image.PreviewGroup>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {images.map((img, index) => {
+                                  const url = buildReviewImageUrl(img);
+                                  console.log("🖼️ Render image with URL:", url);
+                                  return (
+                                    <Image
+                                      key={index}
+                                      src={url}
+                                      width={100}
+                                      height={100}
+                                      style={{
+                                        objectFit: 'cover',
+                                        borderRadius: 8,
+                                        border: '1px solid #ddd'
+                                      }}
+                                      fallback="https://via.placeholder.com/100?text=Load+Error"
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </Image.PreviewGroup>
+                          </div>
+                        )}
+
+
+
+                        {/* ===== THỜI GIAN ===== */}
+                        <div style={{ marginTop: 8 }}>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {formatDate(item.ngayDanhGia)}
+                          </Text>
+                        </div>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
+          />
         </div>
         {/* ⭐ SẢN PHẨM KHÁC */}
         <div className="related-products" style={{ marginTop: '40px' }}>
