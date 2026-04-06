@@ -91,7 +91,19 @@ export default function KichThuocPage() {
     });
   };
 
-  const handleRestore = (id) => {
+  const handleRestore = async (id) => {
+    const result = await Swal.fire({
+      title: 'Xác nhận khôi phục kích thước này?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     fetch(`http://localhost:8080/api/kich-thuoc/khoi-phuc/${id}`, { method: 'PUT' })
       .then(res => { if (!res.ok) throw new Error(); })
       .then(() => {
@@ -166,7 +178,21 @@ export default function KichThuocPage() {
     showModal();
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
+    const actionText = editingItem ? "Cập nhật" : "Thêm mới";
+    const result = await Swal.fire({
+      title: `Xác nhận ${actionText.toLowerCase()} kích thước?`,
+      text: "Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     if (editingItem) {
       // Cập nhật
       fetch(`http://localhost:8080/api/kich-thuoc/update/${editingItem.id}`, {

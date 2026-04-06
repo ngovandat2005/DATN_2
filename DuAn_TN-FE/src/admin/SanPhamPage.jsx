@@ -168,6 +168,20 @@ const SanPhamPage = () => {
   // Xử lý thêm sản phẩm
   const handleAddProduct = async (e) => {
     e.preventDefault();
+    
+    const result = await Swal.fire({
+      title: 'Xác nhận thêm sản phẩm mới?',
+      text: "Vui lòng kiểm tra kỹ thông tin sản phẩm trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1976d2',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     setAddNameError("");
     setLoading(true);
     const data = {
@@ -258,6 +272,20 @@ const SanPhamPage = () => {
 
   const handleEditProduct = async (e) => {
     e.preventDefault();
+
+    const result = await Swal.fire({
+      title: 'Xác nhận cập nhật sản phẩm?',
+      text: "Các thay đổi sẽ được lưu ngay lập tức.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#43a047',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     setEditNameError("");
     setLoading(true);
     const data = {
@@ -701,25 +729,35 @@ const SanPhamPage = () => {
               onSubmit={handleAddProduct}
               style={{ display: "flex", flexDirection: "column", gap: 12 }}
             >
-              <Input
-                required
-                placeholder="Tên sản phẩm"
-                value={addForm.tenSanPham}
-                onChange={(e) => setAddForm((f) => ({ ...f, tenSanPham: e.target.value }))}
-              />
-              <Input
-                placeholder="Mã sản phẩm (Tùy chọn)"
-                value={addForm.ma}
-                onChange={(e) => setAddForm((f) => ({ ...f, ma: e.target.value }))}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Tên sản phẩm <span style={{ color: "red" }}>*</span></label>
+                <Input
+                  required
+                  placeholder="Nhập tên sản phẩm"
+                  value={addForm.tenSanPham}
+                  onChange={(e) => setAddForm((f) => ({ ...f, tenSanPham: e.target.value }))}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm (Tùy chọn)</label>
+                <Input
+                  placeholder="Nhập mã sản phẩm"
+                  value={addForm.ma}
+                  onChange={(e) => setAddForm((f) => ({ ...f, ma: e.target.value }))}
+                />
+              </div>
               {addNameError && <span style={{ color: 'red' }}>{addNameError}</span>}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleMultiImageUpload}
-                style={{ marginBottom: 8 }}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Ảnh sản phẩm</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMultiImageUpload}
+                  style={{ marginBottom: 4 }}
+                />
+              </div>
               {uploadingEditImage && (
                 <div style={{ color: 'blue', fontSize: '14px', marginBottom: 8 }}>
                   ⏳ Đang upload ảnh...
@@ -752,84 +790,107 @@ const SanPhamPage = () => {
               {!addForm.idDanhMuc && (
                 <span style={{ color: "red" }}>Chọn danh mục!</span>
               )}
-              <select
-                required
-                value={addForm.idDanhMuc}
-                onChange={(e) =>
-                  setAddForm((f) => ({
-                    ...f,
-                    idDanhMuc: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">-- Chọn danh mục --</option>
-                {categories.map((dm) => (
-                  <option key={dm.id} value={dm.id}>
-                    {dm.tenDanhMuc}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={addForm.idThuongHieu}
-                onChange={(e) =>
-                  setAddForm((f) => ({
-                    ...f,
-                    idThuongHieu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn thương hiệu</option>
-                {brands.map((th) => (
-                  <option key={th.id} value={th.id}>
-                    {th.tenThuongHieu}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={addForm.idChatLieu}
-                onChange={(e) =>
-                  setAddForm((f) => ({
-                    ...f,
-                    idChatLieu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn chất liệu</option>
-                {materials.map((cl) => (
-                  <option key={cl.id} value={cl.id}>
-                    {cl.tenChatLieu}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={addForm.idXuatXu}
-                onChange={(e) =>
-                  setAddForm((f) => ({
-                    ...f,
-                    idXuatXu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn xuất xứ</option>
-                {origins.map((xx) => (
-                  <option key={xx.id} value={xx.id}>
-                    {xx.tenXuatXu}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Danh mục <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={addForm.idDanhMuc}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      idDanhMuc: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">-- Chọn danh mục --</option>
+                  {categories.map((dm) => (
+                    <option key={dm.id} value={dm.id}>
+                      {dm.tenDanhMuc}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={addForm.trangThai}
-                onChange={(e) =>
-                  setAddForm((f) => ({ ...f, trangThai: e.target.value }))
-                }
-              >
-                <option value={1}>Đang bán</option>
-                <option value={0}>Ngừng bán</option>
-              </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Thương hiệu <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={addForm.idThuongHieu}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      idThuongHieu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn thương hiệu</option>
+                  {brands.map((th) => (
+                    <option key={th.id} value={th.id}>
+                      {th.tenThuongHieu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Chất liệu <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={addForm.idChatLieu}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      idChatLieu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn chất liệu</option>
+                  {materials.map((cl) => (
+                    <option key={cl.id} value={cl.id}>
+                      {cl.tenChatLieu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Xuất xứ <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={addForm.idXuatXu}
+                  onChange={(e) =>
+                    setAddForm((f) => ({
+                      ...f,
+                      idXuatXu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn xuất xứ</option>
+                  {origins.map((xx) => (
+                    <option key={xx.id} value={xx.id}>
+                      {xx.tenXuatXu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Trạng thái</label>
+                <select
+                  value={addForm.trangThai}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, trangThai: e.target.value }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value={1}>Đang bán</option>
+                  <option value={0}>Ngừng bán</option>
+                </select>
+              </div>
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <button
                   type="submit"
@@ -876,24 +937,34 @@ const SanPhamPage = () => {
               onSubmit={handleEditProduct}
               style={{ display: "flex", flexDirection: "column", gap: 12 }}
             >
-              <Input
-                required
-                placeholder="Tên sản phẩm"
-                value={editForm.tenSanPham}
-                onChange={(e) => setEditForm((f) => ({ ...f, tenSanPham: e.target.value }))}
-              />
-              <Input
-                placeholder="Mã sản phẩm"
-                value={editForm.ma}
-                onChange={(e) => setEditForm((f) => ({ ...f, ma: e.target.value }))}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Tên sản phẩm <span style={{ color: "red" }}>*</span></label>
+                <Input
+                  required
+                  placeholder="Nhập tên sản phẩm"
+                  value={editForm.tenSanPham}
+                  onChange={(e) => setEditForm((f) => ({ ...f, tenSanPham: e.target.value }))}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm</label>
+                <Input
+                  placeholder="Nhập mã sản phẩm"
+                  value={editForm.ma}
+                  onChange={(e) => setEditForm((f) => ({ ...f, ma: e.target.value }))}
+                />
+              </div>
               {editNameError && <span style={{ color: 'red' }}>{editNameError}</span>}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleEditImageUpload}
-                style={{ marginBottom: 8 }}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Ảnh sản phẩm</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleEditImageUpload}
+                  style={{ marginBottom: 4 }}
+                />
+              </div>
               {uploadingEditImage && <span>Đang upload ảnh...</span>}
               {editForm.images && (
                 <img
@@ -912,84 +983,107 @@ const SanPhamPage = () => {
               {!editForm.idDanhMuc && (
                 <span style={{ color: "red" }}>Chọn danh mục!</span>
               )}
-              <select
-                required
-                value={editForm.idDanhMuc}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    idDanhMuc: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn danh mục</option>
-                {categories.map((dm) => (
-                  <option key={dm.id} value={dm.id}>
-                    {dm.tenDanhMuc}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={editForm.idThuongHieu}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    idThuongHieu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn thương hiệu</option>
-                {brands.map((th) => (
-                  <option key={th.id} value={th.id}>
-                    {th.tenThuongHieu}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={editForm.idChatLieu}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    idChatLieu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn chất liệu</option>
-                {materials.map((cl) => (
-                  <option key={cl.id} value={cl.id}>
-                    {cl.tenChatLieu}
-                  </option>
-                ))}
-              </select>
-              <select
-                required
-                value={editForm.idXuatXu}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    idXuatXu: e.target.value ? Number(e.target.value) : "",
-                  }))
-                }
-              >
-                <option value="">Chọn xuất xứ</option>
-                {origins.map((xx) => (
-                  <option key={xx.id} value={xx.id}>
-                    {xx.tenXuatXu}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Danh mục <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={editForm.idDanhMuc}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      idDanhMuc: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn danh mục</option>
+                  {categories.map((dm) => (
+                    <option key={dm.id} value={dm.id}>
+                      {dm.tenDanhMuc}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <select
-                value={editForm.trangThai}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, trangThai: e.target.value }))
-                }
-              >
-                <option value={1}>Đang bán</option>
-                <option value={0}>Ngừng bán</option>
-              </select>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Thương hiệu <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={editForm.idThuongHieu}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      idThuongHieu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn thương hiệu</option>
+                  {brands.map((th) => (
+                    <option key={th.id} value={th.id}>
+                      {th.tenThuongHieu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Chất liệu <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={editForm.idChatLieu}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      idChatLieu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn chất liệu</option>
+                  {materials.map((cl) => (
+                    <option key={cl.id} value={cl.id}>
+                      {cl.tenChatLieu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Xuất xứ <span style={{ color: "red" }}>*</span></label>
+                <select
+                  required
+                  value={editForm.idXuatXu}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      idXuatXu: e.target.value ? Number(e.target.value) : "",
+                    }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value="">Chọn xuất xứ</option>
+                  {origins.map((xx) => (
+                    <option key={xx.id} value={xx.id}>
+                      {xx.tenXuatXu}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Trạng thái</label>
+                <select
+                  value={editForm.trangThai}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, trangThai: e.target.value }))
+                  }
+                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                >
+                  <option value={1}>Đang bán</option>
+                  <option value={0}>Ngừng bán</option>
+                </select>
+              </div>
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <button
                   type="submit"

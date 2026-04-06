@@ -19,15 +19,8 @@ import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import Payment from './pages/Payment';
 import OrderDetail from './pages/OrderDetail';
-import VnpayTestInfo from './pages/VnpayTestInfo';
 import CheckPayment from './pages/CheckPayment';
-import DebugInfo from './components/DebugInfo';
-import GHNTestComponent from './components/GHNTestComponent';
 import './styles/App.css';
-import { testConfig } from './utils/testConfig';
-
-// Test config khi app khởi động
-testConfig();
 
 function App() {
   return (
@@ -36,8 +29,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/debug" element={<DebugInfo />} />
-        <Route path="/ghn-test" element={<GHNTestComponent />} />
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route element={<MainLayout />}>
           <Route path="/home" element={<Home />} />
@@ -53,7 +44,6 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/vnpay-test" element={<VnpayTestInfo />} />
           <Route path="/check-payment" element={<CheckPayment />} />
         </Route>
         <Route path="/admin-login" element={<AdminLogin />} />

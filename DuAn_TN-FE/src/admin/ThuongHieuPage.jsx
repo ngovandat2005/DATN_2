@@ -127,7 +127,21 @@ export default function ThuongHieuPage() {
     showModal();
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
+    const actionText = editingItem ? "Cập nhật" : "Thêm mới";
+    const result = await Swal.fire({
+      title: `Xác nhận ${actionText.toLowerCase()} thương hiệu?`,
+      text: "Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     if (editingItem) {
       // Cập nhật
       fetch(`http://localhost:8080/api/thuong-hieu/update/${editingItem.id}`, {
@@ -272,7 +286,19 @@ export default function ThuongHieuPage() {
   };
 
   // Thêm hàm handleRestore
-  const handleRestore = (id) => {
+  const handleRestore = async (id) => {
+    const result = await Swal.fire({
+      title: 'Xác nhận khôi phục thương hiệu này?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     fetch(`http://localhost:8080/api/thuong-hieu/khoi-phuc/${id}`, {
       method: 'PUT',
     })

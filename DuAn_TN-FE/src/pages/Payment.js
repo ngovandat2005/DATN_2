@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Payment.css';
-import { getCustomerId, getCustomerName, getUserInfo, isLoggedIn } from '../utils/authUtils';
+import { getCustomerId, getUserInfo, isLoggedIn } from '../utils/authUtils';
 import config from '../config/config';
-import AddressSelector from '../components/AddressSelector';
+
 import AddressManager from '../components/AddressManager';
 import { parseGHNResponse } from '../utils/ghnUtils';  // ✅ THÊM: Import parseGHNResponse
 
@@ -216,8 +216,7 @@ const Payment = () => {
     }
   }, [addressStorageKey]);
 
-  // ✅ THÊM: Fetch giá khuyến mãi từ API sản phẩm nếu cần
-  const [productPrices, setProductPrices] = useState({});
+
 
   const formatVnd = (value) => {
     const n = Number(value || 0);
@@ -1463,6 +1462,32 @@ const Payment = () => {
     } catch (error) {
       toast.error('Lỗi khi kiểm tra giới hạn đơn hàng: ' + error.message);
       return;
+    }
+
+    // ✅ THÊM: Xác nhận đặt hàng cho COD
+    if (paymentMethod === 'cod') {
+      const isConfirmed = await new Promise((resolve) => {
+        if (window.Swal) {
+          window.Swal.fire({
+            title: 'Xác nhận đặt hàng',
+            text: 'Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Xác nhận đặt hàng',
+            cancelButtonText: 'Hủy'
+          }).then((result) => {
+            resolve(result.isConfirmed);
+          });
+        } else {
+          resolve(window.confirm('Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?'));
+        }
+      });
+
+      if (!isConfirmed) {
+        return;
+      }
     }
 
     setLoading(true);

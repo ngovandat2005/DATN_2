@@ -1,6 +1,5 @@
 package com.example.backend.controller;
 
-
 import com.example.backend.entity.SanPham;
 
 import com.example.backend.service.SanPhamService;
@@ -11,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/api/san-pham")
@@ -33,31 +31,32 @@ public class SanPhamRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
-//    @GetMapping("/id-dm/{id}")
-//    public ResponseEntity<List<SanPham>> getByIdDonHang(@PathVariable Integer id){
-//        return ResponseEntity.ok(sanPhamService.getSanPhamById(id));
-//    }
-//    @GetMapping("/id-th/{id}")
-//    public ResponseEntity<List<SanPham>> getByIdTH(@PathVariable Integer id){
-//        return ResponseEntity.ok(sanPhamService.getThuongHieuById(id));
-//    }
-//    @GetMapping("/id-cl/{id}")
-//    public ResponseEntity<List<SanPham>> getByIdCL(@PathVariable Integer id){
-//        return ResponseEntity.ok(sanPhamService.getChatLieuById(id));
-//    }
-//    @GetMapping("/id-xx/{id}")
-//    public ResponseEntity<List<SanPham>> getByIdXX(@PathVariable Integer id){
-//        return ResponseEntity.ok(sanPhamService.getXuatXuById(id));
-//    }
+
+    // @GetMapping("/id-dm/{id}")
+    // public ResponseEntity<List<SanPham>> getByIdDonHang(@PathVariable Integer
+    // id){
+    // return ResponseEntity.ok(sanPhamService.getSanPhamById(id));
+    // }
+    // @GetMapping("/id-th/{id}")
+    // public ResponseEntity<List<SanPham>> getByIdTH(@PathVariable Integer id){
+    // return ResponseEntity.ok(sanPhamService.getThuongHieuById(id));
+    // }
+    // @GetMapping("/id-cl/{id}")
+    // public ResponseEntity<List<SanPham>> getByIdCL(@PathVariable Integer id){
+    // return ResponseEntity.ok(sanPhamService.getChatLieuById(id));
+    // }
+    // @GetMapping("/id-xx/{id}")
+    // public ResponseEntity<List<SanPham>> getByIdXX(@PathVariable Integer id){
+    // return ResponseEntity.ok(sanPhamService.getXuatXuById(id));
+    // }
     @GetMapping("/bo-loc")
     public ResponseEntity<List<SanPham>> filterSanPham(
             @RequestParam(required = false) Integer idDanhMuc,
             @RequestParam(required = false) Integer idThuongHieu,
             @RequestParam(required = false) Integer idChatLieu,
             @RequestParam(required = false) Integer idXuatXu,
-            @RequestParam(required = false) Integer trangThai
-    ) {
-        List<SanPham> result = sanPhamService.filterSanPham(idDanhMuc, idThuongHieu, idChatLieu, idXuatXu , trangThai);
+            @RequestParam(required = false) Integer trangThai) {
+        List<SanPham> result = sanPhamService.filterSanPham(idDanhMuc, idThuongHieu, idChatLieu, idXuatXu, trangThai);
         return ResponseEntity.ok(result);
     }
 
@@ -88,6 +87,7 @@ public class SanPhamRestController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
     @PutMapping("khoi-phuc/{id}")
     public ResponseEntity<?> restoreSanPham(@PathVariable Integer id) {
         try {
@@ -103,7 +103,9 @@ public class SanPhamRestController {
         return sanPhamService.getDeleted();
     }
 
-
+    // ✅ THÊM: API lấy danh sách sản phẩm có khuyến mãi cho trang chủ
+    @GetMapping("/sp-co-khuyen-mai")
+    public ResponseEntity<List<SanPham>> getSanPhamCoKhuyenMai() {
+        return ResponseEntity.ok(sanPhamService.getSanPhamCoKhuyenMai());
+    }
 }
-
-

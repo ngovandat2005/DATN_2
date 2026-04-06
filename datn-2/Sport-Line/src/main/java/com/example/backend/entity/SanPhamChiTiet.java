@@ -55,4 +55,20 @@ public class SanPhamChiTiet {
 
     @Column(name = "GiaBanGiamGia")
     private Double giaBanGiamGia;
+
+    // Getter thủ công để fallback về giaBan nếu giaBanGiamGia bị null
+    public Double getGiaBanGiamGia() {
+        if (giaBanGiamGia == null || giaBanGiamGia <= 0) {
+            return giaBan;
+        }
+        return giaBanGiamGia;
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void ensureGiaBanGiamGia() {
+        if (giaBanGiamGia == null || giaBanGiamGia <= 0) {
+            giaBanGiamGia = giaBan;
+        }
+    }
 }

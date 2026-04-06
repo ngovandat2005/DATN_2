@@ -55,19 +55,21 @@ public class VoucherDTO {
         }
     }
 
-//    public VoucherDTO(String maVoucher, Integer id, String tenVoucher, String loaiVoucher, String moTa, Integer soLuong, Double donToiThieu, Double giaTri, LocalDateTime ngayBatDau, LocalDateTime ngayKetThuc, Integer trangThai, Boolean isAvailable) {
-//        this.maVoucher = maVoucher;
-//        this.id = id;
-//        this.tenVoucher = tenVoucher;
-//        this.loaiVoucher = loaiVoucher;
-//        this.moTa = moTa;
-//        this.soLuong = soLuong;
-//        this.donToiThieu = donToiThieu;
-//        this.giaTri = giaTri;
-//        this.ngayBatDau = ngayBatDau;
-//        this.ngayKetThuc = ngayKetThuc;
-//        this.trangThai = trangThai;
-//        this.isAvailable = isAvailable;
-//    }
+    // public VoucherDTO(String maVoucher, Integer id, String tenVoucher, String
+    // loaiVoucher, String moTa, Integer soLuong, Double donToiThieu, Double giaTri,
+    // LocalDateTime ngayBatDau, LocalDateTime ngayKetThuc, Integer trangThai,
+    // Boolean isAvailable) {
+    // this.maVoucher = maVoucher;
+    // this.id = id;
+    // this.tenVoucher = tenVoucher;
+    // this.loaiVoucher = loaiVoucher;
+    // this.moTa = moTa;
+    // this.soLuong = soLuong;
+    // this.donToiThieu = donToiThieu;
+    // this.giaTri = giaTri;
+    // this.ngayBatDau = ngayBatDau;
+    // this.ngayKetThuc = ngayKetThuc;
+    // this.trangThai = trangThai;
+    // this.isAvailable = isAvailable;
+    // }
 }
-

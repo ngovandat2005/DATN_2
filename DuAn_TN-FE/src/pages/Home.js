@@ -375,36 +375,36 @@ function Home() {
                 if (variantsResponse.ok) {
                   const variants = await variantsResponse.json();
                   if (variants && variants.length > 0) {
-                    // Tìm giá thấp nhất từ tất cả biến thể (hoặc giá đầu tiên nếu không có giá hợp lệ)
-                    let minPrice = null;
-                    let minDiscountPrice = null;
+                    let minEffectivePrice = null;
+                    let bestGiaBanGoc = null;
+                    let bestGiaBanSauGiam = null;
 
                     for (const variant of variants) {
                       const variantPrice = variant.giaBan;
                       const variantDiscountPrice = variant.giaBanGiamGia;
 
-                      // Chỉ lấy giá > 0
                       if (variantPrice && variantPrice > 0) {
-                        if (minPrice === null || variantPrice < minPrice) {
-                          minPrice = variantPrice;
-                          // Nếu biến thể này có giá giảm, lấy giá giảm
-                          if (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice) {
-                            minDiscountPrice = variantDiscountPrice;
-                          } else {
-                            minDiscountPrice = null;
-                          }
+                        const effectivePrice = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                          ? variantDiscountPrice
+                          : variantPrice;
+
+                        if (minEffectivePrice === null || effectivePrice < minEffectivePrice) {
+                          minEffectivePrice = effectivePrice;
+                          bestGiaBanGoc = variantPrice;
+                          bestGiaBanSauGiam = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                            ? variantDiscountPrice
+                            : null;
                         }
                       }
                     }
 
-                    // Nếu tìm thấy giá hợp lệ, cập nhật vào product
-                    if (minPrice !== null && minPrice > 0) {
+                    if (minEffectivePrice !== null) {
                       return {
                         ...product,
-                        giaBan: minPrice,
-                        giaBanGoc: minPrice,
-                        giaBanGiamGia: minDiscountPrice,
-                        giaBanSauGiam: minDiscountPrice && minDiscountPrice > 0 ? minDiscountPrice : null
+                        giaBan: bestGiaBanGoc,
+                        giaBanGoc: bestGiaBanGoc,
+                        giaBanGiamGia: bestGiaBanSauGiam,
+                        giaBanSauGiam: bestGiaBanSauGiam
                       };
                     }
                   }
@@ -485,32 +485,36 @@ function Home() {
                 if (variantsResponse.ok) {
                   const variants = await variantsResponse.json();
                   if (variants && variants.length > 0) {
-                    let minPrice = null;
-                    let minDiscountPrice = null;
+                    let minEffectivePrice = null;
+                    let bestGiaBanGoc = null;
+                    let bestGiaBanSauGiam = null;
 
                     for (const variant of variants) {
                       const variantPrice = variant.giaBan;
                       const variantDiscountPrice = variant.giaBanGiamGia;
 
                       if (variantPrice && variantPrice > 0) {
-                        if (minPrice === null || variantPrice < minPrice) {
-                          minPrice = variantPrice;
-                          if (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice) {
-                            minDiscountPrice = variantDiscountPrice;
-                          } else {
-                            minDiscountPrice = null;
-                          }
+                        const effectivePrice = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                          ? variantDiscountPrice
+                          : variantPrice;
+
+                        if (minEffectivePrice === null || effectivePrice < minEffectivePrice) {
+                          minEffectivePrice = effectivePrice;
+                          bestGiaBanGoc = variantPrice;
+                          bestGiaBanSauGiam = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                            ? variantDiscountPrice
+                            : null;
                         }
                       }
                     }
 
-                    if (minPrice !== null && minPrice > 0) {
+                    if (minEffectivePrice !== null) {
                       return {
                         ...product,
-                        giaBan: minPrice,
-                        giaBanGoc: minPrice,
-                        giaBanGiamGia: minDiscountPrice,
-                        giaBanSauGiam: minDiscountPrice && minDiscountPrice > 0 ? minDiscountPrice : null
+                        giaBan: bestGiaBanGoc,
+                        giaBanGoc: bestGiaBanGoc,
+                        giaBanGiamGia: bestGiaBanSauGiam,
+                        giaBanSauGiam: bestGiaBanSauGiam
                       };
                     }
                   }
@@ -555,9 +559,69 @@ function Home() {
           if (promotionResponse.ok) {
             const promotionProducts = await promotionResponse.json();
             if (promotionProducts && promotionProducts.length > 0) {
+              // ✅ THÊM: Fetch giá biến thể cho các sản phẩm từ API KM mới
+              const promotionWithPrices = await Promise.all(
+                promotionProducts.map(async (product) => {
+                  try {
+                    const variantsResponse = await fetch(config.getApiUrl(`api/san-pham-chi-tiet/${product.id}`));
+                    if (variantsResponse.ok) {
+                      const variants = await variantsResponse.json();
+                      if (variants && variants.length > 0) {
+                        let minEffectivePrice = null;
+                        let bestGiaBanGoc = null;
+                        let bestGiaBanSauGiam = null;
+
+                        for (const variant of variants) {
+                          const variantPrice = variant.giaBan;
+                          const variantDiscountPrice = variant.giaBanGiamGia;
+
+                          if (variantPrice && variantPrice > 0) {
+                            const effectivePrice = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                              ? variantDiscountPrice
+                              : variantPrice;
+
+                            if (minEffectivePrice === null || effectivePrice < minEffectivePrice) {
+                              minEffectivePrice = effectivePrice;
+                              bestGiaBanGoc = variantPrice;
+                              bestGiaBanSauGiam = (variantDiscountPrice && variantDiscountPrice > 0 && variantDiscountPrice < variantPrice)
+                                ? variantDiscountPrice
+                                : null;
+                            }
+                          }
+                        }
+
+                        if (minEffectivePrice !== null) {
+                          return {
+                            ...product,
+                            giaBan: bestGiaBanGoc,
+                            giaBanGoc: bestGiaBanGoc,
+                            giaBanGiamGia: bestGiaBanSauGiam,
+                            giaBanSauGiam: bestGiaBanSauGiam
+                          };
+                        }
+                      }
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Không thể lấy giá cho sản phẩm ${product.id}:`, error);
+                  }
+                  return product;
+                })
+              );
+
               setOnSaleProducts(prev => {
-                const combined = [...promotionProducts, ...prev];
-                const res = Array.from(new Set(combined.map(a => a.id))).map(id => combined.find(a => a.id === id)).slice(0, 8);
+                const combined = [...promotionWithPrices, ...prev];
+                // Log bỏ trùng lặp và CHỈ GIỮ những sản phẩm thực sự có giảm giá (> 0%)
+                const res = Array.from(new Set(combined.map(a => a.id)))
+                  .map(id => combined.find(a => a.id === id))
+                  .filter(p => {
+                    // Kiểm tra xem có thực sự giảm giá không
+                    const hasDiscount = (p.phanTramGiam && p.phanTramGiam > 0) || 
+                                      (p.giaBanSauGiam && p.giaBanGoc && p.giaBanSauGiam < p.giaBanGoc) ||
+                                      (p.khuyenMai && p.khuyenMai.giaTri > 0);
+                    return hasDiscount;
+                  })
+                  .slice(0, 12); // Tăng lên 12 đôi
+                
                 try {
                     localStorage.setItem('bot_sales', JSON.stringify(res.slice(0, 4).map(p => p.ten || p.tenSanPham)));
                 } catch(e){}
@@ -645,7 +709,7 @@ function Home() {
             {onSaleProducts.length > 0 ? (
               <div className="on-sale-products">
                 <Row gutter={[24, 24]}>
-                  {onSaleProducts.slice(0, 4).map(product => (
+                  {onSaleProducts.map(product => (
                     <Col xs={24} sm={12} md={12} lg={6} key={product.id || Math.random()}>
                       <ProductCard product={product} />
                     </Col>

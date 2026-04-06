@@ -195,15 +195,31 @@ function ProductDetail() {
   });
 
 
-  // Tự động chọn màu và size đầu tiên có sẵn
+  // Tự động chọn biến thể có giá tốt nhất (hoặc đầu tiên nếu không có biến thể)
   useEffect(() => {
-    if (availableColors.length > 0 && !selectedColor) {
-      setSelectedColor(availableColors[0].tenMauSac);
+    if (variants && variants.length > 0 && !selectedColor && !selectedSize) {
+      let bestVariant = variants[0];
+      let minEffectivePrice = Infinity;
+
+      for (const v of variants) {
+        const originalPrice = v.giaBan || 0;
+        const discountedPrice = v.giaBanGiamGia || 0;
+        const effectivePrice = (discountedPrice > 0 && discountedPrice < originalPrice) 
+          ? discountedPrice 
+          : originalPrice;
+
+        if (effectivePrice > 0 && effectivePrice < minEffectivePrice) {
+          minEffectivePrice = effectivePrice;
+          bestVariant = v;
+        }
+      }
+
+      if (bestVariant) {
+        setSelectedColor(bestVariant.mauSac?.tenMauSac);
+        setSelectedSize(bestVariant.kichThuoc?.tenKichThuoc);
+      }
     }
-    if (availableSizes.length > 0 && !selectedSize) {
-      setSelectedSize(availableSizes[0].tenKichThuoc);
-    }
-  }, [availableColors, availableSizes, selectedColor, selectedSize]);
+  }, [variants, selectedColor, selectedSize]);
 
   // Xác định biến thể hiện tại dựa trên các lựa chọn
   useEffect(() => {
@@ -583,37 +599,42 @@ function ProductDetail() {
                 <span>Chọn màu: </span>
 
                 {availableColors.map((color) => {
+                  // ✅ KIỂM TRA: Màu này có khớp với size đang chọn không?
+                  const isCompatible = !selectedSize || variants.some(v => 
+                    v.mauSac?.tenMauSac === color.tenMauSac && 
+                    v.kichThuoc?.tenKichThuoc === selectedSize
+                  );
 
                   return (
                     <Button
                       key={color.id}
+                      disabled={!isCompatible}
                       type={
                         selectedColor === color.tenMauSac ? "primary" : "default"
                       }
                       style={{
                         marginRight: 8,
                         background:
-                          color.tenMauSac &&
-                            color.tenMauSac.toLowerCase() !== "trắng"
-                            ? color.tenMauSac
-                            : undefined,
+                          !isCompatible 
+                            ? '#f5f5f5' 
+                            : (color.tenMauSac && color.tenMauSac.toLowerCase() !== "trắng"
+                              ? color.tenMauSac
+                              : undefined),
                         color:
-                          color.tenMauSac &&
-                            ["đen", "black"].includes(color.tenMauSac.toLowerCase())
-                            ? "#fff"
-                            : "#222",
+                          !isCompatible
+                            ? '#bfbfbf'
+                            : (color.tenMauSac && ["đen", "black"].includes(color.tenMauSac.toLowerCase())
+                              ? "#fff"
+                              : "#222"),
                         border:
                           selectedColor === color.tenMauSac
                             ? "2px solid #1890ff"
                             : undefined,
+                        opacity: isCompatible ? 1 : 0.5,
+                        cursor: isCompatible ? 'pointer' : 'not-allowed'
                       }}
                       onClick={() => {
                         setSelectedColor(color.tenMauSac);
-                        setTimeout(() => {
-                          if (!selectedSize) {
-                            message.info("Vui lòng chọn đủ size!");
-                          }
-                        }, 0);
                       }}
                     >
                       {color.tenMauSac}
@@ -623,24 +644,34 @@ function ProductDetail() {
               </div>
               <div style={{ marginBottom: 8 }}>
                 <span>Chọn size: </span>
-                {availableSizes.map((size) => (
-                  <Button
-                    key={size.id}
-                    type={
-                      selectedSize === size.tenKichThuoc ? "primary" : "default"
-                    }
-                    style={{
-                      marginRight: 8,
-                      border:
-                        selectedSize === size.tenKichThuoc
-                          ? "2px solid #1890ff"
-                          : undefined,
-                    }}
-                    onClick={() => setSelectedSize(size.tenKichThuoc)}
-                  >
-                    {size.tenKichThuoc}
-                  </Button>
-                ))}
+                {availableSizes.map((size) => {
+                  // ✅ KIỂM TRA: Size này có khớp với màu đang chọn không?
+                  const isCompatible = !selectedColor || variants.some(v => 
+                    v.kichThuoc?.tenKichThuoc === size.tenKichThuoc && 
+                    v.mauSac?.tenMauSac === selectedColor
+                  );
+
+                  return (
+                    <Button
+                      key={size.id}
+                      disabled={!isCompatible}
+                      type={
+                        selectedSize === size.tenKichThuoc ? "primary" : "default"
+                      }
+                      style={{
+                        marginRight: 8,
+                        border:
+                          selectedSize === size.tenKichThuoc
+                            ? "2px solid #1890ff"
+                            : undefined,
+                        opacity: isCompatible ? 1 : 0.5,
+                      }}
+                      onClick={() => setSelectedSize(size.tenKichThuoc)}
+                    >
+                      {size.tenKichThuoc}
+                    </Button>
+                  );
+                })}
               </div>
               <div style={{ marginBottom: 8 }}>
                 <span>Số lượng: </span>

@@ -117,7 +117,21 @@ export default function KhachHangPage() {
     showModal();
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
+    const actionText = editingCustomer ? "Cập nhật" : "Thêm mới";
+    const result = await Swal.fire({
+      title: `Xác nhận ${actionText.toLowerCase()} khách hàng?`,
+      text: "Vui lòng kiểm tra kỹ thông tin khách hàng trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1677ff',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     // Map giá trị đúng với backend
     const dataSend = {
       ...values,
@@ -159,7 +173,7 @@ export default function KhachHangPage() {
         })
         .catch(error => {
           Swal.fire({
-            icon: 'success',
+            icon: 'error',
             title: 'Cập nhật thất bại',
             toast: true,
             position: 'top-end',

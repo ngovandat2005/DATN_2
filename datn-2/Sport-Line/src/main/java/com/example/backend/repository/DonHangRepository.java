@@ -22,12 +22,13 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
     List<DonHang> findByTrangThaiAndLoaiDonHangOnly(@Param("trangThai") Integer trangThai, @Param("loai") String loaiDonHang);
 
     List<DonHang> findByKhachHangIdOrderByNgayTaoDesc(Integer idKhachHang);
+    List<DonHang> findByKhachHangIdAndTrangThaiOrderByNgayTaoDesc(Integer idKhachHang, Integer trangThai);
 
     // Dùng trong admin lọc đơn theo trạng thái
     List<DonHang> findByTrangThai(Integer trangThai);
 
-    // Tổng doanh thu
-    @Query("SELECT SUM(d.tongTien) FROM DonHang d")
+    // Tổng doanh thu (Chỉ tính đơn hợp lệ)
+    @Query("SELECT SUM(d.tongTien) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4)")
     double sumTongTien();
 
     // Đếm đơn theo trạng thái
@@ -41,18 +42,18 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
     List<DonHang> findAllByGiamGia_Id(Integer idVoucher);
 
     // Thống kê Queries
-    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua = :date")
+    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4) AND d.ngayMua = :date")
     Integer countOrdersByDate(@Param("date") java.time.LocalDate date);
 
-    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua = :date")
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4) AND d.ngayMua = :date")
     Double sumRevenueByDate(@Param("date") java.time.LocalDate date);
 
-    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
     Double sumRevenueByMonthAndYear(@Param("month") int month, @Param("year") int year);
 
-    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
     Integer countOrdersCompletedByMonthAndYear(@Param("month") int month, @Param("year") int year);
 
-    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND UPPER(d.loaiDonHang) = UPPER(:channel) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
+    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 2, 3, 4) AND UPPER(d.loaiDonHang) = UPPER(:channel) AND MONTH(d.ngayMua) = :month AND YEAR(d.ngayMua) = :year")
     Double sumRevenueByChannelAndMonthAndYear(@Param("channel") String channel, @Param("month") int month, @Param("year") int year);
 }

@@ -425,35 +425,27 @@ const OrderDetail = () => {
     return sum + (finalPrice * sp.soLuong);
   }, 0);
   
-  const tongGiamGia = order && order.tongTienGiamGia ? order.tongTienGiamGia : 0;
   const tienShip = order && order.phiVanChuyen ? order.phiVanChuyen : 0;
+  let tongGiamGiaVal = order && order.tongTienGiamGia ? order.tongTienGiamGia : 0;
   
-  // ✅ SỬA: Tính tổng tiền đúng cách - bao gồm phí ship
-  let tongTien = 0;
-  
-  // Luôn tính lại để đảm bảo chính xác
-  const tongTienHangTinh = orderProducts.reduce((sum, sp) => sum + (sp.thanhTien || 0), 0);
-  tongTien = tongTienHangTinh + tienShip - tongGiamGia;
-  
-  // Nếu backend đã có tongTien và khác với tính toán, sử dụng backend
-  if (order && order.tongTien && Math.abs(order.tongTien - tongTien) > 1000) {
-    console.log('⚠️ Phát hiện chênh lệch giữa frontend và backend:', {
-      frontend: tongTien,
-      backend: order.tongTien,
-      difference: order.tongTien - tongTien
-    });
-    tongTien = order.tongTien;
+  // ✅ BẢO VỆ: Nếu dữ liệu DB sai (giảm giá > tiền hàng), hoặc không khớp với tổng thanh toán thực tế
+  // Ta sẽ tính lại Giảm giá dựa trên thanh toán thực tế của đơn hàng đó
+  if (order && order.tongTien) {
+    const checkValue = tongTienHang + (tienShip || 0) - tongGiamGiaVal;
+    if (Math.abs(checkValue - order.tongTien) > 1000 || tongGiamGiaVal > tongTienHang) {
+      tongGiamGiaVal = Math.max(0, (tongTienHang + (tienShip || 0)) - order.tongTien);
+    }
   }
-  
+
+  // ✅ KẾT QUẢ CUỐI CÙNG: Tổng cộng = Tiền hàng + Ship - Giảm giá
+  const tongTienHienThi = tongTienHang + (tienShip || 0) - tongGiamGiaVal;
+
   // ✅ DEBUG: Log để kiểm tra tính toán
-  console.log('🔍 === DEBUG TÍNH TOÁN TỔNG TIỀN ===');
-  console.log('📊 order.tongTien:', order?.tongTien);
-  console.log('📊 order.phiVanChuyen:', order?.phiVanChuyen);
-  console.log('📊 order.tongTienGiamGia:', order?.tongTienGiamGia);
-  console.log('📊 tongTienHang:', tongTienHang);
-  console.log('📊 tienShip:', tienShip);
-  console.log('📊 tongGiamGia:', tongGiamGia);
-  console.log('📊 tongTien cuối cùng:', tongTien);
+  console.log('🔍 === HỆ THỐNG TÍNH TOÁN (ADMIN SIDE) ===');
+  console.log('📊 1. Tiền hàng:', tongTienHang);
+  console.log('📊 2. Phí ship:', tienShip);
+  console.log('📊 3. Giảm giá:', tongGiamGiaVal);
+  console.log('📊 4. TỔNG CỘNG (1+2-3):', tongTienHienThi);
   console.log('🔍 === END DEBUG ===');
 
   if (loading) return (
@@ -694,7 +686,7 @@ const OrderDetail = () => {
             <strong>📧 Email:</strong> {order.emailGiaoHang || 'Chưa có thông tin'}
           </div>
           <div>
-            <strong>📅 Ngày tạo:</strong> {order.ngayTao || 'Chưa có thông tin'}
+            <strong>📅 Ngày tạo:</strong> {order.ngayTao || order.ngayMua || '---'}
           </div>
           {order.ngayMua && (
             <div>
@@ -802,20 +794,20 @@ const OrderDetail = () => {
         <h3 style={{ color: '#1976d2', fontWeight: 700, marginBottom: 16 }}>💰 Tổng kết đơn hàng</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <span>Tiền hàng:</span>
-          <span>{tongTienHangTinh.toLocaleString()}đ</span>
+          <span>{tongTienHang.toLocaleString()}đ</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
           <span>Phí vận chuyển:</span>
           <span>{tienShip.toLocaleString()}đ</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#e53935' }}>
-          <span>Giảm giá:</span>
-          <span>-{tongGiamGia.toLocaleString()}đ</span>
+          <span>Giảm giá {voucherInfo ? `(${voucherInfo.tenVoucher || voucherInfo.ten || 'Voucher'})` : ''}:</span>
+          <span>-{tongGiamGiaVal.toLocaleString()}đ</span>
         </div>
         <hr style={{ border: 'none', borderTop: '1px solid #e3e8ee', margin: '12px 0' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1976d2', fontSize: 18, marginTop: 8 }}>
           <span>Tổng thanh toán:</span>
-          <span>{tongTien.toLocaleString()}đ</span>
+          <span>{tongTienHienThi.toLocaleString()}đ</span>
         </div>
         
         {/* ✅ DEBUG: Hiển thị tính toán chi tiết */}

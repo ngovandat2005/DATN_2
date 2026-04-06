@@ -215,7 +215,21 @@ export default function NhanVienPage() {
     showModal();
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
+    const actionText = editingEmployee ? "Cập nhật" : "Thêm mới";
+    const result = await Swal.fire({
+      title: `Xác nhận ${actionText.toLowerCase()} nhân viên?`,
+      text: "Vui lòng kiểm tra kỹ thông tin nhân viên trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1677ff',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     const dataSend = {
       ...values,
       tenNhanVien: values.tenNhanVien,

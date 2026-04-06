@@ -85,7 +85,19 @@ export default function ChatLieuPage() {
       }
     });
   };
-  const handleRestore = (id) => {
+  const handleRestore = async (id) => {
+    const result = await Swal.fire({
+      title: 'Xác nhận khôi phục chất liệu này?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Khôi phục',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     fetch(`http://localhost:8080/api/chat-lieu/khoi-phuc/${id}`, { method: 'PUT' })
       .then(res => { if (!res.ok) throw new Error(); })
       .then(() => {
@@ -160,9 +172,23 @@ export default function ChatLieuPage() {
     showModal();
   };
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
+    const actionText = editingItem ? "Cập nhật" : "Thêm mới";
+    const result = await Swal.fire({
+      title: `Xác nhận ${actionText.toLowerCase()} chất liệu?`,
+      text: "Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     if (editingItem) {
-      updateKichThuoc(editingItem.id, values);
+      updateChatLieu(editingItem.id, values);
     } else {
       const { id, ...dataToSend } = values;
       dataToSend.trangThai = Number(dataToSend.trangThai);
@@ -209,7 +235,7 @@ export default function ChatLieuPage() {
     handleCancel();
   };
 
-  const updateKichThuoc = (id, values) => {
+  const updateChatLieu = (id, values) => {
     fetch(`http://localhost:8080/api/chat-lieu/update/${id}`, {
       method: 'PUT',
       headers: {

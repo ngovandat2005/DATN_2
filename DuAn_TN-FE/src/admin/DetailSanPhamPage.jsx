@@ -115,14 +115,39 @@ const DetailSanPhamPage = () => {
   const handleAddSpct = async (e) => {
     e.preventDefault();
 
-    // Kiểm tra trùng ở FE
-    const isDuplogate = chiTietList.some(
+    // 1. Kiểm tra định dạng SKU (nếu có nhập)
+    if (spctForm.ma && !/^[a-zA-Z0-9-_]+$/.test(spctForm.ma)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU không hợp lệ!',
+        text: 'Mã SKU chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 2. Kiểm tra trùng SKU trong danh sách hiện tại
+    if (spctForm.ma) {
+      const isSkuDuplicate = chiTietList.some(ct => ct.ma?.trim().toLowerCase() === spctForm.ma.trim().toLowerCase());
+      if (isSkuDuplicate) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Mã SKU đã tồn tại!',
+          text: `Mã SKU "${spctForm.ma}" đã được sử dụng cho một biến thể khác của sản phẩm này.`,
+          confirmButtonColor: '#d32f2f'
+        });
+        return;
+      }
+    }
+
+    // Kiểm tra trùng bộ (Màu sắc + Kích thước) ở FE
+    const isDuplicate = chiTietList.some(
       (ct) =>
         String(ct.mauSac?.id || ct.idMauSac) === String(spctForm.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(spctForm.idKichThuoc)
     );
 
-    if (isDuplogate) {
+    if (isDuplicate) {
       Swal.fire({
         icon: 'warning',
         title: 'Biến thể này đã tồn tại!',
@@ -134,6 +159,19 @@ const DetailSanPhamPage = () => {
       });
       return;
     }
+
+    const result = await Swal.fire({
+      title: 'Xác nhận thêm biến thể?',
+      text: "Vui lòng kiểm tra kỹ các thông tin trước khi xác nhận.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1976d2',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       await axios.post(`http://localhost:8080/api/san-pham-chi-tiet/them/${product.id}`, {
@@ -177,15 +215,43 @@ const DetailSanPhamPage = () => {
   const handleEditSpct = async (e) => {
     e.preventDefault();
 
-    // Kiểm tra trùng ở FE (trừ chính biến thể đang sửa)
-    const isDuplogate = chiTietList.some(
+    // 1. Kiểm tra định dạng SKU (nếu có nhập)
+    if (editSpct.ma && !/^[a-zA-Z0-9-_]+$/.test(editSpct.ma)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU không hợp lệ!',
+        text: 'Mã SKU chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 2. Kiểm tra trùng SKU (trừ chính nó)
+    if (editSpct.ma) {
+      const isSkuDuplicate = chiTietList.some(ct => 
+        ct.id !== editSpct.id && 
+        ct.ma?.trim().toLowerCase() === editSpct.ma.trim().toLowerCase()
+      );
+      if (isSkuDuplicate) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Mã SKU đã tồn tại!',
+          text: `Mã SKU "${editSpct.ma}" đã được sử dụng cho một biến thể khác.`,
+          confirmButtonColor: '#d32f2f'
+        });
+        return;
+      }
+    }
+
+    // Kiểm tra trùng bộ (Màu sắc + Kích thước) ở FE (trừ chính biến thể đang sửa)
+    const isDuplicate = chiTietList.some(
       (ct) =>
         ct.id !== editSpct.id &&
         String(ct.mauSac?.id || ct.idMauSac) === String(editSpct.mauSac?.id || editSpct.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(editSpct.kichThuoc?.id || editSpct.idKichThuoc)
     );
 
-    if (isDuplogate) {
+    if (isDuplicate) {
       Swal.fire({
         icon: 'warning',
         title: 'Biến thể này đã tồn tại!',
@@ -197,6 +263,19 @@ const DetailSanPhamPage = () => {
       });
       return;
     }
+
+    const result = await Swal.fire({
+      title: 'Xác nhận cập nhật biến thể?',
+      text: "Các thay đổi sẽ được lưu ngay lập tức.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#43a047',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
 
     try {
       // Lấy thông tin biến thể hiện tại để so sánh giá
@@ -353,7 +432,7 @@ const DetailSanPhamPage = () => {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
 
     // Sử dụng endpoint mới /api/images/
-    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
 
   if (loading) {
@@ -630,7 +709,7 @@ const DetailSanPhamPage = () => {
                           >
                             Sửa
                           </button>
-                          {/* <button
+                          <button
                           onClick={() => handleDeleteSpct(ct.id)}
                           style={{ 
                             background: "#e53935", 
@@ -643,7 +722,7 @@ const DetailSanPhamPage = () => {
                           }}
                         >
                           Xóa
-                        </button> */}
+                        </button>
                         </td>
                       </tr>
                     ))

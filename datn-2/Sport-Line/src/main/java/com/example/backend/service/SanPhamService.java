@@ -1,7 +1,6 @@
 
 package com.example.backend.service;
 
-
 import com.example.backend.entity.SanPham;
 import com.example.backend.repository.SanPhamInterface;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-
 
 @Service
 public class SanPhamService {
@@ -27,14 +25,13 @@ public class SanPhamService {
     }
 
     public List<SanPham> filterSanPham(Integer idDanhMuc, Integer idThuongHieu,
-                                       Integer idChatLieu, Integer idXuatXu, Integer trangThai) {
+            Integer idChatLieu, Integer idXuatXu, Integer trangThai) {
         return sanPhamRepo.filterSanPham(idDanhMuc, idThuongHieu, idChatLieu, idXuatXu, trangThai);
     }
 
     public SanPham create(SanPham sanPham) {
 
-        Optional<SanPham> existing =
-                sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
+        Optional<SanPham> existing = sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
 
         if (existing.isPresent()) {
             throw new RuntimeException("Tên sản phẩm đã tồn tại!");
@@ -49,8 +46,7 @@ public class SanPhamService {
         SanPham current = sanPhamRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-        Optional<SanPham> existing =
-                sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
+        Optional<SanPham> existing = sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
 
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             throw new RuntimeException("Tên sản phẩm đã tồn tại!");
@@ -85,5 +81,10 @@ public class SanPhamService {
 
     public List<SanPham> getDeleted() {
         return sanPhamRepo.findAllByTrangThai(0);
+    }
+
+    // ✅ THÊM: Lấy danh sách sản phẩm có khuyến mãi cho trang chủ
+    public List<SanPham> getSanPhamCoKhuyenMai() {
+        return sanPhamRepo.findByHasKhuyenMai();
     }
 }

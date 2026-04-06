@@ -29,12 +29,14 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                     spct.giaBanGiamGia,
                     kt.tenKichThuoc,
                     ms.tenMauSac,
-                    spct.khuyenMai.id 
+                    km.id,
+                    km.tenKhuyenMai 
                 )
                 FROM SanPhamChiTiet spct
                 JOIN spct.sanPham sp
                 JOIN spct.kichThuoc kt
                 JOIN spct.mauSac ms
+                LEFT JOIN spct.khuyenMai km
                 WHERE sp.trangThai = 1
                           And spct.trangThai = 1
             """
@@ -53,12 +55,14 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                 spct.giaBanGiamGia,
                 kt.tenKichThuoc,
                 ms.tenMauSac,
-                spct.khuyenMai.id
+                km.id,
+                km.tenKhuyenMai
             )
             FROM SanPhamChiTiet spct
             JOIN spct.sanPham sp
             JOIN spct.kichThuoc kt
             JOIN spct.mauSac ms
+            LEFT JOIN spct.khuyenMai km
                     WHERE spct.id = :id
             """
     )
@@ -96,12 +100,14 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                 spct.giaBanGiamGia,
                 kt.tenKichThuoc,
                 ms.tenMauSac,
-                spct.khuyenMai.id 
+                km.id,
+                km.tenKhuyenMai 
             )
             FROM SanPhamChiTiet spct
             JOIN spct.sanPham sp
             JOIN spct.kichThuoc kt
             JOIN spct.mauSac ms
+            LEFT JOIN spct.khuyenMai km
             WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
             """
     )

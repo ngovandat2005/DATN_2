@@ -255,7 +255,7 @@ function StatisticsPage() {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
     
     // Sử dụng API endpoint thay vì static resource
-    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
+    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
 
   // Cột cho bảng sản phẩm bán chạy

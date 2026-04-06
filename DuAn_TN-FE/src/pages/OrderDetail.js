@@ -46,7 +46,7 @@ const OrderDetailPage = () => {
   const [deleteProductLoading, setDeleteProductLoading] = useState({});
   const [productsLoading, setProductsLoading] = useState(false);
   
-  // State cho tìm kiếm và lọc sản phẩm
+  // State cho tìm kiếm và log sản phẩm
   const [search, setSearch] = useState('');
   const [filterColor, setFilterColor] = useState('');
   const [filterSize, setFilterSize] = useState('');
@@ -147,9 +147,9 @@ const OrderDetailPage = () => {
                 }}>
                   <img
                     src={product.images && product.images.includes(',')
-                      ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.split(',')[0].trim())}`
+                      ? `http://localhost:8080/images/${encodeURIComponent(product.images.split(',')[0].trim())}`
                       : product.images
-                        ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.trim())}`
+                        ? `http://localhost:8080/images/${encodeURIComponent(product.images.trim())}`
                         : '/placeholder-image.jpg'}
                     alt={product.tenSanPham}
                     style={{ 
@@ -1695,40 +1695,27 @@ const OrderDetailPage = () => {
     return sum + (finalPrice * sp.soLuong);
   }, 0);
 
-  const tongGiamGia = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
   const tienShip = orderInfo && orderInfo.phiVanChuyen ? orderInfo.phiVanChuyen : 0;
-  
-  // ✅ DEBUG: Log giá trị tienShip
-  console.log('🔍 === DEBUG TIENSHIP ===');
-  console.log('📊 orderInfo:', orderInfo);
-  console.log('📊 orderInfo.phiVanChuyen:', orderInfo?.phiVanChuyen);
-  console.log('📊 tienShip:', tienShip);
-  console.log('🔍 === END DEBUG ===');
+  let tongGiamGiaVal = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
 
-  // ✅ THÊM: Tính tống tiền bao gồm phí ship (giống OrderDetail)
-  const tongTienHangTinh = orderProducts.reduce((sum, sp) => sum + (sp.thanhTien || 0), 0);
-  let tongTien = tongTienHang + tienShip - tongGiamGia;
-
-  // ✅ NẾU backend đã có tongTien và khác với tính toán, sử dụng backend
-  if (orderInfo && orderInfo.tongTien && Math.abs(orderInfo.tongTien - tongTien) > 1000) {
-    console.log('⚠️ Phát hiện chênh lệch giữa frontend và backend:', {
-      frontend: tongTien,
-      backend: orderInfo.tongTien,
-      difference: orderInfo.tongTien - tongTien
-    });
-    tongTien = orderInfo.tongTien;
+  // ✅ BẢO VỆ: Nếu dữ liệu DB sai (giảm giá > tiền hàng), hoặc không khớp với tổng thanh toán thực tế
+  // Ta sẽ tính lại Giảm giá dựa trên thanh toán thực tế của đơn hàng đó
+  if (orderInfo && orderInfo.tongTien) {
+    const checkValue = tongTienHang + tienShip - tongGiamGiaVal;
+    if (Math.abs(checkValue - orderInfo.tongTien) > 1000 || tongGiamGiaVal > tongTienHang) {
+      tongGiamGiaVal = Math.max(0, (tongTienHang + tienShip) - orderInfo.tongTien);
+    }
   }
 
+  // ✅ KẾT QUẢ CUỐI CÙNG: Tổng cộng = Tiền hàng + Ship - Giảm giá
+  const tongTienHienThi = tongTienHang + tienShip - tongGiamGiaVal;
+
   // ✅ DEBUG: Log để kiểm tra tính toán
-  console.log('🔍 === DEBUG TÍNH TOÁN TỔNG TIỀN ===');
-  console.log('📊 orderInfo.tongTien:', orderInfo?.tongTien);
-  console.log('📊 orderInfo.phiVanChuyen:', orderInfo?.phiVanChuyen);
-  console.log('📊 orderInfo.tongTienGiamGia:', orderInfo?.tongTienGiamGia);
-  console.log('📊 tongTienHang:', tongTienHang);
-  console.log('📊 tongTienHangTinh:', tongTienHangTinh);
-  console.log('📊 tienShip:', tienShip);
-  console.log('📊 tongGiamGia:', tongGiamGia);
-  console.log('📊 tongTien cuối cùng:', tongTien);
+  console.log('🔍 === HỆ THỐNG TÍNH TOÁN (USER SIDE) ===');
+  console.log('📊 1. Tiền hàng:', tongTienHang);
+  console.log('📊 2. Phí ship:', tienShip);
+  console.log('📊 3. Giảm giá:', tongGiamGiaVal);
+  console.log('📊 4. TỔNG CỘNG (1+2-3):', tongTienHienThi);
   console.log('🔍 === END DEBUG ===');
 
   // 🔄 Refresh lại dữ liệu đơn hàng
@@ -2036,8 +2023,8 @@ const OrderDetailPage = () => {
           
           {/* Nút chức năng: Phân quyền theo vai trò */}
           <div style={{ marginTop: 16 }}>
-            {/* 1. Nút Hủy đơn (Cả khách hàng và Admin đều thấy khi đơn mới) */}
-            {orderInfo.trangThai <= 2 && (
+            {/* 1. Nút Hủy đơn (Chỉ khách hàng thấy khi đơn mới - Trạng thái 0) */}
+            {orderInfo.trangThai === 0 && (
               <button
                 style={{ padding: '8px 20px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
                 onClick={handleHuy}
@@ -2117,7 +2104,7 @@ const OrderDetailPage = () => {
               <strong>📧 Email:</strong> {orderInfo.emailGiaoHang || 'Chưa có thông tin'}
             </div>
             <div>
-              <strong>📅 Ngày tạo:</strong> {orderInfo.ngayTao || 'Chưa có thông tin'}
+              <strong>📅 Ngày tạo:</strong> {orderInfo.ngayTao || orderInfo.ngayMua || '---'}
             </div>
             {orderInfo.ngayMua && (
               <div>
@@ -2271,13 +2258,13 @@ const OrderDetailPage = () => {
           <span>{tienShip.toLocaleString()}đ</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#e53935' }}>
-          <span>Giảm giá:</span>
-          <span>-{tongGiamGia.toLocaleString()}đ</span>
+          <span>Giảm giá {voucherInfo ? `(${voucherInfo.tenVoucher || voucherInfo.ten || 'Voucher'})` : ''}:</span>
+          <span>-{tongGiamGiaVal.toLocaleString()}đ</span>
         </div>
         <hr style={{ border: 'none', borderTop: '1px solid #e3e8ee', margin: '12px 0' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1976d2', fontSize: 18, marginTop: 8 }}>
           <span>Tổng cộng:</span>
-          <span>{tongTien.toLocaleString()}đ</span>
+          <span>{tongTienHienThi.toLocaleString()}đ</span>
         </div>
         
         
@@ -2365,7 +2352,7 @@ const OrderDetailPage = () => {
               </button>
             </div>
             
-            {/* Bộ lọc màu sắc và size */}
+            {/* Bộ log màu sắc và size */}
             <Box display="flex" gap={2} mb={2}>
               <TextField 
                 select 

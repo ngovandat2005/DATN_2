@@ -53,14 +53,14 @@ function HeroSection() {
                 position: 'relative',
               }}
             >
-              <div style={{ 
-                color: '#fff', 
+              <div style={{
+                color: '#fff',
                 maxWidth: '650px',
                 zIndex: 1,
                 textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
               }}>
-                <Title level={1} style={{ 
-                  color: '#fff', 
+                <Title level={1} style={{
+                  color: '#fff',
                   marginBottom: '24px',
                   fontSize: 'clamp(32px, 5vw, 64px)',
                   fontWeight: 'bold',
@@ -69,7 +69,7 @@ function HeroSection() {
                 }}>
                   {slide.title}
                 </Title>
-                <Paragraph style={{ 
+                <Paragraph style={{
                   fontSize: 'clamp(16px, 2.5vw, 22px)',
                   color: '#fff',
                   marginBottom: '36px',
@@ -79,8 +79,8 @@ function HeroSection() {
                   {slide.description}
                 </Paragraph>
                 <Link to={slide.buttonLink}>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     size="large"
                     style={{
                       height: '50px',
@@ -110,7 +110,7 @@ function HeroSection() {
       </Carousel>
 
       {/* Banner nhỏ bên dưới */}
-      <div style={{ 
+      <div style={{
         padding: '40px 10%',
         background: '#f5f5f5',
         display: 'flex',
@@ -118,7 +118,7 @@ function HeroSection() {
         gap: '20px',
         flexWrap: 'wrap', // Responsive
       }}>
-        <div style={{ 
+        <div style={{
           flex: '1 1 200px', // Responsive flex
           background: '#fff',
           padding: '20px',
@@ -128,9 +128,9 @@ function HeroSection() {
           minWidth: '200px',
         }}>
           <Title level={4} style={{ fontSize: 'clamp(16px, 2.5vw, 20px)' }}>Miễn phí vận chuyển</Title>
-          <Paragraph style={{ fontSize: 'clamp(12px, 2vw, 14px)' }}>Cho đơn hàng từ 500.000đ</Paragraph>
+          <Paragraph style={{ fontSize: 'clamp(12px, 2vw, 14px)' }}>Cho đơn hàng từ 2.000.000đ</Paragraph>
         </div>
-        <div style={{ 
+        <div style={{
           flex: '1 1 200px', // Responsive flex
           background: '#fff',
           padding: '20px',
@@ -142,7 +142,7 @@ function HeroSection() {
           <Title level={4} style={{ fontSize: 'clamp(16px, 2.5vw, 20px)' }}>Đổi trả dễ dàng</Title>
           <Paragraph style={{ fontSize: 'clamp(12px, 2vw, 14px)' }}>Trong vòng 30 ngày</Paragraph>
         </div>
-        <div style={{ 
+        <div style={{
           flex: '1 1 200px', // Responsive flex
           background: '#fff',
           padding: '20px',

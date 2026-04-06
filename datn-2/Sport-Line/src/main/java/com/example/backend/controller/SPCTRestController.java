@@ -1,10 +1,8 @@
 package com.example.backend.controller;
 
-
 import com.example.backend.dto.SPCTDTO;
 import com.example.backend.dto.SPCTRequest;
 import com.example.backend.entity.SanPhamChiTiet;
-
 
 import com.example.backend.service.SPCTService;
 import jakarta.validation.Valid;
@@ -30,18 +28,19 @@ public class SPCTRestController {
 
     // tìm theo id sản phẩm
     @GetMapping("/{id}")
-    public ResponseEntity<List<SanPhamChiTiet> > getSPCTDTOById(@PathVariable Integer id) {
+    public ResponseEntity<List<SanPhamChiTiet>> getSPCTDTOById(@PathVariable Integer id) {
         return ResponseEntity.ok(service.getSPCTDTOById(id));
     }
 
-    //tìm theo id spct
+    // tìm theo id spct
     @GetMapping("spct/{id}")
     public ResponseEntity<SPCTDTO> getSPCTById(@PathVariable Integer id) {
         SPCTDTO dto = service.getSPCTDTOByIdSPCT(id);
         return ResponseEntity.ok(dto);
     }
+
     @GetMapping("thung-rac/{id}")
-    public ResponseEntity<List<SanPhamChiTiet> > getThungrac(@PathVariable Integer id) {
+    public ResponseEntity<List<SanPhamChiTiet>> getThungrac(@PathVariable Integer id) {
         return ResponseEntity.ok(service.getThungrac(id));
     }
 
@@ -51,20 +50,18 @@ public class SPCTRestController {
         return ResponseEntity.ok(list);
     }
 
-
-
     @GetMapping("/search")
     public ResponseEntity<List<SPCTDTO>> getByTen(@RequestParam String keyword) {
         return ResponseEntity.ok(service.searchByTenSanPham(keyword));
 
     }
+
     @GetMapping("/bo-loc")
     public ResponseEntity<List<SanPhamChiTiet>> filterSPCT(
             @RequestParam Integer sanPhamId,
             @RequestParam(required = false) Integer mauSacId,
             @RequestParam(required = false) Integer kichThuocId,
-            @RequestParam(required = false) Integer trangThai
-    ) {
+            @RequestParam(required = false) Integer trangThai) {
         return ResponseEntity.ok(service.filterSPCT(sanPhamId, mauSacId, kichThuocId, trangThai));
     }
 
@@ -84,6 +81,7 @@ public class SPCTRestController {
     public ResponseEntity<SanPhamChiTiet> create(@RequestBody @Valid SanPhamChiTiet s) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(s));
     }
+
     @PutMapping("/sua/{idSpct}")
     public ResponseEntity<?> suaBienThe(
             @PathVariable Integer idSpct,
@@ -95,9 +93,10 @@ public class SPCTRestController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PutMapping("/{id}")
     public ResponseEntity<SanPhamChiTiet> update(@PathVariable Integer id,
-                                                 @RequestBody @Valid SanPhamChiTiet s) {
+            @RequestBody @Valid SanPhamChiTiet s) {
         return ResponseEntity.ok(service.update(id, s));
     }
 
@@ -106,6 +105,7 @@ public class SPCTRestController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
     @PutMapping("khoi-phuc/{id}")
     public ResponseEntity<?> restoreSanPham(@PathVariable Integer id) {
         try {
@@ -115,6 +115,7 @@ public class SPCTRestController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Khôi phục thất bại");
         }
     }
+
     @PutMapping("xoa/{id}")
     public ResponseEntity<?> deleteSanPham(@PathVariable Integer id) {
         try {
@@ -125,4 +126,3 @@ public class SPCTRestController {
         }
     }
 }
-

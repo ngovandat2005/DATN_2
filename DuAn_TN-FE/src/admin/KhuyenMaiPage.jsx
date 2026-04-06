@@ -110,6 +110,21 @@ const KhuyenMaiPage = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields(); // Bắt buộc validate toàn bộ form
+      
+      const actionText = isEditMode ? "Cập nhật" : "Thêm mới";
+      const result = await Swal.fire({
+        title: `Xác nhận ${actionText.toLowerCase()} khuyến mãi?`,
+        text: "Vui lòng kiểm tra kỹ thông tin khuyến mãi trước khi xác nhận.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#1677ff',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Xác nhận',
+        cancelButtonText: 'Hủy'
+      });
+
+      if (!result.isConfirmed) return;
+
       const khuyenMaiData = {
         tenKhuyenMai: values.tenKhuyenMai,
         giaTri: values.giaTri,
