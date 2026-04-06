@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class FeeRequest {
     private int serviceTypeId;
+    private Integer serviceId;
     private int insuranceValue;
     private int fromDistrict;
     private int toDistrict;
@@ -14,4 +15,5 @@ public class FeeRequest {
     private int length;
     private int weight;
     private int width;
+    private Double actualDistance;
 }

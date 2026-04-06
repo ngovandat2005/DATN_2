@@ -1,38 +1,56 @@
 package com.example.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.reactive.function.client.WebClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
+import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class ChatbotService {
 
-    @Value("${gemini.api.key:AIzaSyCip5f5SHPpiX0sE7VjXqGzPSLSAQz50dk}")
+    @Value("${gemini.api.key:AIzaSyBvjeGQmWCM6NcLfuCkFfIpsHws7iZlhi4}")
     private String geminiApiKey;
 
+<<<<<<< HEAD
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=";
     private final RestTemplate restTemplate = new RestTemplate();
+=======
+    private final WebClient webClient = WebClient.builder().build();
+>>>>>>> dbcc773015f481c98f8da0d3b9f78c0a448b6424
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String askGemini(String userMessage, String contextInfo) {
-        if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.contains("YOUR_KEY")) {
-            return "Tính năng Chatbot AI chưa được cấu hình. Vui lòng thêm gemini.api.key vào file cấu hình hệ thống.";
+    private String getSystemInstructions(String contextInfo) {
+        String instructions = "Bạn là trợ lý ảo AI của hệ thống giày thể thao KingStep (KingStep.vn). " +
+                "Nhiệm vụ: Tư vấn giày (Nike, Adidas, Puma, v.v.), size giày, thanh toán. " +
+                "QUY TẮC CỐT LÕI: " +
+                "1. Trả lời cực kỳ ngắn gọn, tập trung đúng vào câu hỏi của khách. " +
+                "2. CHỈ cung cấp địa chỉ, hotline hoặc chính sách đổi trả KHI khách hàng thực sự hỏi về những điều đó. " +
+                "3. Xưng 'Shop', gọi khách là 'Quý khách'. " +
+                "4. Thông tin cửa hàng: 'Số 10, Ngõ 20, Ba Đình, Hà Nội', Hotline '0987.654.321'. " +
+                "5. Chính sách: Miễn phí vận chuyển đơn trên 2.000.000đ. Đổi trả 30 ngày. ";
+
+        if (contextInfo != null && !contextInfo.trim().isEmpty()) {
+            instructions += "Bối cảnh sản phẩm hiện tại: " + contextInfo + ". ";
+        }
+        return instructions;
+    }
+
+    public Flux<String> streamAskGemini(List<Map<String, String>> history, String contextInfo) {
+        if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
+            return Flux.just("Tính năng Chatbot AI chưa được cấu hình.");
         }
 
-        try {
-            String url = GEMINI_API_URL + geminiApiKey;
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?key=" + geminiApiKey.trim();
 
+<<<<<<< HEAD
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, Object> content = new HashMap<>();
 
@@ -76,16 +94,69 @@ public class ChatbotService {
                     JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
                     if (!textNode.isMissingNode()) {
                         return textNode.asText().replaceAll("(?i)\\*\\*", "");
+=======
+        Map<String, Object> requestBody = createRequestBody(history, contextInfo);
+
+        return webClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToFlux(JsonNode.class)
+                .map(node -> {
+                    try {
+                        JsonNode textNode = node.path("candidates").get(0).path("content").path("parts").get(0).path("text");
+                        return textNode.isMissingNode() ? "" : textNode.asText();
+                    } catch (Exception e) {
+                        return "";
+>>>>>>> dbcc773015f481c98f8da0d3b9f78c0a448b6424
                     }
-                }
-            }
-            return "Xin lỗi, tôi không thể lấy được câu trả lời lúc này.";
-        } catch (HttpClientErrorException e) {
-            System.err.println("Lỗi gọi Gemini API: " + e.getResponseBodyAsString());
-            return "Lỗi cấu hình AI hoặc API Key bị giới hạn. Vui lòng liên hệ Admin.";
+                })
+                .filter(text -> !text.isEmpty());
+    }
+
+    public String askGemini(String userMessage, String contextInfo) {
+        List<Map<String, String>> history = new ArrayList<>();
+        Map<String, String> msg = new HashMap<>();
+        msg.put("role", "user");
+        msg.put("text", userMessage);
+        history.add(msg);
+        
+        try {
+            return streamAskGemini(history, contextInfo)
+                    .collectList()
+                    .map(list -> String.join("", list))
+                    .block();
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Hệ thống AI đang bảo trì. Vui lòng thử lại sau vài phút.";
+            return "Xin lỗi, hiện tại tôi đang gặp sự cố kết nối.";
         }
+    }
+
+    private Map<String, Object> createRequestBody(List<Map<String, String>> history, String contextInfo) {
+        List<Map<String, Object>> contents = new ArrayList<>();
+        
+        for (Map<String, String> msg : history) {
+            Map<String, Object> entry = new HashMap<>();
+            // Gemini roles: "user" and "model"
+            String role = msg.getOrDefault("role", "user");
+            entry.put("role", role.equals("bot") ? "model" : "user");
+            
+            Map<String, String> part = new HashMap<>();
+            part.put("text", msg.get("text"));
+            entry.put("parts", new Object[]{part});
+            contents.add(entry);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("contents", contents);
+
+        // System Instruction (available in v1beta)
+        Map<String, Object> siPart = new HashMap<>();
+        siPart.put("text", getSystemInstructions(contextInfo));
+        Map<String, Object> systemInstruction = new HashMap<>();
+        systemInstruction.put("parts", new Object[]{siPart});
+        body.put("system_instruction", systemInstruction);
+
+        return body;
     }
 }

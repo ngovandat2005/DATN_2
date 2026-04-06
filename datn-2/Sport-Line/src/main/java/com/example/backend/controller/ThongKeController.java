@@ -61,7 +61,22 @@ public class ThongKeController {
     }
 
     @GetMapping("/orders-by-date")
-    public ResponseEntity<Integer> getOrdersByDate(@RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    public ResponseEntity<Map<String, Object>> getOrdersByDate(@RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return ResponseEntity.ok(thongKeService.getOrdersByDate(date));
+    }
+
+    @GetMapping("/stats-range")
+    public ResponseEntity<Map<String, Object>> getStatsByDateRange(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(thongKeService.getStatsByDateRange(startDate, endDate));
+    }
+
+    @GetMapping("/best-sellers-range")
+    public ResponseEntity<List<BestSellerDTO>> getBestSellersByDateRange(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return ResponseEntity.ok(thongKeService.getBestSellersByDateRange(startDate, endDate, limit));
     }
 }

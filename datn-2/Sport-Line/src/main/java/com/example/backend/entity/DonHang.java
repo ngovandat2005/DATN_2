@@ -63,6 +63,12 @@ public class DonHang {
     @Column(name="PhiVanChuyen")
     private Integer phiVanChuyen = 0;
 
+    @Column(name="MaVanDon")
+    private String maVanDon;
+
+    @Column(name="IdService")
+    private Integer idService;
+
     @PostLoad
     private void postLoad() {
         if (phiVanChuyen == null) {

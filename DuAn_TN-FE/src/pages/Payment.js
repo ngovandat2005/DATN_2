@@ -84,6 +84,11 @@ const Payment = () => {
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
 
+  // ✅ THÊM: States cho dịch vụ GHN
+  const [ghnServices, setGhnServices] = useState([]);
+  const [selectedServiceId, setSelectedServiceId] = useState(null);
+  const [estimatedDate, setEstimatedDate] = useState(null);
+
   // ✅ THÊM: State cho voucher (giống BanHangTaiQuay)
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucherId, setSelectedVoucherId] = useState('');
@@ -98,6 +103,13 @@ const Payment = () => {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [addressIsDefault, setAddressIsDefault] = useState(false);
+
+  // ✅ THÊM: State cho khoảng cách thực tế (Map distance)
+  const [actualDistance, setActualDistance] = useState(null);
+  const [distanceLoading, setDistanceLoading] = useState(false);
+
+  // Shop Location (Ba Đình, Hà Nội)
+  const SHOP_COORDS = [21.033, 105.815];
 
   // Áp dụng một địa chỉ từ sổ địa chỉ vào state hiện tại
   const applyAddressFromBook = async (addr) => {
@@ -429,9 +441,19 @@ const Payment = () => {
 
   // ✅ THÊM: Tự động đồng bộ finalTotal khi các thành phần thay đổi
   useEffect(() => {
-    const newFinalTotal = total - itemDiscountTotal - orderDiscount + shippingFee;
+    const subTotal = total - itemDiscountTotal - orderDiscount;
+    const effectiveShippingFee = subTotal >= 2000000 ? 0 : shippingFee;
+    const newFinalTotal = subTotal + effectiveShippingFee;
+    
     setFinalTotal(newFinalTotal);
-    console.log('💰 Recalculated final total:', { originalTotal: total, savings: itemDiscountTotal, voucher: orderDiscount, ship: shippingFee, final: newFinalTotal });
+    console.log('💰 Recalculated final total:', { 
+      originalTotal: total, 
+      savings: itemDiscountTotal, 
+      voucher: orderDiscount, 
+      ship: shippingFee,
+      effectiveShip: effectiveShippingFee,
+      final: newFinalTotal 
+    });
   }, [total, itemDiscountTotal, orderDiscount, shippingFee]);
 
   // ✅ THÊM: Fetch voucher khả dụng từ API mới
@@ -494,6 +516,9 @@ const Payment = () => {
     setSelectedDistrict(null);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi tỉnh
+    setGhnServices([]);
+    setSelectedServiceId(null);
+    setEstimatedDate(null);
 
     // Load districts cho province này
     if (provinceId) {
@@ -505,6 +530,9 @@ const Payment = () => {
     setSelectedDistrict(districtId);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi quận
+    setGhnServices([]);
+    setSelectedServiceId(null);
+    setEstimatedDate(null);
 
     // Load wards cho district này
     if (districtId) {
@@ -514,6 +542,58 @@ const Payment = () => {
 
   const handleWardChange = (wardId) => {
     setSelectedWard(wardId);
+  };
+
+  // ✅ THÊM: Fetch dịch vụ GHN
+  const fetchGhnServices = async (districtId) => {
+    if (!districtId) return;
+    try {
+      const response = await fetch(config.getApiUrl(`api/ghn/services?toDistrictId=${districtId}`));
+      if (response.ok) {
+        const services = await response.json();
+        // ✅ SỬA: Chỉ lấy 1 dịch vụ duy nhất để đơn giản hóa giao diện (theo yêu cầu người dùng)
+        // Ưu tiên lấy dịch vụ Chuẩn (service_type_id = 2) nếu có
+        let filteredServices = services || [];
+        if (filteredServices.length > 1) {
+          const standardService = filteredServices.find(s => s.service_type_id === 2 || s.short_name?.includes('Chuẩn'));
+          filteredServices = standardService ? [standardService] : [filteredServices[0]];
+        }
+        
+        // Đổi tên hiển thị cho đồng nhất
+        if (filteredServices.length > 0) {
+          filteredServices[0].short_name = "Giao hàng tiêu chuẩn";
+        }
+
+        setGhnServices(filteredServices);
+
+        // Tự động chọn dịch vụ duy nhất này
+        if (filteredServices.length > 0) {
+          const defaultService = filteredServices[0].service_id;
+          setSelectedServiceId(defaultService);
+          return defaultService;
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy dịch vụ GHN:', error);
+    }
+    return null;
+  };
+
+  // ✅ THÊM: Fetch ngày giao hàng dự kiến
+  const fetchLeadTime = async (serviceId, districtId, wardCode) => {
+    if (!serviceId || !districtId || !wardCode) return;
+    try {
+      const response = await fetch(config.getApiUrl(`api/ghn/leadtime?serviceId=${serviceId}&toDistrictId=${districtId}&toWardCode=${wardCode}`));
+      if (response.ok) {
+        const leadtimeTimestamp = await response.json();
+        if (leadtimeTimestamp) {
+          const date = new Date(leadtimeTimestamp * 1000);
+          setEstimatedDate(date.toLocaleDateString('vi-VN'));
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi lấy ngày giao hàng:', error);
+    }
   };
 
   // ✅ THÊM: Tự động điền thông tin khách hàng và select địa chỉ
@@ -651,13 +731,12 @@ const Payment = () => {
     loadProvinces();
   }, [provinces.length]); // ✅ SỬA: Thêm dependency
 
-  // ✅ THÊM: Khởi tạo orderTotal và orderDiscount
+  // ✅ THÊM: Khởi tạo orderTotal và orderDiscount dựa trên giá sau khi đã giảm sản phẩm
   useEffect(() => {
-    setOrderTotal(total);
-    setOrderDiscount(0);
-    // ✅ THÊM: Cập nhật finalTotal khi total hoặc shippingFee thay đổi
-    setFinalTotal(total + shippingFee);
-  }, [total, shippingFee]);
+    const subTotal = total - itemDiscountTotal;
+    setOrderTotal(subTotal);
+    // orderDiscount sẽ được set khi chọn voucher
+  }, [total, itemDiscountTotal]);
 
   // ✅ THÊM: Tự động tính phí ship khi địa chỉ thay đổi
   useEffect(() => {
@@ -665,11 +744,26 @@ const Payment = () => {
       // Đợi một chút để đảm bảo state đã được cập nhật hoàn toàn
       const timer = setTimeout(() => {
         handleAddressChange();
+        if (selectedServiceId) {
+            fetchLeadTime(selectedServiceId, selectedDistrict, selectedWard);
+        }
       }, 200);
 
       return () => clearTimeout(timer);
     }
-  }, [selectedProvince, selectedDistrict, selectedWard]);
+  }, [selectedProvince, selectedDistrict, selectedWard, selectedServiceId]);
+
+  // ✅ THÊM: Tự động fetch dịch vụ GHN khi Quận/Huyện thay đổi
+  useEffect(() => {
+    if (selectedDistrict) {
+      console.log('🚚 Quận/Huyện thay đổi -> Fetching GHN services cho:', selectedDistrict);
+      fetchGhnServices(selectedDistrict);
+    } else {
+      setGhnServices([]);
+      setSelectedServiceId(null);
+      setEstimatedDate(null);
+    }
+  }, [selectedDistrict]);
 
   // ✅ THÊM: Function xử lý voucher (TÍNH TOÁN GIẢM GIÁ NGAY KHI CHỌN)
   const handleVoucherChange = async (voucherId) => {
@@ -742,7 +836,7 @@ const Payment = () => {
   };
 
   // ✅ THÊM: Function tính phí ship từ GHN API với retry mechanism
-  const calculateShippingFee = async (fromDistrict, toDistrict, toProvinceId, toWardCode, weight = 800, insuranceValue = 0, retryCount = 0) => {
+  const calculateShippingFee = async (fromDistrict, toDistrict, toProvinceId, toWardCode, weight = 800, insuranceValue = 0, retryCount = 0, distance = null) => {
     if (!fromDistrict || !toDistrict || !toWardCode) {
       return;
     }
@@ -755,7 +849,9 @@ const Payment = () => {
         toProvinceId: parseInt(toProvinceId),
         toWardCode: toWardCode,
         weight: weight,
-        insuranceValue: insuranceValue
+        insuranceValue: insuranceValue,
+        serviceId: selectedServiceId, // ✅ THÊM: Gửi serviceId đã chọn
+        actualDistance: distance 
       };
 
       const response = await fetch(config.getApiUrl('api/ghn/calculate-fee'), {
@@ -795,15 +891,25 @@ const Payment = () => {
 
         if (shippingFeeValue > 0) {
           setShippingFee(shippingFeeValue);
-          // ✅ SỬA: Thông báo theo mức phí 5k/km của khách hàng
-          const kmFee = 5000;
-          const possibleDistances = [5, 15, 50];
-          const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
-
-          if (currentDistance) {
-            toast.info(`Phí ship theo khoảng cách: ${formatVnd(shippingFeeValue)} (~${currentDistance}km)`);
+          
+          // ✅ KIỂM TRA: Nếu đơn trên 2tr thì thông báo miễn phí luôn
+          const subTotal = total - itemDiscountTotal - orderDiscount;
+          if (subTotal >= 2000000) {
+            toast.success("🚚 Đơn hàng trên 2tr - MIỄN PHÍ VẬN CHUYỂN!", {
+               position: "top-right",
+               autoClose: 3000
+            });
           } else {
-            toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+            // Thông báo theo mức phí của khách hàng
+            const kmFee = 5000;
+            const possibleDistances = [5, 15, 50];
+            const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
+  
+            if (currentDistance) {
+              toast.info(`Phí ship theo khoảng cách: ${formatVnd(shippingFeeValue)} (~${currentDistance}km)`);
+            } else {
+              toast.success(`Phí ship: ${shippingFeeValue.toLocaleString()}₫`);
+            }
           }
         } else {
           // Fallback nếu có lỗi: Giả định liên tỉnh 50km
@@ -817,7 +923,7 @@ const Payment = () => {
         // ✅ THÊM: Retry mechanism cho lỗi 403
         if (response.status === 403 && retryCount < 2) {
           setTimeout(() => {
-            calculateShippingFee(fromDistrict, toDistrict, selectedProvince, toWardCode, weight, retryCount + 1);
+            calculateShippingFee(fromDistrict, toDistrict, selectedProvince, toWardCode, weight, insuranceValue, retryCount + 1, distance);
           }, 2000);
           return;
         }
@@ -830,7 +936,7 @@ const Payment = () => {
       // ✅ THÊM: Retry mechanism cho lỗi network
       if (retryCount < 2) {
         setTimeout(() => {
-          calculateShippingFee(fromDistrict, toDistrict, toWardCode, weight, retryCount + 1);
+          calculateShippingFee(fromDistrict, toDistrict, toWardCode, weight, insuranceValue, retryCount + 1, distance);
         }, 2000);
         return;
       }
@@ -1159,6 +1265,82 @@ const Payment = () => {
     };
   };
 
+  // ✅ THÊM: Function tính khoảng cách qua Bản đồ (Nominatim + OSRM)
+  const calculateDistanceByAddress = async (fullAddress) => {
+    if (!fullAddress || fullAddress.length < 5) return null;
+    
+    setDistanceLoading(true);
+    console.log('🗺️ Đang tính khoảng cách cho:', fullAddress);
+    
+    try {
+      // 1. Geocoding (Address -> Cords) using Nominatim
+      // Lần 1: Thử tìm địa chỉ đầy đủ
+      const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress + ', Việt Nam')}&limit=1`;
+      const geoRes = await fetch(geoUrl, {
+        headers: { 'User-Agent': 'KingStep-Web-App' }
+      });
+      let geoData = await geoRes.json();
+
+      // ✅ Lớp 1 (Phòng thủ): Nếu không tìm thấy địa chỉ chi tiết, thử tìm theo Huyện/Tỉnh
+      if (!geoData || geoData.length === 0) {
+        console.warn('⚠️ Không tìm thấy địa chỉ cụ thể, thử tìm theo Quận/Huyện...');
+        // Tách lấy phần phía sau (Ward, District, Province)
+        const parts = fullAddress.split(',');
+        if (parts.length >= 3) {
+          const fallbackQuery = parts.slice(-2).join(',') + ', Việt Nam'; // Ví dụ: "Huyện Văn Lâm, Hưng Yên, Việt Nam"
+          const fallbackUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallbackQuery)}&limit=1`;
+          const fallbackRes = await fetch(fallbackUrl, {
+            headers: { 'User-Agent': 'KingStep-Web-App' }
+          });
+          geoData = await fallbackRes.json();
+        }
+      }
+
+      if (geoData && geoData.length > 0) {
+        const lat = parseFloat(geoData[0].lat);
+        const lon = parseFloat(geoData[0].lon);
+        
+        // 2. Routing (Distance calculation) using OSRM
+        const routeUrl = `https://router.project-osrm.org/route/v1/driving/${SHOP_COORDS[1]},${SHOP_COORDS[0]};${lon},${lat}?overview=false`;
+        const routeRes = await fetch(routeUrl);
+        const routeData = await routeRes.json();
+
+        if (routeData.code === 'Ok' && routeData.routes.length > 0) {
+          const distKm = routeData.routes[0].distance / 1000;
+          console.log(`✅ Khoảng cách đường bộ tính được: ${distKm.toFixed(2)} km`);
+          setActualDistance(distKm);
+          return distKm;
+        } else {
+          const straightDist = calculateStraightDistance(SHOP_COORDS[0], SHOP_COORDS[1], lat, lon);
+          setActualDistance(straightDist);
+          return straightDist;
+        }
+      } else {
+        console.error('❌ Không thể định vị địa chỉ này trên bản đồ.');
+        setActualDistance(null);
+        return null;
+      }
+    } catch (err) {
+      console.error("❌ Lỗi dịch vụ bản đồ:", err);
+      setActualDistance(null);
+      return null;
+    } finally {
+      setDistanceLoading(false);
+    }
+  };
+
+  // Hàm tính khoảng cách đường chim bay (Haversine formula)
+  const calculateStraightDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Rayon de la terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   // ✅ THÊM: Function xử lý thay đổi địa chỉ
   const handleAddressChange = async () => {
     console.log('🔄 handleAddressChange được gọi');
@@ -1224,15 +1406,20 @@ const Payment = () => {
       insuranceValue: insuranceValue
     });
 
-    // Tính phí ship với cân nặng và bảo hiểm
-    calculateShippingFee(1484, selectedDistrict, selectedProvince, selectedWard, totalWeight, insuranceValue);
-
     const fullAddress = `${addressDetail}, ${ward.WardName}, ${district.DistrictName}, ${province.ProvinceName}`;
     setCustomerAddress(fullAddress);
 
     if (addressDetail) {
       setAddressDetail(addressDetail);
     }
+
+    // ✅ THÊM: Tính khoảng cách thực tế từ bản đồ trước khi tính phí ship
+    const calculatedDistance = await calculateDistanceByAddress(fullAddress);
+
+    console.log('🚚 Gọi calculateShippingFee với KM thực tế:', calculatedDistance);
+
+    // Tính phí ship với cân nặng, bảo hiểm và KHOẢNG CÁCH THỰC TẾ
+    calculateShippingFee(1484, selectedDistrict, selectedProvince, selectedWard, totalWeight, insuranceValue, 0, calculatedDistance);
   };
 
   // ✅ THÊM: Function fetch thông tin đơn hàng (giống BanHangTaiQuay)
@@ -1492,155 +1679,29 @@ const Payment = () => {
 
     setLoading(true);
 
-    // Nếu chọn thanh toán online (VNPAY)
-    if (paymentMethod === 'bank') {
-      try {
-        // ✅ KHÔI PHỤC: Lưu thông tin đơn hàng vào localStorage trước khi chuyển hướng VNPAY
-        console.log('🔄 Đang chuẩn bị thanh toán VNPAY...');
-
-        // ✅ DEBUG: Kiểm tra cấu trúc cart trước khi lưu
-
-
-        const orderInfo = {
-          tenNguoiNhan: customerName,
-          soDienThoaiGiaoHang: customerPhone,
-          emailGiaoHang: customerEmail,
-          // ✅ SỬA: Chỉ sử dụng customerAddress (đã bao gồm địa chỉ chi tiết)
-          diaChiGiaoHang: customerAddress,
-          loaiDonHang: 'online',
-          customerNote,
-          paymentMethod,
-          // ✅ SỬA: Gửi finalTotal (đã bao gồm phí ship từ GHN)
-          tongTien: finalTotal, // Tổng tiền đã bao gồm phí ship thực tế
-          phiVanChuyen: shippingFee, // Phí ship từ GHN API
-          finalAmount: finalTotal, // Sử dụng finalTotal thay vì orderTotal + shippingFee
-          trangThai: 0, // VNPAY: Chờ xác nhận (admin kiểm tra rồi mới chuyển sang Đã xác nhận)
-          ngayTao: new Date().toISOString().slice(0, 10),
-          cart: cart,
-          selectedVoucherId: selectedVoucherId
-        };
-
-        localStorage.setItem('pendingOrderInfo', JSON.stringify(orderInfo));
-        console.log('✅ Đã lưu thông tin đơn hàng vào localStorage, chưa tạo đơn hàng');
-        console.log('📋 Thông tin đơn hàng đã lưu:', orderInfo);
-        console.log('📦 Cart trong orderInfo:', orderInfo.cart);
-
-        // ✅ THÊM DEBUG: Kiểm tra localStorage ngay sau khi lưu
-        console.log('🔍 === DEBUG LOCALSTORAGE SAVE ===');
-        console.log('📍 localStorage.pendingOrderInfo exists:', !!localStorage.getItem('pendingOrderInfo'));
-        console.log('📍 localStorage.pendingOrderInfo value:', localStorage.getItem('pendingOrderInfo'));
-        console.log('📍 All localStorage keys:', Object.keys(localStorage));
-        console.log('🔍 === END DEBUG ===');
-
-        // Chuyển đến VNPAY với số tiền cần thanh toán
-        console.log('💰 Số tiền thanh toán VNPAY:', finalTotal);
-        console.log('🔄 Đang gọi API tạo thanh toán VNPAY...');
-        console.log('📍 API URL:', config.getApiUrl(`api/payment/create?amount=${finalTotal}`));
-
-        const res = await fetch(config.getApiUrl(`api/payment/create?amount=${finalTotal}`));
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error('❌ API VNPAY trả về lỗi:', res.status, errorText);
-          throw new Error(`API VNPAY lỗi: ${res.status} - ${errorText}`);
-        }
-
-        const paymentUrl = await res.text();
-        console.log('✅ URL thanh toán VNPAY:', paymentUrl);
-
-        if (!paymentUrl || paymentUrl === '') {
-          throw new Error('API VNPAY không trả về URL thanh toán');
-        }
-
-        // Kiểm tra URL có hợp lệ không
-        try {
-          new URL(paymentUrl);
-        } catch (urlError) {
-          console.error('❌ URL thanh toán không hợp lệ:', paymentUrl);
-          throw new Error('URL thanh toán không hợp lệ');
-        }
-
-        console.log('🚀 Chuyển hướng đến VNPAY...');
-        console.log('📍 VNPAY URL:', paymentUrl);
-
-        // Thêm delay nhỏ để log được hiển thị
-        console.log('🚀 Chuẩn bị chuyển hướng đến VNPAY...');
-        console.log('📍 localStorage trước khi chuyển hướng:', localStorage.getItem('pendingOrderInfo'));
-
-        setTimeout(() => {
-          console.log('🚀 Đang chuyển hướng...');
-          window.location.href = paymentUrl;
-        }, 100);
-
-      } catch (error) {
-        toast.error(`Không thể tạo thanh toán VNPAY: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
-
-    // Đảm bảo total có giá trị hợp lệ
-    if (!total || total <= 0) {
-      toast.error('Tổng tiền không hợp lệ!');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // ✅ Lấy ID khách hàng từ user đang đăng nhập (đã kiểm tra ở trên)
       const customerId = getCustomerId();
-      // BƯỚC 1: Xử lý VNPAY (Chuyển hướng sang VNPay, không tạo đơn ở đây)
-      if (paymentMethod !== 'cod') {
-        const orderInfo = {
-          tenNguoiNhan: customerName,
-          soDienThoaiGiaoHang: customerPhone,
-          emailGiaoHang: customerEmail,
-          diaChiGiaoHang: customerAddress,
-          selectedVoucherId: selectedVoucherId || null,
-          tongTien: finalTotal,
-          phiVanChuyen: shippingFee,
-          cart: location.state?.buyNow ? [{
-            ...cart[0],
-            source: 'buy_now'
-          }] : cart,
-          isBuyNow: location.state?.buyNow === true
-        };
-        localStorage.setItem('pendingOrderInfo', JSON.stringify(orderInfo));
-
-        try {
-          const res = await fetch(config.getApiUrl(`api/payment/create?amount=${Math.round(finalTotal)}`));
-          const data = await res.text();
-          const vnpUrl = data.trim();
-          window.location.href = vnpUrl;
-          return; // Stop execution here
-        } catch (vnpErr) {
-          console.error('Lỗi khi lấy VNPAY URL:', vnpErr);
-          throw new Error('Không thể kết nối với VNPAY. Vui lòng thử lại sau.');
-        }
-      }
-
-      // BƯỚC 1.5: Tạo đơn hàng cơ bản (Chỉ dành cho COD)
+      
+      // BƯỚC 1: TẠO ĐƠN HÀNG (Dùng cho cả COD và VNPAY để validate Voucher/Stock ngay lập tức)
       const orderData = {
-        idkhachHang: customerId, // ID khách hàng từ user đang đăng nhập
+        idkhachHang: customerId,
         idnhanVien: null,
         idgiamGia: selectedVoucherId || null,
         ngayTao: null,
-        // ✅ QUAN TRỌNG: Gửi tổng tiền hàng sau khi giảm sản phẩm nhưng TRƯỚC khi trừ Voucher
-        // Vì Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
+        // Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
         tongTien: total - itemDiscountTotal,
-        tongTienGiamGia: orderDiscount, // Thông tin voucher đã giảm
-        phiVanChuyen: shippingFee, // Phí ship từ GHN API
+        tongTienGiamGia: orderDiscount, 
+        phiVanChuyen: shippingFee, 
         tenNguoiNhan: customerName,
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
-        // ✅ SỬA: Chỉ sử dụng customerAddress (đã bao gồm địa chỉ chi tiết)
         diaChiGiaoHang: customerAddress,
-        loaiDonHang: 'online', // Sử dụng chữ thường để phù hợp với Backend
-        trangThai: 0 // COD: Chờ xác nhận (cần xác nhận thủ công)
+        idService: selectedServiceId, // ✅ THÊM: Gửi idService
+        loaiDonHang: 'online', 
+        trangThai: 0 // Chờ xác nhận / Chờ thanh toán
       };
 
-
+      console.log('📦 Đang gửi yêu cầu tạo đơn hàng Atomic:', orderData);
 
       const orderRes = await fetch(config.getApiUrl('api/donhang/create'), {
         method: 'POST',
@@ -1648,10 +1709,15 @@ const Payment = () => {
         body: JSON.stringify(orderData)
       });
 
-      if (!orderRes.ok) throw new Error('Lỗi khi tạo đơn hàng');
+      if (!orderRes.ok) {
+        const errorData = await orderRes.json();
+        // Ném lỗi Voucher/Stock từ Backend
+        throw new Error(errorData.message || 'Lỗi khi tạo đơn hàng. Vui lòng kiểm tra lại Voucher hoặc Sản phẩm.');
+      }
 
       const createdOrder = await orderRes.json();
       const newOrderId = createdOrder.id;
+      console.log('✅ Đã tạo đơn hàng thành công, ID:', newOrderId);
 
 
       // BƯỚC 2: Tạo đơn hàng chi tiết cho từng sản phẩm (giống BanHangTaiQuay)
@@ -1758,48 +1824,10 @@ const Payment = () => {
 
       console.log('Hoàn thành tạo đơn hàng và chi tiết!');
 
-      // ✅ BƯỚC 3: Cập nhật tổng tiền đơn hàng (chỉ khi KHÔNG có voucher)
-      if (!selectedVoucherId) {
-        console.log('Bước 3: Không có voucher - cập nhật tổng tiền đơn hàng...');
+      console.log('✅ Hoàn thành tạo đơn hàng và chi tiết sản phẩm.');
 
-        try {
-          const updateTotalRes = await fetch(config.getApiUrl(`api/don-hang/${newOrderId}/cap-nhat-tong-tien`), {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          if (updateTotalRes.ok) {
-            const updatedOrder = await updateTotalRes.json();
-
-            console.log('💰 Tổng tiền sau khi cập nhật:', updatedOrder.tongTien);
-            console.log('🚚 Phí vận chuyển:', updatedOrder.phiVanChuyen);
-          } else {
-            console.warn('⚠️ Không thể cập nhật tổng tiền đơn hàng, nhưng đơn hàng đã được tạo');
-          }
-        } catch (updateTotalError) {
-          console.warn('⚠️ Lỗi khi cập nhật tổng tiền đơn hàng:', updateTotalError);
-        }
-      } else {
-        console.log('Bước 3: Có voucher - KHÔNG cần cập nhật tổng tiền (backend đã tính đúng)');
-      }
-
-      // ✅ BƯỚC 4: Áp dụng voucher qua API mới (nếu có chọn voucher) - GIỐNG BANHANGTAIQUAY
-      if (selectedVoucherId) {
-        console.log('Bước 4: Áp dụng voucher qua API mới (giống BanHangTaiQuay)...');
-        console.log('🎫 Voucher ID:', selectedVoucherId);
-        console.log('📦 Order ID:', newOrderId);
-
-        const voucherApplied = await applyVoucherToOrder(newOrderId, selectedVoucherId);
-        if (voucherApplied) {
-
-          toast.success('Voucher đã được áp dụng thành công!');
-
-          // ✅ Fetch lại thông tin đơn hàng để lấy tổng tiền chính xác từ backend
-          await fetchOrderInfo(newOrderId);
-        } else {
-          console.warn('⚠️ Không thể áp dụng voucher qua API mới, nhưng đơn hàng đã tạo thành công');
-        }
-      }
+      // ✅ BƯỚC 5: Xóa giỏ hàng CHỈ KHI thanh toán từ giỏ hàng, KHÔNG xóa khi mua ngay
+      console.log('Bước 5: Xử lý xóa giỏ hàng...');
 
       // ✅ BƯỚC 5: Xóa giỏ hàng CHỈ KHI thanh toán từ giỏ hàng, KHÔNG xóa khi mua ngay
       console.log('Bước 5: Xử lý xóa giỏ hàng...');
@@ -1863,10 +1891,31 @@ const Payment = () => {
           autoClose: 5000,
         });
 
-        // ✅ COD: Chuyển trang sau 3 giây để user đọc thông báo
+        // ✅ COD: Chuyển trang sau 2 giây
         setTimeout(() => {
           navigate('/orders');
-        }, 3000);
+        }, 2000);
+      } else if (paymentMethod === 'bank') {
+        // ✅ VNPAY: Gọi API lấy URL thanh toán VNPAY
+        console.log('💰 Đang tạo yêu cầu thanh toán VNPAY cho đơn hàng:', newOrderId);
+        
+        try {
+          // Làm tròn tổng tiền cho VNPAY
+          const vnpAmount = Math.round(finalTotal);
+          const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}`));
+          
+          if (!paymentRes.ok) throw new Error('Không thể khởi tạo thanh toán VNPAY');
+          
+          const vnpUrl = await paymentRes.text();
+          console.log('🚀 Chuyển hướng đến VNPAY:', vnpUrl);
+          
+          // Chuyển hướng ngay lập tức đến VNPAY
+          window.location.href = vnpUrl;
+        } catch (paymentErr) {
+          console.error('❌ Lỗi VNPAY:', paymentErr);
+          toast.error('Đơn hàng đã tạo nhưng không thể chuyển sang trang thanh toán. Vui lòng thanh toán lại trong mục Lịch sử đơn hàng.');
+          setTimeout(() => navigate('/orders'), 3000);
+        }
       }
 
     } catch (error) {
@@ -1889,10 +1938,10 @@ const Payment = () => {
         {/* Cột trái: Form khách hàng */}
         <div className="gx-payment-form-col">
           {/* Khối địa chỉ kiểu Shopee */}
-          <div className="gx-payment-address-card gx-payment-card">
+          <div className="gx-payment-address-card">
             <div className="gx-payment-address-header">
               <div className="gx-payment-address-title-wrapper">
-                <span className="gx-payment-address-title">Địa chỉ nhận hàng</span>
+                <span className="gx-payment-address-title">📍 Địa chỉ nhận hàng</span>
                 {addressIsDefault && (
                   <span className="gx-payment-address-tag">Mặc định</span>
                 )}
@@ -1909,13 +1958,64 @@ const Payment = () => {
             </div>
             <div className="gx-payment-address-body">
               <div className="gx-payment-address-name">
-                {safeText(customerName, 'Chưa có tên')}{' '}
-                <span className="gx-payment-address-phone">{safeText(formatPhone(customerPhone), 'Chưa có SĐT')}</span>
+                {safeText(customerName, 'Chưa có tên')}
+                <span className="gx-payment-address-phone"> | {safeText(formatPhone(customerPhone), 'Chưa có SĐT')}</span>
               </div>
               <div className="gx-payment-address-text">
                 {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
               </div>
             </div>
+          </div>
+
+          {/* ✅ THÊM: Khối chọn phương thức vận chuyển (Shopee Style) */}
+          <div className="gx-payment-shipping-card gx-payment-card">
+            <div className="gx-payment-card-header">
+              <span className="gx-payment-card-title">🚚 Phương thức vận chuyển</span>
+            </div>
+            
+            {ghnServices && ghnServices.length > 0 ? (
+              <div className="gx-payment-shipping-list">
+                {ghnServices.map((service) => (
+                  <label 
+                    key={service.service_id} 
+                    className={`gx-payment-shipping-item ${selectedServiceId === service.service_id ? 'active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="shippingService"
+                      value={service.service_id}
+                      checked={selectedServiceId === service.service_id}
+                      onChange={() => setSelectedServiceId(service.service_id)}
+                      style={{ display: 'none' }}
+                    />
+                    <div className="gx-payment-shipping-info">
+                      <div className="gx-payment-shipping-name">
+                        {service.short_name || 'Giao hàng tiêu chuẩn'}
+                      </div>
+                      {estimatedDate && selectedServiceId === service.service_id && (
+                        <div className="gx-payment-shipping-date">
+                          Giao hàng dự kiến: <strong>{estimatedDate}</strong>
+                        </div>
+                      )}
+                    </div>
+                    <div className="gx-payment-shipping-fee">
+                      {selectedServiceId === service.service_id && shippingFee > 0 ? shippingFee.toLocaleString() + '₫' : '---'}
+                    </div>
+                    {selectedServiceId === service.service_id && (
+                      <div className="gx-payment-shipping-check">✓</div>
+                    )}
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="gx-payment-no-shipping">
+                {selectedDistrict ? 'Đang lấy thông tin vận chuyển...' : 'Vui lòng chọn địa chỉ để xem phương thức vận chuyển'}
+              </div>
+            )}
+            
+            {shippingFeeLoading && (
+              <div className="gx-payment-shipping-loading">Đang tính phí vận chuyển từ GHN...</div>
+            )}
           </div>
 
           {/* <div className="gx-payment-form-group">
@@ -2033,11 +2133,11 @@ const Payment = () => {
               <p>Không có sản phẩm nào!</p>
             ) : (
               <div className="gx-payment-order-table" role="table" aria-label="Danh sách sản phẩm">
-                <div className="gx-payment-order-row gx-payment-order-row--head" role="row">
-                  <div className="gx-payment-order-cell gx-payment-order-cell--product" role="columnheader">Sản phẩm</div>
-                  <div className="gx-payment-order-cell gx-payment-order-cell--price" role="columnheader">Đơn giá</div>
-                  <div className="gx-payment-order-cell gx-payment-order-cell--qty" role="columnheader">Số lượng</div>
-                  <div className="gx-payment-order-cell gx-payment-order-cell--amount" role="columnheader">Thành tiền</div>
+                <div className="gx-payment-product-header">
+                  <div className="gx-payment-product-item-head">Sản phẩm</div>
+                  <div className="gx-payment-product-price-head">Đơn giá</div>
+                  <div className="gx-payment-product-qty-head">Số lượng</div>
+                  <div className="gx-payment-product-total-head">Thành tiền</div>
                 </div>
 
                 {cart.map((rawItem, index) => {
@@ -2046,63 +2146,50 @@ const Payment = () => {
                   const lineTotal = item.unitPrice * (item.qty || 1);
 
                   return (
-                    <div key={index} className="gx-payment-order-row" role="row">
-                      <div className="gx-payment-order-cell gx-payment-order-cell--product" role="cell">
-                        <div className="gx-payment-product">
+                    <div key={index} className="gx-payment-product-row">
+                      <div className="gx-payment-product-item">
+                        <div className="gx-payment-image-container">
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="gx-payment-order-img"
+                            className="gx-payment-product-image"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://placehold.co/100x100?text=S%E1%BA%A3n+Ph%E1%BA%A9m";
+                            }}
                           />
-                          <div className="gx-payment-product-info">
-                            <div className="gx-payment-order-name">{item.name}</div>
-                            {item.ma && (
-                              <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '12px', marginTop: '2px' }}>
-                                Mã: {item.ma}
-                              </div>
-                            )}
-                            {item.variant ? (
-                              <div className="gx-payment-order-variant" style={{
-                                fontSize: '12px',
-                                color: '#888',
-                                marginTop: '4px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '2px'
-                              }}>
-                                {item.variant.split(' • ').map((v, i) => (
-                                  <span key={i} className="gx-payment-variant-tag" style={{
-                                    backgroundColor: '#f5f5f5',
-                                    padding: '2px 8px',
-                                    borderRadius: '4px',
-                                    width: 'fit-content'
-                                  }}>
-                                    {v}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : null}
-                          </div>
+                        </div>
+                        <div className="gx-payment-product-detail">
+                          <div className="gx-payment-product-name">{item.name}</div>
+                          {item.variant && (
+                            <div className="gx-payment-product-variants">
+                              {item.variant.split(' • ').map((v, i) => (
+                                <span key={i} className="gx-payment-variant-pill">
+                                  {v}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      <div className="gx-payment-order-cell gx-payment-order-cell--price" role="cell">
+                      <div className="gx-payment-product-price">
                         {hasDiscount ? (
-                          <div className="gx-payment-price-stack">
-                            <div className="gx-payment-price-old">{formatVnd(item.originalUnitPrice)}</div>
-                            <div className="gx-payment-price-new">{formatVnd(item.unitPrice)}</div>
+                          <div className="gx-payment-price-group">
+                            <span className="gx-price-old">{formatVnd(item.originalUnitPrice)}</span>
+                            <span className="gx-price-new">{formatVnd(item.unitPrice)}</span>
                           </div>
                         ) : (
-                          <div className="gx-payment-price-new">{formatVnd(item.unitPrice)}</div>
+                          <span className="gx-price-new">{formatVnd(item.unitPrice)}</span>
                         )}
                       </div>
 
-                      <div className="gx-payment-order-cell gx-payment-order-cell--qty" role="cell">
+                      <div className="gx-payment-product-qty">
                         x{item.qty}
                       </div>
 
-                      <div className="gx-payment-order-cell gx-payment-order-cell--amount" role="cell">
-                        <div className="gx-payment-amount">{formatVnd(lineTotal)}</div>
+                      <div className="gx-payment-product-total">
+                        {formatVnd(lineTotal)}
                       </div>
                     </div>
                   );
@@ -2111,33 +2198,45 @@ const Payment = () => {
             )}
           </div>
           <div className="gx-payment-summary gx-payment-card">
-            {/* ✅ Tóm tắt chi phí (breakdown rõ ràng) */}
+            {/* ✅ TÓM TẮT CHI PHÍ (PREMIUM STYLE) */}
             <div className="gx-payment-summary-row">
-              <span className="gx-payment-label">Tạm tính (Giá gốc):</span>
+              <span className="gx-payment-label">
+                <span className="gx-summary-icon">📦</span> Tạm tính (Giá gốc):
+              </span>
               <span className="gx-payment-value">{formatVnd(total)}</span>
             </div>
 
             {itemDiscountTotal > 0 && (
               <div className="gx-payment-summary-row" style={{ color: '#e74c3c' }}>
-                <span className="gx-payment-label">💰 Tiết kiệm từ khuyến mãi:</span>
+                <span className="gx-payment-label">
+                  <span className="gx-summary-icon">💰</span> Tiết kiệm khuyến mãi:
+                </span>
                 <span className="gx-payment-value">-{formatVnd(itemDiscountTotal)}</span>
               </div>
             )}
 
             {selectedVoucherId && (
               <div className="gx-payment-summary-row" style={{ color: '#52c41a' }}>
-                <span className="gx-payment-label">🎫 Giảm giá voucher:</span>
+                <span className="gx-payment-label">
+                  <span className="gx-summary-icon">🎫</span> Voucher giảm giá:
+                </span>
                 <span className="gx-payment-value">-{formatVnd(orderDiscount)}</span>
               </div>
             )}
 
             <div className="gx-payment-summary-row">
-              <span className="gx-payment-label">Phí vận chuyển:</span>
+              <span className="gx-payment-label">
+                <span className="gx-summary-icon">🚚</span> Phí vận chuyển:
+              </span>
               <span className="gx-payment-value">
-                {shippingFeeLoading ? (
-                  <span style={{ color: '#1890ff' }}>Đang tính...</span>
+                {shippingFeeLoading || distanceLoading ? (
+                  <span className="gx-payment-loading-text">Đang tính...</span>
                 ) : (
-                  <span>{formatVnd(shippingFee)}</span>
+                  (total - itemDiscountTotal - orderDiscount) >= 2000000 ? (
+                    <span className="gx-free-ship-badge">Miễn phí (Đơn trên 2tr)</span>
+                  ) : (
+                    <span className="gx-shipping-price-text">{formatVnd(shippingFee)}</span>
+                  )
                 )}
               </span>
             </div>

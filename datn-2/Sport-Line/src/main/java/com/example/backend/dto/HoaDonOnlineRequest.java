@@ -15,5 +15,6 @@ public class HoaDonOnlineRequest {
     private Integer idVoucher;
     private Double tongTien;
     private Integer phiVanChuyen;
+    private Integer idService;
     private List<SanPhamDatDTO> sanPhamDat;
 }
