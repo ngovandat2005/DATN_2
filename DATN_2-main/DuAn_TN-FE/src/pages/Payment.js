@@ -440,15 +440,15 @@ const Payment = () => {
     const subTotal = total - itemDiscountTotal - orderDiscount;
     const effectiveShippingFee = subTotal >= 2000000 ? 0 : shippingFee;
     const newFinalTotal = subTotal + effectiveShippingFee;
-    
+
     setFinalTotal(newFinalTotal);
-    console.log('💰 Recalculated final total:', { 
-      originalTotal: total, 
-      savings: itemDiscountTotal, 
-      voucher: orderDiscount, 
+    console.log('💰 Recalculated final total:', {
+      originalTotal: total,
+      savings: itemDiscountTotal,
+      voucher: orderDiscount,
       ship: shippingFee,
       effectiveShip: effectiveShippingFee,
-      final: newFinalTotal 
+      final: newFinalTotal
     });
   }, [total, itemDiscountTotal, orderDiscount, shippingFee]);
 
@@ -813,20 +813,20 @@ const Payment = () => {
 
         if (shippingFeeValue > 0) {
           setShippingFee(shippingFeeValue);
-          
+
           // ✅ KIỂM TRA: Nếu đơn trên 2tr thì thông báo miễn phí luôn
           const subTotal = total - itemDiscountTotal - orderDiscount;
           if (subTotal >= 2000000) {
             toast.success("🚚 Đơn hàng trên 2tr - MIỄN PHÍ VẬN CHUYỂN!", {
-               position: "top-right",
-               autoClose: 3000
+              position: "top-right",
+              autoClose: 3000
             });
           } else {
             // Thông báo theo mức phí của khách hàng
             const kmFee = 5000;
             const possibleDistances = [5, 15, 50];
             const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
-  
+
             if (currentDistance) {
               toast.info(`Phí ship theo khoảng cách: ${formatVnd(shippingFeeValue)} (~${currentDistance}km)`);
             } else {
@@ -1190,10 +1190,10 @@ const Payment = () => {
   // ✅ THÊM: Function tính khoảng cách qua Bản đồ (Nominatim + OSRM)
   const calculateDistanceByAddress = async (fullAddress) => {
     if (!fullAddress || fullAddress.length < 5) return null;
-    
+
     setDistanceLoading(true);
     console.log('🗺️ Đang tính khoảng cách cho:', fullAddress);
-    
+
     try {
       // 1. Geocoding (Address -> Cords) using Nominatim
       // Lần 1: Thử tìm địa chỉ đầy đủ
@@ -1221,7 +1221,7 @@ const Payment = () => {
       if (geoData && geoData.length > 0) {
         const lat = parseFloat(geoData[0].lat);
         const lon = parseFloat(geoData[0].lon);
-        
+
         // 2. Routing (Distance calculation) using OSRM
         const routeUrl = `https://router.project-osrm.org/route/v1/driving/${SHOP_COORDS[1]},${SHOP_COORDS[0]};${lon},${lat}?overview=false`;
         const routeRes = await fetch(routeUrl);
@@ -1577,7 +1577,7 @@ const Payment = () => {
 
     try {
       const customerId = getCustomerId();
-      
+
       // BƯỚC 1: TẠO ĐƠN HÀNG (Dùng cho cả COD và VNPAY để validate Voucher/Stock ngay lập tức)
       const orderData = {
         idkhachHang: customerId,
@@ -1586,13 +1586,13 @@ const Payment = () => {
         ngayTao: null,
         // Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
         tongTien: total - itemDiscountTotal,
-        tongTienGiamGia: orderDiscount, 
-        phiVanChuyen: shippingFee, 
+        tongTienGiamGia: orderDiscount,
+        phiVanChuyen: shippingFee,
         tenNguoiNhan: customerName,
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
         diaChiGiaoHang: customerAddress,
-        loaiDonHang: 'online', 
+        loaiDonHang: 'online',
         trangThai: 0 // Chờ xác nhận / Chờ thanh toán
       };
 
@@ -1793,17 +1793,17 @@ const Payment = () => {
       } else if (paymentMethod === 'bank') {
         // ✅ VNPAY: Gọi API lấy URL thanh toán VNPAY
         console.log('💰 Đang tạo yêu cầu thanh toán VNPAY cho đơn hàng:', newOrderId);
-        
+
         try {
           // Làm tròn tổng tiền cho VNPAY
           const vnpAmount = Math.round(finalTotal);
           const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}`));
-          
+
           if (!paymentRes.ok) throw new Error('Không thể khởi tạo thanh toán VNPAY');
-          
+
           const vnpUrl = await paymentRes.text();
           console.log('🚀 Chuyển hướng đến VNPAY:', vnpUrl);
-          
+
           // Chuyển hướng ngay lập tức đến VNPAY
           window.location.href = vnpUrl;
         } catch (paymentErr) {
@@ -2112,19 +2112,66 @@ const Payment = () => {
             </div>
           </div>
 
-          <button
-            className="gx-payment-btn"
-            onClick={handlePayment}
-            disabled={loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)}
-            style={{
-              opacity: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 0.6 : 1,
-              cursor: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {loading ? 'Đang xử lý...' :
-              !selectedProvince || !selectedDistrict || !selectedWard ? 'Chọn địa chỉ giao hàng' :
-                shippingFee <= 0 ? 'Đang tính phí vận chuyển...' : 'ĐẶT HÀNG'}
-          </button>
+          {/* ==================== NÚT CHỌN ĐỊA CHỈ GIAO HÀNG (ĐÃ SỬA) ==================== */}
+          <div style={{ marginTop: 24 }}>
+            <Button
+              type="primary"
+              danger
+              size="large"
+              block
+              onClick={() => setAddressModalOpen(true)}   // ← Sửa thành setAddressModalOpen
+              disabled={!cart || cart.length === 0}
+              style={{
+                height: 56,
+                fontSize: 18,
+                fontWeight: 'bold'
+              }}
+            >
+              📍 Chọn địa chỉ giao hàng
+            </Button>
+
+            {/* Hiển thị địa chỉ đã chọn */}
+            {customerAddress && (
+              <div style={{
+                marginTop: 12,
+                padding: 16,
+                backgroundColor: '#f6ffed',
+                border: '1px solid #b7eb8f',
+                borderRadius: 8,
+                fontSize: 15
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: 6 }}>Địa chỉ nhận hàng:</div>
+                <div>
+                  <strong>{customerName || 'Chưa có tên'}</strong> — {customerPhone || 'Chưa có SĐT'}
+                </div>
+                <div style={{ marginTop: 6, color: '#555' }}>
+                  {customerAddress}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* NÚT ĐẶT HÀNG / THANH TOÁN */}
+          <div style={{ marginTop: 30 }}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              onClick={handlePayment}
+              loading={loading}
+              disabled={loading || !customerAddress || !selectedProvince || !selectedDistrict || !selectedWard}
+              style={{
+                height: 56,
+                fontSize: 18,
+                fontWeight: 'bold'
+              }}
+            >
+              {loading ? "Đang xử lý..." : "XÁC NHẬN ĐẶT HÀNG"}
+            </Button>
+            <div style={{ textAlign: 'center', marginTop: 10, color: '#666', fontSize: 14 }}>
+              Thanh toán khi nhận hàng (COD)
+            </div>
+          </div>
 
 
 

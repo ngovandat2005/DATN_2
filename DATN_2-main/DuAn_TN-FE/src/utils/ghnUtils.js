@@ -1,94 +1,130 @@
 /**
- * Utility functions để xử lý GHN API response
+ * ghnUtils.js
+ * Utility functions để xử lý response từ GHN API
+ * Đã được tối ưu để parse đúng response chuẩn của GHN
  */
 
+console.log("🚀 ghnUtils.js loaded");
+
 /**
- * Xử lý response từ GHN API
- * @param {Object} responseData - Response data từ API
- * @returns {Array|null} - Array data hoặc null nếu lỗi
+ * Xử lý response từ GHN API - Phiên bản linh hoạt
+ * @param {Object|Array} responseData - Dữ liệu trả về từ axios
+ * @returns {Array} - Mảng dữ liệu (districts hoặc wards)
  */
 export const parseGHNResponse = (responseData) => {
   console.log('🔍 Parsing GHN response:', responseData);
-  
+
   if (!responseData) {
     console.error('❌ Response data is null/undefined');
-    return null;
+    return [];
   }
-  
-  // Nếu responseData là array trực tiếp
+
+  // Trường hợp 1: Response là array trực tiếp
   if (Array.isArray(responseData)) {
     console.log('✅ Response is direct array');
     return responseData;
   }
-  
-  // Nếu responseData có cấu trúc {code, data, message}
+
+  // Trường hợp 2: Response chuẩn của GHN { code: 200, message: "...", data: [...] }
+  if (responseData.code === 200 && responseData.data !== undefined) {
+    if (Array.isArray(responseData.data)) {
+      console.log('✅ Parsed successfully - using response.data (standard GHN format)');
+      return responseData.data;
+    } else {
+      console.warn('⚠️ "data" field exists but is not an array:', typeof responseData.data);
+      return [];
+    }
+  }
+
+  // Trường hợp 3: Response chỉ có field "data" và là array
   if (responseData.data && Array.isArray(responseData.data)) {
-    console.log('✅ Response has data field with array');
+    console.log('✅ Parsed using response.data (fallback)');
     return responseData.data;
   }
-  
-  // Nếu responseData có cấu trúc khác
-  if (responseData.data) {
-    console.log('⚠️ Response has data field but not array:', typeof responseData.data);
-    return null;
+
+  // Trường hợp 4: Tìm array trong object (phòng trường hợp response lạ)
+  if (typeof responseData === 'object' && responseData !== null) {
+    const values = Object.values(responseData);
+    for (const value of values) {
+      if (Array.isArray(value)) {
+        console.log('✅ Found array inside response object');
+        return value;
+      }
+    }
   }
-  
+
+  // Nếu không parse được
   console.error('❌ Unknown response format:', responseData);
-  return null;
+  console.log('   Available keys:', Object.keys(responseData));
+
+  return [];
 };
 
 /**
  * Kiểm tra response có thành công không
- * @param {Object} responseData - Response data từ API
- * @returns {boolean} - True nếu thành công
+ * @param {Object|Array} responseData 
+ * @returns {boolean}
  */
 export const isGHNResponseSuccess = (responseData) => {
   if (!responseData) return false;
-  
-  // Nếu là array trực tiếp
+
   if (Array.isArray(responseData)) return true;
-  
-  // Nếu có cấu trúc {code, data, message}
-  if (responseData.code === 200 && responseData.data) return true;
-  
+
+  // GHN chuẩn
+  if (responseData.code === 200) return true;
+
+  // Một số trường hợp chỉ có data
+  if (responseData.data && Array.isArray(responseData.data)) return true;
+
   return false;
 };
 
 /**
- * Lấy error message từ response
- * @param {Object} responseData - Response data từ API
- * @returns {string} - Error message
+ * Lấy thông báo lỗi từ response
+ * @param {Object} responseData 
+ * @returns {string}
  */
 export const getGHNErrorMessage = (responseData) => {
-  if (!responseData) return 'Response data is null';
-  
-  if (responseData.message) {
-    return responseData.message;
-  }
-  
-  if (responseData.error) {
-    return responseData.error;
-  }
-  
-  return 'Unknown error';
+  if (!responseData) return 'Không nhận được phản hồi từ server';
+
+  if (responseData.message) return responseData.message;
+  if (responseData.error) return responseData.error;
+  if (responseData.description) return responseData.description;
+
+  return 'Đã xảy ra lỗi khi gọi GHN API';
 };
 
 /**
- * Log response details để debug
- * @param {string} endpoint - API endpoint
- * @param {Object} responseData - Response data
+ * Log chi tiết response để debug (rất hữu ích)
+ * @param {string} endpoint - Tên endpoint (ví dụ: provinces, districts, wards)
+ * @param {Object} responseData 
  */
 export const logGHNResponse = (endpoint, responseData) => {
-  console.log(`📊 GHN API Response for ${endpoint}:`);
-  console.log('  Raw data:', responseData);
-  console.log('  Type:', typeof responseData);
-  console.log('  Is Array:', Array.isArray(responseData));
-  
+  console.group(`📊 GHN API Response for ${endpoint}`);
+  console.log('Raw data:', responseData);
+  console.log('Type:', typeof responseData);
+  console.log('Is Array:', Array.isArray(responseData));
+
   if (responseData && typeof responseData === 'object') {
-    console.log('  Keys:', Object.keys(responseData));
+    console.log('Keys:', Object.keys(responseData));
+
+    if (responseData.code !== undefined) {
+      console.log('Code:', responseData.code);
+    }
+    if (responseData.message) {
+      console.log('Message:', responseData.message);
+    }
     if (responseData.data) {
-      console.log('  Data type:', typeof responseData.data);
-      console.log('  Data is array:', Array.isArray(responseData.data));
+      console.log('Data type:', typeof responseData.data);
+      console.log('Data is array:', Array.isArray(responseData.data));
     }
   }
-}; 
+  console.groupEnd();
+};
+
+export default {
+  parseGHNResponse,
+  isGHNResponseSuccess,
+  getGHNErrorMessage,
+  logGHNResponse
+};
