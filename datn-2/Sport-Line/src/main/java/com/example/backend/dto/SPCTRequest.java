@@ -19,5 +19,6 @@ public class SPCTRequest {
     private Integer idMauSac;
     private Integer soLuong;
     private Double giaBan;
+    private Double giaBanGiamGia; // ✅ THÊM: Giá bán sau giảm
     private Date ngaySanXuat;
 }

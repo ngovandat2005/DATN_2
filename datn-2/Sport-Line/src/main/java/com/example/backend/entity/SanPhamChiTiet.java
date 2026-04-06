@@ -1,8 +1,8 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
-
 
 import java.time.*;
 import java.sql.Date;
@@ -28,8 +28,9 @@ public class SanPhamChiTiet {
     @Column(name = "NgaySanXuat")
     private Date ngaySanXuat;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "IdSanPham", referencedColumnName = "Id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("sanPhamChiTiets")
     private SanPham sanPham;
 
     @ManyToOne

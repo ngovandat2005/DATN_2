@@ -20,6 +20,7 @@ import Profile from './pages/Profile';
 import Payment from './pages/Payment';
 import OrderDetail from './pages/OrderDetail';
 import CheckPayment from './pages/CheckPayment';
+import SalePage from './pages/SalePage';
 import './styles/App.css';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<OrderHistory />} />
           <Route path="/orders/:id" element={<OrderDetail />} />
+          <Route path="/sale" element={<SalePage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/admin" element={<AdminDashboard />} />

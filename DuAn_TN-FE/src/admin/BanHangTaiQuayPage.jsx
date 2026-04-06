@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/AdminPanel.css';
+import config from '../config/config';
 
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -144,7 +145,7 @@ const BanHangTaiQuayPage = () => {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
 
     // Sử dụng API endpoint thay vì static resource
-    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
   };
 
   // Thêm state cho tổng tiền và tổng tiền giảm giá từ BE

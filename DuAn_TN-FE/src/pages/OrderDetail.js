@@ -22,7 +22,8 @@ const formatImage = (raw) => {
   let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
   if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
   if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
-  return `images/${firstImg}`;
+  // Sửa đường dẫn chuẩn theo backend admin
+  return `${config.baseUrl}api/san-pham/images/${firstImg}`;
 };
 
 const OrderDetailPage = () => {
@@ -147,9 +148,9 @@ const OrderDetailPage = () => {
                 }}>
                   <img
                     src={product.images && product.images.includes(',')
-                      ? `http://localhost:8080/images/${encodeURIComponent(product.images.split(',')[0].trim())}`
+                      ? `${config.baseUrl}images/${encodeURIComponent(product.images.split(',')[0].trim())}`
                       : product.images
-                        ? `http://localhost:8080/images/${encodeURIComponent(product.images.trim())}`
+                        ? `${config.baseUrl}images/${encodeURIComponent(product.images.trim())}`
                         : '/placeholder-image.jpg'}
                     alt={product.tenSanPham}
                     style={{ 

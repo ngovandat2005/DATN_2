@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Card, Statistic, Row, Col, Typography, Space, Divider, Select, Table, Spin, Alert, Button, Progress, DatePicker, Segmented } from 'antd';
 import { ShoppingCartOutlined, DollarOutlined, UserOutlined, RiseOutlined, FallOutlined, ReloadOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import config from '../config/config';
 import SimpleChart from './components/SimpleChart';
 
 const { Title, Text } = Typography;
@@ -208,7 +209,7 @@ function StatisticsPage() {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
     
     // Sử dụng API endpoint thay vì static resource
-    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
   };
 
   // Cột cho bảng sản phẩm bán chạy

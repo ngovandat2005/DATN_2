@@ -52,13 +52,14 @@ function ProductDetail() {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [cartItems, setCartItems] = useState([]); // ✅ THÊM: Theo dõi giỏ hàng để tính tồn kho thực tế
+  const [imageList, setImageList] = useState([]); // ✅ THÊM: Danh sách ảnh
+  const [mainImage, setMainImage] = useState(""); // ✅ THÊM: Ảnh chính
 
   // ✅ THÊM: Lấy ID khách hàng từ localStorage
   const customerId = getCustomerId();
 
-  // Lấy chi tiết sản phẩm và biến thể từ API
+  // Lấy chi tiết sản phẩm và các biến thể từ API chuẩn
   useEffect(() => {
-    // Reset các state khi thay đổi sản phẩm
     setSelectedColor(undefined);
     setSelectedSize(undefined);
     setCurrentVariant(null);
@@ -66,23 +67,39 @@ function ProductDetail() {
     setLoading(true);
     setError(null);
 
-    fetch(config.getApiUrl(`api/san-pham-chi-tiet/${id}`))
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+    // CALL 1: Lấy thông tin sản phẩm chính (để có tên, danh mục, thương hiệu...)
+    const fetchProductInfo = axios.get(config.getApiUrl(`api/san-pham/${id}`));
+    
+    // CALL 2: Lấy danh sách sản phẩm chi tiết (để có màu, size, giá...)
+    const fetchVariantsInfo = axios.get(config.getApiUrl(`api/san-pham-chi-tiet/${id}`));
+
+    Promise.all([fetchProductInfo, fetchVariantsInfo])
+      .then(([productRes, variantsRes]) => {
+        // Gắn dữ liệu sản phẩm
+        if (productRes.data) {
+          setProduct(productRes.data);
         }
-        return res.json();
-      })
-      .then((data) => {
-        setVariants(data);
-        setProduct(data[0]?.sanPham || null);
+
+        // Gắn dữ liệu biến thể
+        if (productRes.data && productRes.data.images) {
+          const images = productRes.data.images.split(",").map((img) => img.trim());
+          setImageList(images);
+          setMainImage(`${config.baseUrl}images/${images[0]}`);
+        }
+
+        if (Array.isArray(variantsRes.data)) {
+          setVariants(variantsRes.data);
+        } else {
+          setVariants([]);
+        }
+        
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Lỗi khi lấy thông tin sản phẩm:", error);
-        setError("Không lấy được thông tin sản phẩm!");
+        console.error("❌ Lỗi đồng bộ API sản phẩm:", error);
+        setError("Không lấy được thông tin từ hệ thống!");
         setLoading(false);
-        message.error("Không lấy được thông tin sản phẩm!");
+        message.error("Lỗ kết nối máy chủ!");
       });
   }, [id]);
 
@@ -429,7 +446,7 @@ function ProductDetail() {
 
     if (img.startsWith('http')) return img;
 
-    return config.getApiUrl(`images/${encodeURIComponent(img)}`);
+    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
   };
 
   const handleSubmitReview = () => {
@@ -506,72 +523,71 @@ function ProductDetail() {
             />
           </Col>
           <Col span={14} className="product-detail-info">
-            <Title level={2}>{product?.tenSanPham || product?.name}</Title>
-            <div style={{ marginBottom: 8 }}>
-              {/* ✅ SỬA LẠI: Hiển thị giá khuyến mãi và giá gốc */}
-              {(() => {
-                const priceInfo = getDisplayPrice(currentVariant || variants[0]);
+            {/* 1. Tên Sản Phẩm */}
+            <Title level={2} style={{ marginBottom: '15px', color: '#111', fontWeight: '700' }}>
+              {product?.tenSanPham || product?.name || variants[0]?.sanPham?.tenSanPham || "Hệ thống đang tải tên..."}
+            </Title>
 
-                if (priceInfo.hasDiscount) {
+            {/* 2. Giá Tiền */}
+            <div style={{ marginBottom: '15px' }}>
+              {(() => {
+                const variant = currentVariant || variants[0];
+                const originalPrice = variant?.giaBan || 0;
+                const promo = variant?.khuyenMai;
+                const isActivePromo = (promo && promo.trangThai === 1 && promo.giaTri > 0);
+                
+                let finalPrice = originalPrice;
+                let hasDiscount = false;
+
+                if (isActivePromo) {
+                  const calculatedPrice = Math.round(originalPrice * (1 - promo.giaTri / 100));
+                  if (calculatedPrice > 0 && calculatedPrice < originalPrice) {
+                    finalPrice = calculatedPrice;
+                    hasDiscount = true;
+                  }
+                }
+
+                if (hasDiscount) {
                   return (
-                    <div>
-                      <Text
-                        delete
-                        style={{
-                          fontSize: 18,
-                          color: '#666',
-                          marginRight: 12
-                        }}
-                      >
-                        {priceInfo.originalPrice.toLocaleString()}₫
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Text delete style={{ fontSize: '18px', color: '#999' }}>
+                        {originalPrice.toLocaleString()}₫
                       </Text>
-                      <Text
-                        strong
-                        style={{
-                          color: "#f5222d",
-                          fontSize: 22
-                        }}
-                      >
-                        {priceInfo.finalPrice.toLocaleString()}₫
+                      <Text strong style={{ color: "#f5222d", fontSize: '28px' }}>
+                        {finalPrice.toLocaleString()}₫
                       </Text>
-                      <Tag
-                        color="red"
-                        style={{
-                          marginLeft: 8,
-                          fontSize: 12,
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        -{Math.round(((priceInfo.originalPrice - priceInfo.finalPrice) / priceInfo.originalPrice) * 100)}%
+                      <Tag color="red" style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        -{promo.giaTri}%
                       </Tag>
                     </div>
                   );
                 } else {
                   return (
-                    <Text strong style={{ color: "#f5222d", fontSize: 22 }}>
-                      {priceInfo.finalPrice.toLocaleString()}₫
+                    <Text strong style={{ color: "#f5222d", fontSize: '28px' }}>
+                      {originalPrice.toLocaleString()}₫
                     </Text>
                   );
                 }
               })()}
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <Tag color="blue">
-                Loại:{" "}
-                {currentVariant?.danhMuc?.tenDanhMuc ||
-                  product?.danhMuc?.tenDanhMuc ||
-                  "---"}
+
+            {/* 3. Danh Mục (Loại) */}
+            <div style={{ marginBottom: '12px' }}>
+              <Tag color="blue" style={{ fontSize: '13px', padding: '2px 10px', borderRadius: '4px' }}>
+                Loại: {product?.danhMuc?.tenDanhMuc || variants[0]?.danhMuc?.tenDanhMuc || "---"}
               </Tag>
             </div>
-            <div style={{ marginBottom: 8 }}>
-              <Tag color={stock > 0 ? (availableToBuy > 0 ? "green" : "orange") : "red"}>
+
+            {/* 4. Tình trạng tồn kho */}
+            <div style={{ marginBottom: '20px' }}>
+              <Tag color={stock > 0 ? (availableToBuy > 0 ? "green" : "orange") : "red"} style={{ fontSize: '13px', padding: '2px 10px', borderRadius: '4px' }}>
                 {selectedColor && selectedSize
                   ? stock > 0
                     ? availableToBuy > 0
-                      ? `Tình trạng: Còn ${availableToBuy} sản phẩm có thể thêm (Tổng kho: ${stock}${currentInCart > 0 ? `, đã có ${currentInCart} trong giỏ` : ""})`
-                      : `Tình trạng: Đã đạt giới hạn tối đa trong giỏ hàng (Tổng kho: ${stock})`
-                    : `Tình trạng: Màu ${selectedColor}, Size ${selectedSize} đã hết hàng`
-                  : "Vui lòng chọn đủ màu và size"}
+                      ? `Tình trạng: Còn ${availableToBuy} sản phẩm có thể thêm (Tổng kho: ${stock})`
+                      : `Tình trạng: Đã đạt giới hạn giỏ hàng (Tổng: ${stock})`
+                    : `Tình trạng: Đã hết hàng cho lựa chọn này`
+                  : "Chọn màu sắc và kích thước để xem tồn kho"}
               </Tag>
             </div>
             <div className="product-description-box">
@@ -758,8 +774,8 @@ function ProductDetail() {
                 >
                   <img
                     src={
-                      item.images
-                        ? config.getApiUrl(`images/${item.images.split(",")[0]}`)
+                      item.images 
+                        ? `${config.baseUrl}images/${item.images.split(",")[0].trim()}`
                         : "/logo.png"
                     }
                     alt={item.tenSanPham}

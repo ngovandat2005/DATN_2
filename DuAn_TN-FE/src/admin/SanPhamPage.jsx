@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import axios from "axios";
 import {
-
-  Input, Switch
+  Input, Switch, message, Segmented, Alert, Row, Col, Select, Button, Table, Modal, Divider, Typography, Space, Tag
 } from "antd";
 
 import "../styles/AdminPanel.css";
@@ -34,7 +33,8 @@ const SanPhamPage = () => {
     giaBan: "",
     giaGiamGia: "",
     trangThai: 1,
-    images: ""
+    images: "",
+    gioiTinh: 0 // ✅ THÊM: Mặc định là Nam
   });
   const [loading, setLoading] = useState(false);
   const [trangThai, setTrangThai] = useState("");
@@ -211,6 +211,7 @@ const SanPhamPage = () => {
         giaBan: Number(addForm.giaBan),
         giaGiamGia: addForm.giaGiamGia ? Number(addForm.giaGiamGia) : 0,
         trangThai: Number(addForm.trangThai),
+        gioiTinh: 0 // ✅ LUÔN LUÔN là Nam
       });
       setShowAddModal(false);
       setAddForm({
@@ -265,7 +266,8 @@ const SanPhamPage = () => {
       giaBan: product.giaBan || "",
       giaGiamGia: product.giaGiamGia || "",
       trangThai: product.trangThai,
-      images: product.images || ""
+      images: product.images || "",
+      gioiTinh: product.gioiTinh || 0 // ✅ THÊM: Lấy giới tính hiện tại
     });
     setShowEditModal(true);
   };
@@ -298,7 +300,8 @@ const SanPhamPage = () => {
       giaBan: Number(editForm.giaBan),
       giaGiamGia: editForm.giaGiamGia ? Number(editForm.giaGiamGia) : 0,
       trangThai: Number(editForm.trangThai),
-      images: editForm.images
+      images: editForm.images,
+      gioiTinh: 0 // ✅ LUÔN LUÔN là Nam
     };
     if (editForm.idKhuyenMai) {
       data.khuyenMai = { id: editForm.idKhuyenMai };
@@ -747,6 +750,8 @@ const SanPhamPage = () => {
                   onChange={(e) => setAddForm((f) => ({ ...f, ma: e.target.value }))}
                 />
               </div>
+
+
               {addNameError && <span style={{ color: 'red' }}>{addNameError}</span>}
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Ảnh sản phẩm</label>
@@ -1071,6 +1076,8 @@ const SanPhamPage = () => {
                 </select>
               </div>
 
+
+
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Trạng thái</label>
                 <select
@@ -1078,7 +1085,7 @@ const SanPhamPage = () => {
                   onChange={(e) =>
                     setEditForm((f) => ({ ...f, trangThai: e.target.value }))
                   }
-                  style={{ padding: "8px", borderRadius: "4px", border: "1px solid #d9d9d9" }}
+                  className="status-select"
                 >
                   <option value={1}>Đang bán</option>
                   <option value={0}>Ngừng bán</option>

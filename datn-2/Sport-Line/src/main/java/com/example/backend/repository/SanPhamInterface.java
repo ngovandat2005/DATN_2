@@ -4,55 +4,42 @@ import com.example.backend.entity.SanPham;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.util.List;
 import java.util.Optional;
 
 public interface SanPhamInterface extends JpaRepository<SanPham, Integer> {
 
-        // Lấy sản phẩm theo trạng thái
-        List<SanPham> findAllByTrangThai(Integer trangThai);
+    // 0. Lấy tất cả sản phẩm đang kinh doanh
+    List<SanPham> findAllByTrangThai(Integer trangThai);
 
-        // Tìm theo tên sản phẩm
-        Optional<SanPham> findByTenSanPhamIgnoreCase(String tenSanPham);
+    // 1. Lấy sản phẩm đang kinh doanh theo giới tính
+    List<SanPham> findAllByTrangThaiAndGioiTinh(Integer trangThai, Integer gioiTinh);
 
-        // Tìm theo full điều kiện
-        List<SanPham> findByTenSanPhamAndDanhMuc_IdAndThuongHieu_IdAndChatLieu_IdAndXuatXu_Id(
-                        String tenSanPham,
-                        Integer idDanhMuc,
-                        Integer idThuongHieu,
-                        Integer idChatLieu,
-                        Integer idXuatXu);
+    // 2. Tìm kiếm theo tên (thuần)
+    Optional<SanPham> findByTenSanPhamIgnoreCase(String tenSanPham);
 
-        // Tìm theo danh mục + thương hiệu + chất liệu + xuất xứ
-        List<SanPham> findByDanhMuc_IdAndThuongHieu_IdAndChatLieu_IdAndXuatXu_Id(
-                        Integer idDanhMuc,
-                        Integer idThuongHieu,
-                        Integer idChatLieu,
-                        Integer idXuatXu);
+    // 3. Hệ thống lọc sản phẩm Mega (Hỗ trợ lọc theo giới tính)
+    @Query("""
+        SELECT s FROM SanPham s
+        WHERE (:gioiTinh IS NULL OR s.gioiTinh = :gioiTinh)
+          AND (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
+          AND (:idThuongHieu IS NULL OR s.thuongHieu.id = :idThuongHieu)
+          AND (:search IS NULL OR s.tenSanPham LIKE %:search% OR s.ma LIKE %:search%)
+          AND (s.trangThai = 1)
+    """)
+    List<SanPham> filterProducts(
+        @Param("gioiTinh") Integer gioiTinh,
+        @Param("idDanhMuc") Integer idDanhMuc,
+        @Param("idThuongHieu") Integer idThuongHieu,
+        @Param("search") String search
+    );
 
-        // Filter linh hoạt
-        @Query("""
-                            SELECT s FROM SanPham s
-                            WHERE (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
-                              AND (:idThuongHieu IS NULL OR s.thuongHieu.id = :idThuongHieu)
-                              AND (:idChatLieu IS NULL OR s.chatLieu.id = :idChatLieu)
-                              AND (:idXuatXu IS NULL OR s.xuatXu.id = :idXuatXu)
-                              AND (:trangThai IS NULL OR s.trangThai = :trangThai)
-                        """)
-        List<SanPham> filterSanPham(
-                        @Param("idDanhMuc") Integer idDanhMuc,
-                        @Param("idThuongHieu") Integer idThuongHieu,
-                        @Param("idChatLieu") Integer idChatLieu,
-                        @Param("idXuatXu") Integer idXuatXu,
-                        @Param("trangThai") Integer trangThai);
-
-        // ✅ THÊM: Lấy danh sách sản phẩm có khuyến mãi (check qua SPCT)
-        @Query("""
-                            SELECT DISTINCT s FROM SanPham s
-                            JOIN SanPhamChiTiet spct ON spct.sanPham.id = s.id
-                            WHERE s.trangThai = 1 
-                              AND spct.khuyenMai IS NOT NULL
-                        """)
-        List<SanPham> findByHasKhuyenMai();
+    // 4. Lấy sản phẩm mới nhất theo giới tính cho trang chủ (Cập nhật: không bắt buộc KM để tránh trống menu)
+    @Query("""
+        SELECT s FROM SanPham s
+        WHERE s.trangThai = 1 
+          AND s.gioiTinh = :gioiTinh
+        ORDER BY s.id DESC
+    """)
+    List<SanPham> findFeaturedByGender(@Param("gioiTinh") Integer gioiTinh);
 }

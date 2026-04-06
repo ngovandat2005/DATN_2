@@ -24,7 +24,7 @@ function ContactPage() {
                 <EnvironmentOutlined style={{ fontSize: '20px', marginRight: '8px' }} />
                 <Text strong>Địa chỉ:</Text>
                 <br />
-                <Text>123 Đường ABC,Quận Ba Đình, TP. Hà Nội</Text>
+                <Text>Số 10, Ngõ 20, Ba Đình, Hà Nội</Text>
               </div>
 
               <div>

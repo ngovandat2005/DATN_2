@@ -47,14 +47,12 @@ const slugify = (s) =>
 
 // Hàm lấy ảnh sản phẩm:
 // - Luôn sử dụng ảnh local trong publog/products theo brand + tên sản phẩm
-// - Backend chỉ cung cấp tên / brand, không quyết định ảnh hiển thị
 const getProductImage = (product) => {
   if (!product?.images) return "/logo.png";
-
   // nếu có nhiều ảnh thì lấy ảnh đầu tiên
   const firstImage = product.images.split(",")[0].trim();
-
-  return config.getApiUrl(`images/${firstImage}`);
+  // Sửa đường dẫn chuẩn theo backend admin
+  return `${config.baseUrl}images/${firstImage}`;
 };
 
 // Hàm hiển thị giá với giá gạch đi
@@ -106,8 +104,9 @@ function ProductList() {
   const location = useLocation();
   // Parse query string
   const params = new URLSearchParams(location.search);
-  const initialBrand = params.get("brand");
-  const initialCategory = params.get("category");
+  const initialBrandId = params.get("idThuongHieu");
+  const initialCategoryId = params.get("idDanhMuc");
+  const initialGender = params.get("gioiTinh");
 
   // State cho filter
   const [sizeList, setSizeList] = useState([]);
@@ -115,9 +114,10 @@ function ProductList() {
   const [categoryList, setCategoryList] = useState([]);
   const [filters, setFilters] = useState({
     size: undefined,
-    brand: initialBrand || undefined,
+    brandId: initialBrandId || undefined,
     name: "",
-    category: initialCategory || undefined,
+    categoryId: initialCategoryId || undefined,
+    gender: initialGender || undefined,
   });
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -174,38 +174,39 @@ function ProductList() {
                   let minDiscountPrice = null;
 
                   for (const variant of variants) {
-                    const variantPrice = variant.giaBan;
-                    const variantDiscountPrice = variant.giaBanGiamGia;
+                    const vPrice = variant.giaBan || 0;
+                    const promo = variant.khuyenMai;
+                    const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
+                    
+                    // Ưu tiên giá giảm từ backend nếu có KM đang chạy
+                    let vDiscountPrice = (variant.giaBanGiamGia > 0 && variant.giaBanGiamGia < vPrice && isActivePromo) 
+                      ? variant.giaBanGiamGia 
+                      : (isActivePromo ? Math.round(vPrice * (1 - promo.giaTri / 100)) : 0);
 
                     // Chỉ lấy giá > 0
-                    if (variantPrice && variantPrice > 0) {
-                      if (minPrice === null || variantPrice < minPrice) {
-                        minPrice = variantPrice;
-                        // Nếu biến thể này có giá giảm, lấy giá giảm
-                        if (
-                          variantDiscountPrice &&
-                          variantDiscountPrice > 0 &&
-                          variantDiscountPrice < variantPrice
-                        ) {
-                          minDiscountPrice = variantDiscountPrice;
-                        } else {
-                          minDiscountPrice = null;
+                    if (vPrice > 0) {
+                      // Tìm giá gốc thấp nhất (cho hiển thị "Từ ...đ")
+                      if (minPrice === null || vPrice < minPrice) {
+                        minPrice = vPrice;
+                      }
+                      
+                      // Kiểm tra xem biến thể này có thực sự là sale hợp lệ không
+                      if (vDiscountPrice > 0 && vDiscountPrice < vPrice) {
+                        // Tìm giá sale thấp nhất bộ sưu tập
+                        if (minDiscountPrice === null || vDiscountPrice < minDiscountPrice) {
+                          minDiscountPrice = vDiscountPrice;
                         }
                       }
                     }
                   }
 
-                  // Nếu tìm thấy giá hợp lệ, cập nhật vào product
                   if (minPrice !== null && minPrice > 0) {
                     return {
                       ...product,
                       giaBan: minPrice,
                       giaBanGoc: minPrice,
-                      giaBanGiamGia: minDiscountPrice,
-                      giaBanSauGiam:
-                        minDiscountPrice && minDiscountPrice > 0
-                          ? minDiscountPrice
-                          : null,
+                      giaBanSauGiam: minDiscountPrice,
+                      phanTramGiam: minDiscountPrice ? Math.round((1 - minDiscountPrice / minPrice) * 100) : 0
                     };
                   }
                 }
@@ -227,28 +228,35 @@ function ProductList() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Log sản phẩm theo filter
+  // Lọc sản phẩm theo filter
   const filteredProducts = products.filter((product) => {
     const matchSize =
       !filters.size ||
       (product.kichThuoc &&
         (product.kichThuoc.tenKichThuoc === filters.size ||
           product.kichThuoc.size === filters.size));
-    const matchBrand =
-      !filters.brand ||
-      (product.thuongHieu &&
-        (product.thuongHieu.tenThuongHieu === filters.brand ||
-          product.thuongHieu.brand === filters.brand));
+    
+    // Lọc theo Brand ID
+    const matchBrandId =
+      !filters.brandId ||
+      (product.thuongHieu && String(product.thuongHieu.id) === String(filters.brandId));
+    
+    // Lọc theo Category ID
+    const matchCategoryId =
+      !filters.categoryId ||
+      (product.danhMuc && String(product.danhMuc.id) === String(filters.categoryId));
+
+    // Lọc theo Giới tính
+    const matchGender =
+      !filters.gender ||
+      String(product.gioiTinh) === String(filters.gender);
+
     const matchName =
       !filters.name ||
       (product.tenSanPham || product.name || "")
         .toLowerCase()
         .includes(filters.name.toLowerCase());
-    const matchCategory =
-      !filters.category ||
-      (product.danhMuc &&
-        (product.danhMuc.tenDanhMuc === filters.category ||
-          product.danhMuc.category === filters.category));
+
     const price =
       product.giaBanSauGiam ??
       product.giaBanGiamGia ??
@@ -258,7 +266,8 @@ function ProductList() {
     const matchPrice =
       (!priceRange[0] || price >= priceRange[0]) &&
       (!priceRange[1] || price <= priceRange[1]);
-    return matchSize && matchBrand && matchName && matchCategory && matchPrice;
+
+    return matchSize && matchBrandId && matchCategoryId && matchGender && matchName && matchPrice && String(product.gioiTinh) !== '1';
   });
 
   // Reset về trang 1 khi filter hoặc giá thay đổi
@@ -266,108 +275,86 @@ function ProductList() {
     setCurrentPage(1);
   }, [filters, priceRange]);
 
+  // ✅ THÊM: Cập nhật bộ lọc khi URL thay đổi (VD: bấm Nike -> Adidas ở Header)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setFilters(f => ({
+      ...f,
+      brandId: params.get("idThuongHieu") || undefined,
+      categoryId: params.get("idDanhMuc") || undefined,
+      gender: params.get("gioiTinh") || undefined
+    }));
+  }, [location.search]);
+
   // Tính toán sản phẩm hiển thị theo trang
   const startIdx = (currentPage - 1) * pageSize;
   const endIdx = startIdx + pageSize;
   const pagedProducts = filteredProducts.slice(startIdx, endIdx);
 
   return (
-    <div className="product-list-page">
-      <div className="product-list-inner">
-        <div
-          className="product-list-header"
-          style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            padding: "60px 32px",
-            borderRadius: 24,
-            marginBottom: 40,
-            marginTop: 20,
-            textAlign: "center",
-            boxShadow: "0 20px 60px rgba(102, 126, 234, 0.4)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          {/* Animated background elements */}
-          <div
-            style={{
-              position: "absolute",
-              top: "-50%",
-              right: "-10%",
-              width: 400,
-              height: 400,
-              background: "rgba(255, 255, 255, 0.1)",
-              borderRadius: "50%",
-              animation: "float 6s ease-in-out infinite",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: "-30%",
-              left: "-5%",
-              width: 300,
-              height: 300,
-              background: "rgba(255, 255, 255, 0.05)",
-              borderRadius: "50%",
-              animation: "float 8s ease-in-out infinite reverse",
-            }}
-          />
-
-          <style>{`
-            @keyframes float {
-              0%, 100% { transform: translateY(0px); }
-              50% { transform: translateY(20px); }
-            }
-            @keyframes slideDown {
-              from {
-                opacity: 0;
-                transform: translateY(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-            .product-list-title {
-              animation: slideDown 0.8s ease-out;
-            }
-            .product-list-subtitle {
-              animation: slideDown 0.8s ease-out 0.2s both;
-            }
-          `}</style>
-
+    <div className="product-list-page" style={{ padding: 0, overflowX: 'hidden' }}>
+      {/* Banner Full Width phá vỡ mọi khung lề */}
+      <div
+        className="product-list-banner"
+        style={{
+          width: '100vw',
+          position: 'relative',
+          left: '50%',
+          right: '50%',
+          marginLeft: '-50vw',
+          marginRight: '-50vw',
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${
+            String(filters.gender) === '0' ? 'https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop' : 
+            'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2000&auto=format&fit=crop'
+          })`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+          height: '550px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          textAlign: 'center',
+          color: '#fff',
+          boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+          marginBottom: '60px'
+        }}
+      >
+        <div style={{ position: 'relative', zIndex: 2, padding: '0 20px' }}>
           <Title
-            level={2}
-            className="product-list-title"
+            level={1}
             style={{
-              marginBottom: 16,
               color: "#fff",
-              fontSize: 42,
-              fontWeight: 700,
-              textShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              position: "relative",
-              zIndex: 1,
+              fontSize: 'clamp(32px, 6vw, 72px)',
+              fontWeight: 900,
+              textTransform: 'uppercase',
+              letterSpacing: '6px',
+              marginBottom: 16,
+              textShadow: "0 4px 15px rgba(0, 0, 0, 0.6)",
             }}
           >
-            ✨ Danh Sách Sản Phẩm
+            {filters.gender === '0' ? 'COLLECTION GIÀY NAM' : 'TẤT CẢ SẢN PHẨM'}
           </Title>
           <Text
-            className="product-list-subtitle"
             style={{
-              fontSize: 16,
+              fontSize: 'clamp(16px, 2vw, 20px)',
               color: "rgba(255, 255, 255, 0.95)",
-              textShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              position: "relative",
-              zIndex: 1,
+              textShadow: "0 2px 5px rgba(0, 0, 0, 0.3)",
+              letterSpacing: '1.5px',
+              display: 'block',
+              maxWidth: '800px',
+              margin: '0 auto',
               lineHeight: 1.6,
+              fontWeight: 300,
+              textTransform: 'uppercase'
             }}
           >
-            Lọc theo thương hiệu, size, giá và danh mục để tìm đôi giày phù hợp
-            nhất với bạn
+            Khẳng định phong cách riêng cùng bộ sưu tập {filters.gender === '0' ? 'Nam' : filters.gender === '1' ? 'Nữ' : 'chính hãng'} độc quyền tại KING STEP.
           </Text>
         </div>
+      </div>
 
+      <div className="product-list-inner" style={{ padding: '40px 32px' }}>
         {/* Bộ lọc hiện đại hai tầng */}
         <div
           style={{
@@ -478,8 +465,9 @@ function ProductList() {
               </div>
             </Col>
 
-            {/* Hàng 2: Bộ lọc tùy chọn */}
-            <Col xs={24} md={8}>
+
+
+            <Col xs={24} sm={12} lg={6}>
               <Text
                 strong
                 style={{
@@ -498,23 +486,20 @@ function ProductList() {
                 style={{ width: "100%" }}
                 allowClear
                 size="large"
-                value={filters.brand}
+                value={filters.brandId}
                 onChange={(value) =>
-                  setFilters((f) => ({ ...f, brand: value }))
+                  setFilters((f) => ({ ...f, brandId: value }))
                 }
               >
                 {brandList.map((brand) => (
-                  <Option
-                    key={brand.id || brand}
-                    value={brand.tenThuongHieu || brand.brand || brand}
-                  >
-                    {brand.tenThuongHieu || brand.brand || brand}
+                  <Option key={brand.id} value={String(brand.id)}>
+                    {brand.tenThuongHieu}
                   </Option>
                 ))}
               </Select>
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12} lg={6}>
               <Text
                 strong
                 style={{
@@ -533,20 +518,20 @@ function ProductList() {
                 style={{ width: "100%" }}
                 allowClear
                 size="large"
-                value={filters.category}
+                value={filters.categoryId}
                 onChange={(value) =>
-                  setFilters((f) => ({ ...f, category: value }))
+                  setFilters((f) => ({ ...f, categoryId: value }))
                 }
               >
                 {categoryList.map((cat) => (
-                  <Option key={cat.id} value={cat.tenDanhMuc}>
+                  <Option key={cat.id} value={String(cat.id)}>
                     {cat.tenDanhMuc}
                   </Option>
                 ))}
               </Select>
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={24} sm={12} lg={6}>
               <Text
                 strong
                 style={{

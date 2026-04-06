@@ -1,9 +1,11 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -50,6 +52,22 @@ public class SanPham {
     @Column(name = "Images")
     private String images;
 
+    @Column(name = "GioiTinh") // ✅ THÊM: Giới tính (0: Nam, 1: Nữ, 2: Unisex)
+    @com.fasterxml.jackson.annotation.JsonProperty("gioiTinh")
+    private Integer gioiTinh;
+
     @Column(name = "TrangThai")
     private Integer trangThai;
+
+    public Integer getGioiTinh() {
+        return gioiTinh;
+    }
+
+    public void setGioiTinh(Integer gioiTinh) {
+        this.gioiTinh = gioiTinh;
+    }
+
+    @OneToMany(mappedBy = "sanPham", fetch = FetchType.EAGER)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("sanPham")
+    private List<SanPhamChiTiet> sanPhamChiTiets; 
 }

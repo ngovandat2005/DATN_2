@@ -140,6 +140,15 @@ const DetailSanPhamPage = () => {
       }
     }
 
+    // 3. Kiểm tra giá bán hợp lệ
+    if (Number(spctForm.giaBan) <= 0) {
+      Swal.fire({ icon: 'error', title: 'Giá bán không hợp lệ!', text: 'Giá bán phải lớn hơn 0.' });
+      return;
+    }
+
+    // 4. Kiểm tra mã SKU đã tồn tại ở các sản phẩm khác (Thực tế nên gọi API, ở đây check local trước)
+    // Để triệt để, ta sẽ thêm một lớp bảo vệ khi nhận lỗi từ Backend ở khối catch
+
     // Kiểm tra trùng bộ (Màu sắc + Kích thước) ở FE
     const isDuplicate = chiTietList.some(
       (ct) =>
@@ -149,13 +158,10 @@ const DetailSanPhamPage = () => {
 
     if (isDuplicate) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Biến thể này đã tồn tại!',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500,
-        width: 250
+        icon: 'error',
+        title: 'Biến thể đã tồn tại!',
+        text: 'Màu sắc và Kích thước này đã có trong danh sách chi tiết của sản phẩm.',
+        confirmButtonColor: '#d32f2f'
       });
       return;
     }
@@ -175,7 +181,7 @@ const DetailSanPhamPage = () => {
 
     try {
       await axios.post(`http://localhost:8080/api/san-pham-chi-tiet/them/${product.id}`, {
-        ma: spctForm.ma, // ✅ THÊM: Mã SKU
+        ma: spctForm.ma, 
         idKichThuoc: spctForm.idKichThuoc,
         idMauSac: spctForm.idMauSac,
         soLuong: Number(spctForm.soLuong),
@@ -185,29 +191,11 @@ const DetailSanPhamPage = () => {
       setSpctForm({ ma: '', idMauSac: '', idKichThuoc: '', giaBan: '', soLuong: '' });
       fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Thêm biến thể thành công',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500,
-        width: 250
-      });
-
+      Swal.fire({ icon: 'success', title: 'Thêm biến thể thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       setShowAddSpctModal(false);
     } catch (err) {
-      const msg = err.response?.data || err.message || 'Có lỗi xảy ra!';
-      Swal.fire({
-        icon: 'error',
-        title: 'Thêm biến thể thất bại!',
-        text: msg,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1800,
-        width: 250
-      });
+      const msg = err.response?.data?.message || err.response?.data || 'Mã SKU này có thể đã tồn tại ở một sản phẩm khác!';
+      Swal.fire({ icon: 'error', title: 'Thêm thất bại!', text: msg });
     }
   };
 
@@ -215,35 +203,13 @@ const DetailSanPhamPage = () => {
   const handleEditSpct = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra định dạng SKU (nếu có nhập)
+    // 1. Kiểm tra định dạng SKU
     if (editSpct.ma && !/^[a-zA-Z0-9-_]+$/.test(editSpct.ma)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Mã SKU không hợp lệ!',
-        text: 'Mã SKU chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
-        confirmButtonColor: '#1976d2'
-      });
+      Swal.fire({ icon: 'error', title: 'Mã SKU không hợp lệ!', text: 'Mã SKU không được chứa ký tự đặc biệt.' });
       return;
     }
 
-    // 2. Kiểm tra trùng SKU (trừ chính nó)
-    if (editSpct.ma) {
-      const isSkuDuplicate = chiTietList.some(ct => 
-        ct.id !== editSpct.id && 
-        ct.ma?.trim().toLowerCase() === editSpct.ma.trim().toLowerCase()
-      );
-      if (isSkuDuplicate) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Mã SKU đã tồn tại!',
-          text: `Mã SKU "${editSpct.ma}" đã được sử dụng cho một biến thể khác.`,
-          confirmButtonColor: '#d32f2f'
-        });
-        return;
-      }
-    }
-
-    // Kiểm tra trùng bộ (Màu sắc + Kích thước) ở FE (trừ chính biến thể đang sửa)
+    // 2. Kiểm tra trùng bộ (Màu sắc + Kích thước)
     const isDuplicate = chiTietList.some(
       (ct) =>
         ct.id !== editSpct.id &&
@@ -252,25 +218,14 @@ const DetailSanPhamPage = () => {
     );
 
     if (isDuplicate) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Biến thể này đã tồn tại!',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500,
-        width: 250
-      });
+      Swal.fire({ icon: 'error', title: 'Biến thể đã tồn tại!', text: 'Màu và size này đã được sử dụng.' });
       return;
     }
 
     const result = await Swal.fire({
-      title: 'Xác nhận cập nhật biến thể?',
-      text: "Các thay đổi sẽ được lưu ngay lập tức.",
+      title: 'Xác nhận cập nhật?',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#43a047',
-      cancelButtonColor: '#6c757d',
       confirmButtonText: 'Xác nhận',
       cancelButtonText: 'Hủy'
     });
@@ -278,80 +233,34 @@ const DetailSanPhamPage = () => {
     if (!result.isConfirmed) return;
 
     try {
-      // Lấy thông tin biến thể hiện tại để so sánh giá
       const currentVariant = chiTietList.find(ct => ct.id === editSpct.id);
-      const oldPrice = currentVariant?.giaBan || 0;
       const newPrice = Number(editSpct.giaBan);
+      const promo = currentVariant?.khuyenMai;
+      const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
 
-      // Kiểm tra xem có cần cập nhật giá khuyến mãi không
+      // THIẾT QUÂN LUẬT: Nếu không có KM đang chạy, giá giảm PHẢI bị xóa bỏ (null)
       let updatedGiaBanGiamGia = null;
 
-      if (currentVariant?.giaBanGiamGia && oldPrice !== newPrice) {
-        // Nếu có giá khuyến mãi và giá bán thay đổi
-        if (oldPrice > 0) {
-          // Tính tỷ lệ giảm giá cũ
-          const discountRatio = (oldPrice - currentVariant.giaBanGiamGia) / oldPrice;
-
-          // Áp dụng tỷ lệ giảm giá cũ cho giá mới
-          updatedGiaBanGiamGia = Math.round(newPrice * (1 - discountRatio));
-
-          // Đảm bảo giá khuyến mãi không cao hơn giá bán
-          if (updatedGiaBanGiamGia >= newPrice) {
-            updatedGiaBanGiamGia = newPrice;
-          }
-        }
+      if (isActivePromo) {
+        // Nếu có KM đang chạy, tính toán lại giá giảm dựa trên % khuyến mãi và giá mới
+        updatedGiaBanGiamGia = Math.round(newPrice * (1 - promo.giaTri / 100));
       }
 
-      // Gọi API cập nhật biến thể
-      const updateData = {
-        ma: editSpct.ma, // ✅ THÊM: Mã SKU
+      await axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${editSpct.id}`, {
+        ma: editSpct.ma,
         giaBan: newPrice,
         soLuong: editSpct.soLuong,
         idMauSac: editSpct.mauSac?.id || editSpct.idMauSac,
         idKichThuoc: editSpct.kichThuoc?.id || editSpct.idKichThuoc,
-      };
-
-      // Nếu có khuyến mãi hiện tại và giá thay đổi, để Backend tự động tính lại giá khuyến mãi
-      // Không cần gửi idKhuyenMai = 0, Backend sẽ tự động cập nhật giá khuyến mãi theo tỷ lệ giảm cũ
-
-      // Nếu có cập nhật giá khuyến mãi, thêm vào data
-      if (updatedGiaBanGiamGia !== null) {
-        updateData.giaBanGiamGia = updatedGiaBanGiamGia;
-      }
-      await axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${editSpct.id}`, updateData);
-
-      // Hiển thị thông báo thành công với thông tin về giá khuyến mãi
-      let successMessage = 'Cập nhật biến thể thành công';
-      if (updatedGiaBanGiamGia !== null) {
-        successMessage += `\nGiá khuyến mãi đã được cập nhật từ ${currentVariant.giaBanGiamGia?.toLocaleString()}đ xuống ${updatedGiaBanGiamGia.toLocaleString()}đ`;
-      }
-
-      // Hiển thị thông báo thành công đơn giản
-      Swal.fire({
-        icon: 'success',
-        title: 'Cập nhật biến thể thành công',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500,
-        width: 250
+        giaBanGiamGia: updatedGiaBanGiamGia // Sẽ là null nếu không có KM
       });
 
+      Swal.fire({ icon: 'success', title: 'Cập nhật thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       setShowEditSpctModal(false);
-      setEditSpct(null);
       fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
     } catch (err) {
-      const msg = err.response?.data || err.message || 'Có lỗi xảy ra!';
-      Swal.fire({
-        icon: 'error',
-        title: 'Cập nhật thất bại',
-        text: msg,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1800,
-        width: 250
-      });
+      const msg = err.response?.data?.message || err.response?.data || 'Lỗi cập nhật dữ liệu!';
+      Swal.fire({ icon: 'error', title: 'Thất bại', text: msg });
     }
   };
 
@@ -418,6 +327,74 @@ const DetailSanPhamPage = () => {
       });
     } catch (error) {
       Swal.fire('Lỗi', 'Không thể cập nhật trạng thái biến thể', 'error');
+    }
+  };
+
+  // 🪄 HÀM DỌN DẸP DỮ LIỆU RÁC (THẦN TỐC)
+  const handleCleanUpPrices = async () => {
+    // 1. Lọc ra những biến thể "bị lỗi" (không có KM nhưng lại có giá giảm rác trong DB)
+    const variantsToFix = chiTietList.filter(ct => {
+      const promo = ct.khuyenMai;
+      const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
+      // Lỗi là khi không có KM mà giá giảm vẫn khác (null/0/giá gốc)
+      return !isActivePromo && ct.giaBanGiamGia !== null && ct.giaBanGiamGia !== ct.giaBan;
+    });
+
+    if (variantsToFix.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Dữ liệu đã sạch!',
+        text: 'Toàn bộ biến thể của sản phẩm này hiện tại đã chuẩn dữ liệu SQL.',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: 'Xác nhận dọn dẹp?',
+      text: `Hệ thống đã tìm thấy ${variantsToFix.length} biến thể có dữ liệu giá ảo trong SQL. Bạn có muốn dọn dẹp ngay?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ff9800',
+      confirmButtonText: '🪄 Dọn dẹp ngay!',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Đang thanh tẩy dữ liệu...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    try {
+      // 2. Chạy dọn dẹp hàng loạt bằng Promise.all
+      await Promise.all(variantsToFix.map(ct => 
+        axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${ct.id}`, {
+          ma: ct.ma,
+          giaBan: ct.giaBan,
+          soLuong: ct.soLuong,
+          idMauSac: ct.mauSac?.id || ct.idMauSac,
+          idKichThuoc: ct.kichThuoc?.id || ct.idKichThuoc,
+          giaBanGiamGia: null // Đưa về null để SQL sạch bóng
+        })
+      ));
+
+      Swal.close();
+      Swal.fire({
+        icon: 'success',
+        title: 'Thanh tẩy thành công!',
+        text: `Đã dọn dẹp sạch ${variantsToFix.length} biến thể trong SQL.`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+      
+      // Tải lại danh sách
+      fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
+    } catch (err) {
+      Swal.fire('Lỗi dọn dẹp', 'Không thể cập nhật SQL hàng loạt!', 'error');
     }
   };
 
@@ -673,12 +650,29 @@ const DetailSanPhamPage = () => {
                         <td>{ct.kichThuoc?.tenKichThuoc || "-"}</td>
                         <td>{ct.giaBan?.toLocaleString() || "-"}</td>
                         <td>
-                          {ct.giaBanGiamGia ? ct.giaBanGiamGia.toLocaleString() : '-'}
-                          {ct.giaBanGiamGia && ct.giaBanGiamGia < ct.giaBan && (
-                            <span style={{ color: '#ff4d4f', marginLeft: 8 }}>
-                              (-{Math.round((1 - ct.giaBanGiamGia / ct.giaBan) * 100)}%)
-                            </span>
-                          )}
+                          {(() => {
+                            const promo = ct.khuyenMai;
+                            const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
+                            const salePrice = ct.giaBanGiamGia;
+
+                            if (isActivePromo) {
+                              // Nếu có KM đang chạy, tính toán giá giảm
+                              const displaySalePrice = (salePrice > 0 && salePrice < ct.giaBan) 
+                                ? salePrice 
+                                : Math.round(ct.giaBan * (1 - promo.giaTri / 100));
+
+                              return (
+                                <>
+                                  {displaySalePrice.toLocaleString()} ₫
+                                  <span style={{ color: '#ff4d4f', marginLeft: 8, fontWeight: 'bold' }}>
+                                    (-{promo.giaTri}%)
+                                  </span>
+                                </>
+                              );
+                            }
+                            // Nếu không có KM, hiển thị đúng bằng giá gốc (2,000,000đ)
+                            return `${(ct.giaBan || 0).toLocaleString()} ₫`;
+                          })()}
                         </td>
                         <td>{ct.soLuong ?? "-"}</td>
                         <td>

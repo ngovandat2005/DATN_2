@@ -113,6 +113,18 @@ public class SPCTService {
         if (request.getGiaBan() != null) {
             spct.setGiaBan(request.getGiaBan());
         }
+
+        // ✅ THÊM: Logic cập nhật giá giảm (giaBanGiamGia)
+        // Luôn cập nhật giá giảm từ yêu cầu (giúp dọn dẹp giá rác)
+        spct.setGiaBanGiamGia(request.getGiaBanGiamGia());
+
+        // Nếu đôi giày đang có khuyến mãi đang chạy (trangThai == 1), ta tự tính lại giá giảm 
+        // để đảm bảo SQL luôn chuẩn, đề phòng trường hợp edit lẻ tẻ từng ô
+        if (spct.getKhuyenMai() != null && spct.getKhuyenMai().getTrangThai() == 1) {
+             double giatri = spct.getKhuyenMai().getGiaTri();
+             double calculated = (double) Math.round(spct.getGiaBan() * (1 - giatri / 100));
+             spct.setGiaBanGiamGia(calculated);
+        }
         if (request.getNgaySanXuat() != null) {
             spct.setNgaySanXuat((Date) request.getNgaySanXuat());
         }

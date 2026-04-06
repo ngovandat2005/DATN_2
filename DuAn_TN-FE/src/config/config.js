@@ -2,6 +2,7 @@
 const config = {
   // Sử dụng URL tương đối khi có proxy trong development
   API_BASE_URL: process.env.NODE_ENV === 'development' ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:8080'),
+  baseUrl: 'http://localhost:8080/', // ✅ THÊM: Đường dẫn gốc cho ảnh Backend
   
   // Các cấu hình khác
   APP_NAME: 'Shoe Store',
