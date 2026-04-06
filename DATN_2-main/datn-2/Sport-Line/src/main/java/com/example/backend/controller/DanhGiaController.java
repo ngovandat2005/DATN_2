@@ -6,6 +6,7 @@ import com.example.backend.service.DanhGiaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,19 +28,30 @@ public class DanhGiaController {
         }
     }
 
-    // Thêm vào trong class DanhGiaController
     @PostMapping("/them")
-    public ResponseEntity<?> submitReview(@RequestBody DanhGiaRequest request) {
+    public ResponseEntity<?> submitReview(
+            @RequestParam(value = "images", required = false) List<MultipartFile> files,
+            @RequestParam("idKhachHang") Integer idKhachHang,
+            @RequestParam("idSanPham") Integer idSanPham,
+            @RequestParam("soSao") Integer soSao,
+            @RequestParam("binhLuan") String binhLuan) {
+
         try {
-            // Gọi service xử lý
-            DanhGia savedReview = danhGiaService.submitReview(request);
-            return ResponseEntity.ok(savedReview);
-        } catch (RuntimeException e) {
-            // Trả về lỗi 400 nếu không tìm thấy khách hàng/sản phẩm
-            return ResponseEntity.badRequest().body(e.getMessage());
+            // 1. Tạo request object
+            DanhGiaRequest request = new DanhGiaRequest();
+            request.setIdKhachHang(idKhachHang);
+            request.setIdSanPham(idSanPham);
+            request.setSoSao(soSao);
+            request.setBinhLuan(binhLuan);
+
+            // 2. Gọi service
+            DanhGia saved = danhGiaService.submitReview(request, files);
+
+            // 3. Trả về kết quả
+            return ResponseEntity.ok(saved);
+
         } catch (Exception e) {
-            // Trả về lỗi 500 nếu có lỗi hệ thống khác
-            return ResponseEntity.status(500).body("Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(500).body("Lỗi: " + e.getMessage());
         }
     }
 }

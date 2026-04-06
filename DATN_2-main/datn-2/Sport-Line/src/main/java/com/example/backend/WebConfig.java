@@ -21,5 +21,8 @@ public class WebConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:///E:/MauGiay/");
+
+        registry.addResourceHandler("/review-images/**")
+                .addResourceLocations("file:///E:/review-images/");
     }
 }

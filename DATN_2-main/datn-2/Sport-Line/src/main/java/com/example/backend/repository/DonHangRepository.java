@@ -59,4 +59,13 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 
     @Query("SELECT d.trangThai, COUNT(d) FROM DonHang d WHERE d.ngayMua BETWEEN :startDate AND :endDate GROUP BY d.trangThai")
     List<Object[]> countOrdersByStatusInRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
+
+    @Query("""
+    SELECT COUNT(dh) FROM DonHang dh 
+    JOIN dh.donHangChiTiets ct 
+    WHERE dh.khachHang.id = :khId 
+    AND ct.sanPhamChiTiet.sanPham.id = :spId 
+    AND dh.trangThai = 5
+""")
+    long countFinishedOrders(@Param("khId") Integer khachHangId, @Param("spId") Integer sanPhamId);
 }

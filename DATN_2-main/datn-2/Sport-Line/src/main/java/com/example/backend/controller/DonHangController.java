@@ -8,16 +8,19 @@ package com.example.backend.controller;
     import com.example.backend.dto.XacNhanThanhToanDTO;
     import com.example.backend.dto.HoaDonOnlineRequest;
     import com.example.backend.entity.DonHang;
+    import com.example.backend.entity.DonHangChiTiet;
     import com.example.backend.enums.TrangThaiDonHang;
     import com.example.backend.service.DonHangService;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
 
+    import java.util.HashMap;
     import java.util.List;
     import java.util.Map;
+    import java.util.stream.Collectors;
 
-    @RestController
+@RestController
     @RequestMapping("/api")
     public class DonHangController {
 
@@ -254,4 +257,16 @@ package com.example.backend.controller;
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
         }
+
+    @GetMapping("/donhang/check-danh-gia")
+    public ResponseEntity<Map<String, Object>> checkDanhGia(
+            @RequestParam Integer idKhachHang,
+            @RequestParam Integer idSanPham) {
+
+        // Gọi hàm từ Service vừa viết ở Bước 1
+        Map<String, Object> response = donHangService.checkQuyenFeedback(idKhachHang, idSanPham);
+
+        return ResponseEntity.ok(response);
+    }
+
     }

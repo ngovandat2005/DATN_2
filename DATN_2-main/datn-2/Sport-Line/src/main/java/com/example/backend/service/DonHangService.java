@@ -9,12 +9,10 @@ import com.example.backend.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.example.backend.repository.DanhGiaRepository;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +34,8 @@ public class DonHangService {
     private VoucherService voucherService;
     @Autowired
     private GHNClientService ghnClientService;
+    @Autowired
+    private DanhGiaRepository danhGiaRepository;
 
     public List<DonHangDTO> getAll() {
         return donHangRepository.findAll()
@@ -62,7 +62,7 @@ public class DonHangService {
             try {
                 Voucher voucher = donHang.getGiamGia();
                 voucherService.kiemTraDieuKienVoucher(donHang, voucher.getId());
-                
+
                 // Trừ số lượng voucher (Stock -1)
                 if (voucher.getSoLuong() != null && voucher.getSoLuong() > 0) {
                     voucher.setSoLuong(voucher.getSoLuong() - 1);
@@ -175,7 +175,7 @@ public class DonHangService {
             donHang.setNgayMua(LocalDate.now());
             if (ship != null) donHang.setPhiVanChuyen(ship);
             if (diaChi != null) donHang.setDiaChiGiaoHang(diaChi);
-            
+
             capNhatTongTienDonHang(donHang.getId());
 
             if (idkhachHang != null) {
@@ -208,7 +208,7 @@ public class DonHangService {
         double subTotal = tongTienGoc - giam;
         int ship = donHang.getPhiVanChuyen() != null ? donHang.getPhiVanChuyen() : 0;
         if (subTotal >= 2000000) ship = 0;
-        
+
         donHang.setPhiVanChuyen(ship);
         donHang.setTongTien(subTotal + ship);
         donHangRepository.save(donHang);
@@ -251,7 +251,7 @@ public class DonHangService {
                 don.setGiamGia(v);
             }
         }
-        
+
         double subTotal = tongTien - giam;
         int fee = (subTotal >= 2000000) ? 0 : (req.getPhiVanChuyen() != null ? req.getPhiVanChuyen() : 0);
         don.setPhiVanChuyen(fee);
@@ -375,4 +375,29 @@ public class DonHangService {
         if (dto.getIdgiamGia() != null) voucherRepository.findById(dto.getIdgiamGia()).ifPresent(dh::setGiamGia);
         return dh;
     }
+
+    public boolean coQuyenDanhGia(Integer khachHangId, Integer sanPhamId) {
+        if (khachHangId == null || sanPhamId == null) return false;
+
+        // 1. Số lần mua thành công sản phẩm này
+        long soLanMua = donHangRepository.countFinishedOrders(khachHangId, sanPhamId);
+
+        // 2. Số lần đã gửi feedback cho sản phẩm này
+        long soLanDaFeedback = danhGiaRepository.countReviewsSent(khachHangId, sanPhamId);
+
+        // Quyền đánh giá = (Số lần mua - Số lần đã đánh giá) > 0
+        return (soLanMua - soLanDaFeedback) > 0;
+    }
+
+    // Trong DonHangService.java
+    public Map<String, Object> checkQuyenFeedback(Integer khId, Integer spId) {
+        long soLanMua = donHangRepository.countFinishedOrders(khId, spId);
+        long soLanDaFeedback = danhGiaRepository.countReviewsSent(khId, spId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("canReview", (soLanMua - soLanDaFeedback) > 0);
+        result.put("remainingReviews", soLanMua - soLanDaFeedback);
+        return result;
+    }
+
 }

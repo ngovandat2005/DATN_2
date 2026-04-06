@@ -18,18 +18,27 @@ public class DanhGia {
 
     @ManyToOne
     @JoinColumn(name = "IdKhachHang")
-    // Quan trọng: Chặn Jackson lôi ngược danh sách đánh giá từ KhachHang
     @JsonIgnoreProperties({"danhGias", "password", "username", "hibernateLazyInitializer", "handler"})
     private KhachHang khachHang;
 
     @ManyToOne
     @JoinColumn(name = "IdSanPham")
-    // Quan trọng: Chặn Jackson lôi ngược danh sách đánh giá từ SanPham
     @JsonIgnoreProperties({"danhGias", "hibernateLazyInitializer", "handler"})
     private SanPham sanPham;
 
     private Integer soSao;
+
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String binhLuan;
+
     private LocalDateTime ngayDanhGia;
     private Integer trangThai;
+
+    // --- Các trường thêm mới cho giống Shopee ---
+    @Column(columnDefinition = "NVARCHAR(MAX)")
+    private String danhSachAnh; // Lưu chuỗi: "url1,url2,url3"
+
+    private String dungMoTa;    // Ví dụ: "Đúng với mô tả"
+    private String chatLuongSP; // Ví dụ: "Chất lượng tuyệt vời"
+    private String phanLoaiHang; // Ví dụ: "Màu Đen, Size 42"
 }
