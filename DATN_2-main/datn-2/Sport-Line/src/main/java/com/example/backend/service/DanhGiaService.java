@@ -38,19 +38,29 @@ public class DanhGiaService {
     }
 
     public DanhGia submitReview(DanhGiaRequest request, List<MultipartFile> files) {
-        // 1. Kiểm tra đầu vào
+        // 1. Kiểm tra đầu vào cơ bản
         if (request.getIdKhachHang() == null || request.getIdSanPham() == null) {
             throw new RuntimeException("ID Khách hàng hoặc Sản phẩm không được để trống!");
         }
 
-        // 2. Tìm kiếm thông tin Khách hàng và Sản phẩm
+        // 2. KIỂM TRA TRÙNG LẶP (Giới hạn 1 lần đánh giá)
+        boolean alreadyExists = danhGiaRepository.existsByKhachHangIdAndSanPhamId(
+                request.getIdKhachHang(),
+                request.getIdSanPham()
+        );
+
+        if (alreadyExists) {
+            throw new RuntimeException("Bạn đã gửi đánh giá cho sản phẩm này rồi!");
+        }
+
+        // 3. Tìm kiếm thông tin Khách hàng và Sản phẩm
         KhachHang khachHang = khachHangRepository.findById(request.getIdKhachHang())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng!"));
 
         SanPham sanPham = sanPhamRepository.findById(request.getIdSanPham())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
 
-        // 3. Tạo đối tượng Đánh giá mới
+        // 4. Tạo đối tượng Đánh giá mới
         DanhGia danhGia = new DanhGia();
         danhGia.setKhachHang(khachHang);
         danhGia.setSanPham(sanPham);
@@ -64,33 +74,38 @@ public class DanhGiaService {
         danhGia.setChatLuongSP(request.getChatLuongSP());
         danhGia.setPhanLoaiHang(request.getPhanLoaiHang());
 
-        // 4. XỬ LÝ LƯU FILE ẢNH VÀO Ổ E:
+        // 5. XỬ LÝ LƯU FILE ẢNH
         List<String> fileNames = new ArrayList<>();
-
         if (files != null && !files.isEmpty()) {
+            // Đảm bảo thư mục tồn tại
+            Path uploadDir = Paths.get("E:/review-images/");
+            try {
+                if (!Files.exists(uploadDir)) {
+                    Files.createDirectories(uploadDir);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Không thể tạo thư mục lưu ảnh: " + e.getMessage());
+            }
+
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
                     try {
                         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                        Path path = Paths.get("E:/review-images/" + fileName);
+                        Path path = uploadDir.resolve(fileName);
 
                         Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
                         fileNames.add(fileName);
-
                     } catch (IOException e) {
                         throw new RuntimeException("Lỗi lưu ảnh: " + e.getMessage());
                     }
                 }
             }
-
             danhGia.setDanhSachAnh(String.join(",", fileNames));
-
         } else {
-            // Không có ảnh
             danhGia.setDanhSachAnh(null);
         }
 
-        // 5. Lưu vào Database và trả về kết quả
+        // 6. Lưu vào Database và trả về kết quả
         return danhGiaRepository.save(danhGia);
     }
 }

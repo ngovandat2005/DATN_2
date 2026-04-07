@@ -51,7 +51,7 @@ function ProductDetail() {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [cartItems, setCartItems] = useState([]); // ✅ THÊM: Theo dõi giỏ hàng để tính tồn kho thực tế
-
+  const [activeKey, setActiveKey] = useState(null); // Quản lý mục nào đang mở
 
 
   // ✅ THÊM: Lấy ID khách hàng từ localStorage
@@ -439,21 +439,20 @@ function ProductDetail() {
   // Hàm lấy ảnh từ biến thể - sử dụng cùng logic như admin
   // Thay thế hàm getProductImage cũ của bạn bằng hàm này
 
-  const getProductImage = (data) => {
-    // 1. Kiểm tra nếu data hoặc thuộc tính ảnh không tồn tại
+  const getProductImage = (data, type = 'product') => {
+    // 1. Kiểm tra dữ liệu đầu vào
     const rawImages = data?.hinhAnh || data?.images;
 
     if (!rawImages) {
-      // Trả về một link ảnh mẫu từ internet để test xem UI có lên không
       return "https://via.placeholder.com/150?text=No+Image";
     }
 
     let fileName = "";
     try {
-      // 2. Xử lý nếu là mảng hoặc chuỗi JSON
       if (Array.isArray(rawImages)) {
         fileName = rawImages[0];
       } else if (typeof rawImages === 'string') {
+        // Xử lý cả dạng JSON string ["a.jpg"] hoặc chuỗi cách nhau bởi dấu phẩy "a.jpg,b.jpg"
         const parsed = rawImages.startsWith('[') ? JSON.parse(rawImages) : rawImages.split(',');
         fileName = Array.isArray(parsed) ? parsed[0] : parsed;
       }
@@ -461,9 +460,15 @@ function ProductDetail() {
       fileName = String(rawImages).split(',')[0];
     }
 
-    // 3. Làm sạch tên file và nối với URL API
+    // 2. Làm sạch tên file (chỉ lấy tên, bỏ đường dẫn thừa nếu có)
     const cleanName = fileName?.replace(/^.*[\\\/]/, '').trim();
-    return cleanName ? config.getApiUrl(`images/${cleanName}`) : "https://via.placeholder.com/150";
+    if (!cleanName) return "https://via.placeholder.com/150";
+
+    // 3. QUAN TRỌNG: Chọn đúng Folder dựa trên type
+    // Nếu là 'review' thì dùng path 'review-images', ngược lại dùng 'images'
+    const path = type === 'review' ? 'review-images' : 'images';
+
+    return config.getApiUrl(`${path}/${cleanName}`);
   };
   const handleSubmitReview = async () => {
     if (!isLoggedIn()) {
@@ -536,42 +541,23 @@ function ProductDetail() {
     };
   };
   // ===== FIX ẢNH REVIEW + ANTI CRASH =====
-  // Thay thế hàm getReviewImages bằng hàm này
-  const getReviewImages = (danhSachAnh) => {
-    if (!danhSachAnh) {
-      console.log("RAW danhSachAnh:", danhSachAnh);
-      return [];
-    }
-
+  const getReviewImages = (rawImages) => {
+    if (!rawImages) return [];
     try {
-      console.log("🔍 RAW danhSachAnh:", danhSachAnh);
-
-      let images = [];
-
-      if (typeof danhSachAnh === "string") {
-        const trimmed = danhSachAnh.trim();
-
-        // Nếu là JSON array
-        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-          images = JSON.parse(trimmed);
-        }
-        // Nếu là chuỗi tên file (có thể có nhiều file cách nhau bởi dấu phẩy hoặc chỉ 1 file)
-        else {
-          // Tách theo dấu phẩy nếu có
-          images = trimmed.split(",")
-            .map(name => name.trim())
-            .filter(name => name.length > 0);
-        }
-      } else if (Array.isArray(danhSachAnh)) {
-        images = danhSachAnh;
+      // Nếu là mảng rồi thì trả về luôn
+      if (Array.isArray(rawImages)) return rawImages;
+      // Nếu là chuỗi JSON (["a.jpg","b.jpg"])
+      if (typeof rawImages === 'string' && rawImages.startsWith('[')) {
+        return JSON.parse(rawImages);
       }
-
-      console.log("✅ PARSED images:", images);
-      return images;
+      // Nếu là chuỗi phân tách bởi dấu phẩy
+      if (typeof rawImages === 'string') {
+        return rawImages.split(',').filter(img => img.trim() !== "");
+      }
     } catch (e) {
-      console.error("❌ Lỗi parse danhSachAnh:", e);
-      return [];
+      console.error("Lỗi parse ảnh review:", e);
     }
+    return [];
   };
 
   // Hàm build URL giữ nguyên (hoặc dùng phiên bản này để ngắn gọn hơn)
@@ -588,13 +574,15 @@ function ProductDetail() {
     console.log("🖼️ Built Review URL:", url);
     return url;
   };
-  const formatDate = (date) => {
-    if (!date) return "Vừa xong";
-    try {
-      return new Date(date).toLocaleString("vi-VN");
-    } catch {
-      return "Vừa xong";
-    }
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
   // Hiển thị loading
   if (loading) {
@@ -722,25 +710,101 @@ function ProductDetail() {
                   : "Vui lòng chọn đủ màu và size"}
               </Tag>
             </div>
-            <div className="product-description-box">
-              <Title level={4}>Mô tả sản phẩm</Title>
-
-              <Paragraph>
-                {product?.moTa || "Giày thể thao cao cấp với thiết kế hiện đại, phù hợp chạy bộ và hoạt động hàng ngày."}
-              </Paragraph>
-
-              <ul className="product-features">
-                <li>✔ Chất liệu vải thoáng khí, mang lại cảm giác thoải mái</li>
-                <li>✔ Đế cao su chống trượt, tăng độ bám</li>
-                <li>✔ Thiết kế thể thao hiện đại</li>
-                <li>✔ Phù hợp chạy bộ, tập gym và đi chơi</li>
-                <li>✔ Form giày ôm chân, dễ phối đồ</li>
-              </ul>
+            {/* --- PHẦN DỊCH VỤ CAM KẾT (Giống ảnh phải) --- */}
+            <div className="product-service-v2" style={{
+              background: '#f8f8f8',
+              padding: '15px',
+              borderRadius: '4px',
+              marginBottom: '20px',
+              border: '1px dashed #ccc'
+            }}>
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+                <span style={{ marginRight: '10px' }}>🚚</span>
+                <Text>Miễn phí vận chuyển cho đơn hàng từ 500k</Text>
+              </div>
+              <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center' }}>
+                <span style={{ marginRight: '10px' }}>🛡️</span>
+                <Text>Giao hàng nhanh chóng (2-4 ngày làm việc)</Text>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ marginRight: '10px' }}>🔄</span>
+                <Text>Đổi trả trong vòng 7 ngày nếu có lỗi</Text>
+              </div>
             </div>
-            <div className="product-service">
-              <div>🚚 Giao hàng toàn quốc</div>
-              <div>💰 Thanh toán khi nhận hàng</div>
-              <div>🔄 Đổi trả trong 7 ngày</div>
+
+            {/* --- PHẦN ACCORDION CHI TIẾT (Giống ảnh phải) --- */}
+            <div className="product-accordion" style={{ borderTop: '1px solid #eee' }}>
+              <Text type="secondary" style={{ fontSize: '12px', display: 'block', margin: '10px 0' }}>
+                SKU: {currentVariant?.maBienThe || "NMWCBB-1"}
+              </Text>
+
+              {/* Mục 1: Thông tin sản phẩm */}
+              <div className="accordion-item" style={{ borderBottom: '1px solid #eee' }}>
+                <div
+                  onClick={() => setActiveKey(activeKey === 'info' ? null : 'info')}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                >
+                  <span>THÔNG TIN SẢN PHẨM</span>
+                  <span>{activeKey === 'info' ? '−' : '+'}</span>
+                </div>
+                {activeKey === 'info' && (
+                  <div style={{ paddingBottom: '15px', color: '#555', lineHeight: '1.6' }}>
+                    <Paragraph>
+                      {product?.moTa || "Mô tả chi tiết sản phẩm đang được cập nhật..."}
+                    </Paragraph>
+                    <ul style={{ paddingLeft: '20px' }}>
+                      <li>Chất liệu: Cao cấp, thoáng khí</li>
+                      <li>Công nghệ: Đệm êm chân thế hệ mới</li>
+                      <li>Phù hợp: Đi làm, đi chơi, tập luyện</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Mục 2: Chính sách đổi hàng (Nội dung quan trọng từ ảnh mẫu) */}
+              <div className="accordion-item" style={{ borderBottom: '1px solid #eee' }}>
+                <div
+                  onClick={() => setActiveKey(activeKey === 'exchange' ? null : 'exchange')}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                >
+                  <span>CHÍNH SÁCH ĐỔI HÀNG</span>
+                  <span>{activeKey === 'exchange' ? '−' : '+'}</span>
+                </div>
+                {activeKey === 'exchange' && (
+                  <div style={{ paddingBottom: '15px', fontSize: '14px', color: '#555' }}>
+                    <ul style={{ paddingLeft: '20px', marginBottom: '10px' }}>
+                      <li>Hàng phải còn nguyên vẹn, không có bất kỳ sự thay đổi nào.</li>
+                      <li>Hàng khi đóng gói lại phải kèm túi/hộp vẫn còn nguyên vẹn.</li>
+                      <li>Phải điền đầy đủ thông tin để tránh thất lạc.</li>
+                      <li>Mọi chi phí vận chuyển đổi size sẽ do bên mua chịu toàn bộ.</li>
+                    </ul>
+                    <Text strong>LƯU Ý: </Text>
+                    <Text>Nếu lỗi do nhà cung cấp, chúng tôi sẽ chịu hoàn toàn chi phí.</Text>
+                    <br />
+                    <Text italic style={{ fontSize: '12px' }}>* Liên hệ trực tiếp với chúng tôi để việc trao đổi dễ dàng hơn.</Text>
+                  </div>
+                )}
+              </div>
+
+              {/* Mục 3: Bảng quy đổi size */}
+              <div className="accordion-item" style={{ borderBottom: '1px solid #eee' }}>
+                <div
+                  onClick={() => setActiveKey(activeKey === 'size' ? null : 'size')}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 0', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+                >
+                  <span>BẢNG QUY ĐỔI SIZE</span>
+                  <span>{activeKey === 'size' ? '−' : '+'}</span>
+                </div>
+                {activeKey === 'size' && (
+                  <div style={{ paddingBottom: '15px', textAlign: 'center' }}>
+                    <Image
+                      src="https://myshoes.vn/image/catalog/bai-viet/bang-size-giay/bang-size-giay-nike.png"
+                      alt="Bảng size"
+                      style={{ maxWidth: '100%' }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div style={{ margin: "16px 0" }}>
               <div style={{ marginBottom: 8 }}>
@@ -827,215 +891,152 @@ function ProductDetail() {
           </Col>
         </Row>
 
-        {/* ⭐ PHẦN ĐÁNH GIÁ */}
-        {/* ⭐ PHẦN ĐÁNH GIÁ */}
+        {/*  PHẦN ĐÁNH GIÁ */}
         <div className="product-review-section" style={{ marginTop: 50, borderTop: '1px solid #eee', paddingTop: 30 }}>
-          <Title level={3}>Đánh giá từ khách hàng ({reviews.length})</Title>
-          {/* Tiêu đề + Bộ lọc sao */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
 
+          {/* 1. TIÊU ĐỀ & BỘ LỌC */}
+          <div style={{ marginBottom: 30, padding: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+            <Title level={3}>Đánh giá từ khách hàng ({reviews.length})</Title>
 
-            <div>
-              <Text strong style={{ marginRight: 8 }}>Lọc theo sao: </Text>
-              <Button.Group>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginTop: 20 }}>
+              <Text strong>Lọc theo:</Text>
+              <Button
+                type={filterRating === 0 ? "primary" : "default"}
+                onClick={() => setFilterRating(0)}
+                shape="round"
+              >
+                Tất cả
+              </Button>
+              {[5, 4, 3, 2, 1].map(star => (
                 <Button
-                  type={filterRating === 0 ? "primary" : "default"}
-                  onClick={() => setFilterRating(0)}
+                  key={star}
+                  type={filterRating === star ? "primary" : "default"}
+                  onClick={() => setFilterRating(star)}
+                  shape="round"
                 >
-                  Tất cả
+                  {star} Sao ({reviews.filter(r => r.soSao === star).length})
                 </Button>
-                {[5, 4, 3, 2, 1].map(star => (
-                  <Button
-                    key={star}
-                    type={filterRating === star ? "primary" : "default"}
-                    onClick={() => setFilterRating(star)}
-                    style={{ minWidth: 50 }}
-                  >
-                    {star} <Rate disabled value={1} count={1} style={{ fontSize: 12, marginLeft: 4 }} />
-                  </Button>
-                ))}
-              </Button.Group>
+              ))}
             </div>
           </div>
-          {/* FORM REVIEW - Chỉ hiển thị khi đã đăng nhập VÀ đã mua hàng */}
-          {isLoggedIn() ? (
-            canReview ? (
-              /* === FORM REVIEW BÌNH THƯỜNG === */
-              <div className="review-form" style={{ marginBottom: 40, padding: 20, background: '#f9f9f9', borderRadius: 8 }}>
-                <div style={{ marginBottom: 10 }}>
-                  <Text strong>Đánh giá của bạn: </Text>
-                  <Rate value={newRating} onChange={setNewRating} />
-                </div>
 
-                <TextArea
-                  rows={3}
-                  placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
-                  value={newReview}
-                  onChange={(e) => setNewReview(e.target.value)}
-                  style={{ borderRadius: 6, marginBottom: 15 }}
-                />
-
-                <div style={{ marginBottom: 15 }}>
-                  <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
-                    Thêm hình ảnh thực tế (tối đa 5 ảnh):
-                  </Text>
-                  <Upload
-                    listType="picture-card"
-                    fileList={fileList}
-                    onChange={({ fileList: newFileList }) => setFileList(newFileList)}
-                    beforeUpload={() => false}
-                    multiple={true}
-                    accept="image/*"
-                  >
-                    {fileList.length >= 5 ? null : (
-                      <div>
-                        <PlusOutlined />
-                        <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                      </div>
-                    )}
-                  </Upload>
-                </div>
-
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={handleSubmitReview}
-                  // Thêm 2 thuộc tính quan trọng này để chặn spam
-                  loading={isSubmitting}
-                  disabled={isSubmitting || !newReview.trim()}
-                  style={{
-                    backgroundColor: '#000',
-                    borderColor: '#000',
-                    height: '45px',
-                    padding: '0 40px',
-                    borderRadius: 6
-                  }}
+          {/* 2. FORM NHẬP ĐÁNH GIÁ (Chỉ hiện khi đủ điều kiện) */}
+          {!isLoggedIn() ? (
+            <div style={{ marginBottom: 30, padding: 20, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 12, textAlign: 'center' }}>
+              <Text>Bạn cần <a onClick={() => navigate('/login')} style={{ fontWeight: 'bold', color: '#1890ff', cursor: 'pointer' }}>đăng nhập</a> để gửi đánh giá.</Text>
+            </div>
+          ) : canReview ? (
+            <div className="review-form" style={{ marginBottom: 40, padding: 25, background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 12 }}>
+              <Title level={4}>Viết đánh giá của bạn</Title>
+              <div style={{ marginBottom: 16 }}>
+                <Text strong>Số sao: </Text>
+                <Rate value={newRating} onChange={setNewRating} />
+                {remainingReviews > 0 && <Tag color="blue" style={{ marginLeft: 15 }}>Bạn còn {remainingReviews} lượt đánh giá</Tag>}
+              </div>
+              <TextArea
+                rows={4}
+                placeholder="Chia sẻ cảm nhận chân thực về sản phẩm (chất liệu, form dáng...)"
+                value={newReview}
+                onChange={(e) => setNewReview(e.target.value)}
+                style={{ marginBottom: 16, borderRadius: 8 }}
+              />
+              <div style={{ marginBottom: 16 }}>
+                <Upload
+                  listType="picture-card"
+                  fileList={fileList}
+                  onChange={({ fileList }) => setFileList(fileList)}
+                  beforeUpload={() => false}
+                  multiple
                 >
-                  {isSubmitting ? "Đang gửi..." : "Gửi đánh giá ngay"}
-                </Button>
+                  {fileList.length < 5 && (
+                    <div><PlusOutlined /><div style={{ marginTop: 8 }}>Ảnh thực tế</div></div>
+                  )}
+                </Upload>
               </div>
-            ) : (
-              /* === THÔNG BÁO CHƯA ĐƯỢC REVIEW === */
-              <div style={{
-                marginBottom: 40,
-                padding: 20,
-                background: hasPurchased ? '#e6f7ff' : '#fff7e6',
-                border: hasPurchased ? '1px solid #91d5ff' : '1px solid #ffe58f',
-                borderRadius: 8,
-                textAlign: 'center'
-              }}>
-                <Text strong style={{ fontSize: 16 }}>
-                  {hasPurchased
-                    ? "Hệ thống đã ghi nhận đơn hàng của bạn. Vui lòng đợi trạng thái đơn hàng chuyển sang 'Hoàn thành' để đánh giá."
-                    : "Bạn cần mua sản phẩm này trước khi có thể viết đánh giá."
-                  }
-                </Text>
-
-                {!hasPurchased && (
-                  <div style={{ marginTop: 12 }}>
-                    <Button type="primary" onClick={() => navigate('/')}>
-                      Về trang chủ mua hàng
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleSubmitReview}
+                loading={isSubmitting}
+                disabled={!newReview.trim()}
+                style={{ background: '#000', borderColor: '#000', borderRadius: 6, height: 45, padding: '0 30px' }}
+              >
+                Gửi đánh giá ngay
+              </Button>
+            </div>
           ) : (
-            /* Chưa đăng nhập */
-            <div style={{ marginBottom: 30, padding: 15, background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 4 }}>
-              <Text>
-                Bạn cần <a onClick={() => navigate('/login')} style={{ fontWeight: 'bold' }}>đăng nhập</a> để gửi đánh giá.
+            <div style={{ marginBottom: 40, padding: 20, background: '#f5f5f5', borderRadius: 12, textAlign: 'center' }}>
+              <Text type="secondary">
+                {remainingReviews === 0 && reviews.some(r => r.idKhachHang === customerId)
+                  ? "Cảm ơn bạn đã đánh giá sản phẩm này!"
+                  : "Bạn cần mua và nhận hàng thành công để viết đánh giá."}
               </Text>
             </div>
           )}
 
-          {/* DANH SÁCH REVIEW */}
+          {/* 3. DANH SÁCH REVIEW (PHẦN GỐC) */}
           <List
-            dataSource={filteredReviews}     // ← dùng filteredReviews
-            locale={{
-              emptyText: filterRating === 0
-                ? "Chưa có đánh giá nào cho sản phẩm này."
-                : `Chưa có đánh giá ${filterRating} sao nào.`
-            }}
-            renderItem={(item) => {
-              console.log("RAW:", item.danhSachAnh);
+            itemLayout="vertical"
+            dataSource={reviews
+              .filter(r => filterRating === 0 || r.soSao === filterRating)
+              .sort((a, b) => new Date(b.ngayTao) - new Date(a.ngayTao))
+            }
+            locale={{ emptyText: "Chưa có đánh giá nào cho mức sao này." }}
+            renderItem={(item) => (
+              <List.Item key={item.id} style={{ padding: '24px 20px', background: '#fff', marginBottom: 15, borderRadius: 12, border: '1px solid #f0f0f0' }}>
+                <List.Item.Meta
+                  avatar={
+                    <Avatar size={45} src={item.khachHang?.hinhAnh} style={{ backgroundColor: '#87d068' }}>
+                      {item.khachHang?.tenKhachHang?.[0].toUpperCase() || "U"}
+                    </Avatar>
+                  }
+                  title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <Text strong style={{ fontSize: 16 }}>{item.khachHang?.tenKhachHang || "Khách hàng"}</Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {item.ngayDanhGia ? new Date(item.ngayDanhGia).toLocaleString('vi-VN') : formatDate(item.ngayTao)}
+                      </Text>
+                    </div>
+                  }
+                  description={<Rate disabled value={item.soSao} style={{ fontSize: 12 }} />}
+                />
 
-              const images = getReviewImages(item.danhSachAnh);
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ color: '#333', fontSize: 15, lineHeight: 1.6, marginBottom: 15 }}>
+                    {item.binhLuan}
+                  </div>
 
-              console.log("PARSED:", images);
+                  {/* HIỂN THỊ ẢNH ĐÃ FIX ĐƯỜNG DẪN */}
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <Image.PreviewGroup>
+                      {/* Sử dụng hàm getReviewImages để tách chuỗi thành mảng tên file */}
+                      {getReviewImages(item.danhSachAnh || item.hinhAnh).map((img, idx) => (
+                        <Image
+                          key={idx}
+                          width={100}
+                          height={100}
+                          style={{ objectFit: 'cover', borderRadius: 8, border: '1px solid #eee' }}
 
-              return (
-                <List.Item style={{ padding: '20px 0', display: 'block' }}>
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        src={item.khachHang?.hinhAnh}
-                        style={{ backgroundColor: '#1890ff' }}
-                      >
-                        {item.khachHang?.tenKhachHang
-                          ? item.khachHang.tenKhachHang[0].toUpperCase()
-                          : "U"}
-                      </Avatar>
-                    }
+                          // SỬA DÒNG NÀY: Phải dùng đúng prefix 'review-images' như trong WebConfig Backend
+                          src={config.getApiUrl(`review-images/${img.trim()}`)}
 
-                    title={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Text strong>
-                          {item.khachHang?.tenKhachHang || "Khách hàng"}
-                        </Text>
-                        <Rate disabled value={item.soSao} style={{ fontSize: 12 }} />
-                      </div>
-                    }
+                          // Nếu config.getApiUrl không bao gồm cổng 8080, hãy viết thẳng để test:
+                          // src={`http://localhost:8080/review-images/${img.trim()}`}
 
-                    description={
-                      <div>
-                        {/* Nội dung */}
-                        <div style={{ marginTop: 6 }}>{item.binhLuan}</div>
-
-                        {/* ===== ẢNH REVIEW ===== */}
-                        {images.length > 0 && (
-                          <div style={{ marginTop: 10 }}>
-                            <Image.PreviewGroup>
-                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                {images.map((img, index) => {
-                                  const url = buildReviewImageUrl(img);
-                                  console.log("🖼️ Render image with URL:", url);
-                                  return (
-                                    <Image
-                                      key={index}
-                                      src={url}
-                                      width={100}
-                                      height={100}
-                                      style={{
-                                        objectFit: 'cover',
-                                        borderRadius: 8,
-                                        border: '1px solid #ddd'
-                                      }}
-                                      fallback="https://via.placeholder.com/100?text=Load+Error"
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </Image.PreviewGroup>
-                          </div>
-                        )}
-
-
-
-                        {/* ===== THỜI GIAN ===== */}
-                        <div style={{ marginTop: 8 }}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {formatDate(item.ngayDanhGia)}
-                          </Text>
-                        </div>
-                      </div>
-                    }
-                  />
-                </List.Item>
-              );
-            }}
+                          fallback="https://ih1.redbubble.net/image.1027712254.9762/pp,840x830-pad,1000x1000,f8f8f8.u2.jpg"
+                        />
+                      ))}
+                    </Image.PreviewGroup>
+                  </div>
+                </div>
+              </List.Item>
+            )}
           />
         </div>
+
+
+        {/* --- PHẦN SẢN PHẨM LIÊN QUAN (Đã có sẵn logic của bạn) --- */}
+        {/* ... code related products của bạn ... */}
         {/* ⭐ SẢN PHẨM KHÁC */}
         <div className="related-products" style={{ marginTop: '40px' }}>
           <Title level={3}>Sản phẩm khác</Title>

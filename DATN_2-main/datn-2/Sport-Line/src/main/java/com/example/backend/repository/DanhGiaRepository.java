@@ -13,4 +13,7 @@ public interface DanhGiaRepository extends JpaRepository<DanhGia, Integer> {
     @Query("SELECT COUNT(dg) FROM DanhGia dg WHERE dg.khachHang.id = :khId AND dg.sanPham.id = :spId")
     long countReviewsSent(@Param("khId") Integer khachHangId, @Param("spId") Integer sanPhamId);
     List<DanhGia> findBySanPhamIdOrderByNgayDanhGiaDesc(Integer sanPhamId);
+
+    @Query("SELECT COUNT(d) > 0 FROM DanhGia d WHERE d.khachHang.id = :idKH AND d.sanPham.id = :idSP")
+    boolean existsByKhachHangIdAndSanPhamId(@Param("idKH") Integer idKhachHang, @Param("idSP") Integer idSanPham);
 }
