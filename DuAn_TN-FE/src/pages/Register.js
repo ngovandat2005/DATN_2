@@ -68,8 +68,6 @@ function Register() {
         soDienThoai: values.phone || '',
         matKhau: values.password,
         confirmPassword: values.confirm,
-        gioiTinh: true, // Giá trị mặc định: true = Nam
-        ngaySinh: null, // Giá trị mặc định: null
         diaChi: createShortAddress(values.addressDetail, selectedWard, selectedDistrict, selectedProvince)
       };
 

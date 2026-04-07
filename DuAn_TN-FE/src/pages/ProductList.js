@@ -106,7 +106,6 @@ function ProductList() {
   const params = new URLSearchParams(location.search);
   const initialBrandId = params.get("idThuongHieu");
   const initialCategoryId = params.get("idDanhMuc");
-  const initialGender = params.get("gioiTinh");
 
   // State cho filter
   const [sizeList, setSizeList] = useState([]);
@@ -117,7 +116,6 @@ function ProductList() {
     brandId: initialBrandId || undefined,
     name: "",
     categoryId: initialCategoryId || undefined,
-    gender: initialGender || undefined,
   });
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -246,11 +244,6 @@ function ProductList() {
       !filters.categoryId ||
       (product.danhMuc && String(product.danhMuc.id) === String(filters.categoryId));
 
-    // Log theo Giới tính
-    const matchGender =
-      !filters.gender ||
-      String(product.gioiTinh) === String(filters.gender);
-
     const matchName =
       !filters.name ||
       (product.tenSanPham || product.name || "")
@@ -267,7 +260,7 @@ function ProductList() {
       (!priceRange[0] || price >= priceRange[0]) &&
       (!priceRange[1] || price <= priceRange[1]);
 
-    return matchSize && matchBrandId && matchCategoryId && matchGender && matchName && matchPrice && String(product.gioiTinh) !== '1';
+    return matchSize && matchBrandId && matchCategoryId && matchName && matchPrice;
   });
 
   // Reset về trang 1 khi filter hoặc giá thay đổi
@@ -282,7 +275,6 @@ function ProductList() {
       ...f,
       brandId: params.get("idThuongHieu") || undefined,
       categoryId: params.get("idDanhMuc") || undefined,
-      gender: params.get("gioiTinh") || undefined
     }));
   }, [location.search]);
 
@@ -303,10 +295,7 @@ function ProductList() {
           right: '50%',
           marginLeft: '-50vw',
           marginRight: '-50vw',
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${
-            String(filters.gender) === '0' ? 'https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop' : 
-            'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2000&auto=format&fit=crop'
-          })`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=2000&auto=format&fit=crop')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center 40%',
           height: '550px',
@@ -333,7 +322,7 @@ function ProductList() {
               textShadow: "0 4px 15px rgba(0, 0, 0, 0.6)",
             }}
           >
-            {filters.gender === '0' ? 'COLLECTION GIÀY NAM' : 'TẤT CẢ SẢN PHẨM'}
+            TẤT CẢ SẢN PHẨM
           </Title>
           <Text
             style={{
@@ -349,7 +338,7 @@ function ProductList() {
               textTransform: 'uppercase'
             }}
           >
-            Khẳng định phong cách riêng cùng bộ sưu tập {filters.gender === '0' ? 'Nam' : filters.gender === '1' ? 'Nữ' : 'chính hãng'} độc quyền tại KING STEP.
+            Khẳng định phong cách riêng cùng bộ sưu tập chính hãng độc quyền tại KING STEP.
           </Text>
         </div>
       </div>

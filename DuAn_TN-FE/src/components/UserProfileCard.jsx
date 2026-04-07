@@ -52,7 +52,6 @@ const UserProfileCard = () => {
           phone: localUser?.soDienThoai || "",
           address: localUser?.diaChi || "",
           ngaySinh: localUser?.ngaySinh ? moment(localUser.ngaySinh) : null,
-          gioiTinh: localUser?.gioiTinh || null,
         };
         form.setFieldsValue(initialValues);
 
@@ -86,7 +85,6 @@ const UserProfileCard = () => {
                   districtId,
                   provinceId,
                   ngaySinh: data.ngaySinh ? moment(data.ngaySinh) : null,
-                  gioiTinh: data.gioiTinh === true ? 'Nam' : data.gioiTinh === false ? 'Nữ' : null,
                 });
 
                 if (provinceId) setSelectedProvince(Number(provinceId));
@@ -220,7 +218,6 @@ const UserProfileCard = () => {
         soDienThoai: values.phone || existing.soDienThoai,
         diaChi: fullAddress || existing.diaChi,
         ngaySinh: values.ngaySinh ? values.ngaySinh.toISOString() : null,
-        gioiTinh: values.gioiTinh === 'Nam' ? true : values.gioiTinh === 'Nữ' ? false : null,
         profileUpdatedAt: new Date().toISOString(),
       };
       localStorage.setItem("user", JSON.stringify(updated));
@@ -240,7 +237,6 @@ const UserProfileCard = () => {
               sdt: values.phone,                // ✅ GIỮ: Để tương thích
               diaChi: fullAddress,
               ngaySinh: values.ngaySinh ? values.ngaySinh.toISOString() : null,
-              gioiTinh: values.gioiTinh === 'Nam' ? true : values.gioiTinh === 'Nữ' ? false : null,
               trangThai: true,                  // ✅ THÊM: Đảm bảo trạng thái
             };
             
@@ -387,15 +383,6 @@ const UserProfileCard = () => {
           />
         </Form.Item>
 
-        <Form.Item
-          label="Giới tính"
-          name="gioiTinh"
-        >
-          <Select placeholder="Chọn giới tính (không bắt buộc)">
-            <Option value="Nam">Nam</Option>
-            <Option value="Nữ">Nữ</Option>
-          </Select>
-        </Form.Item>
 
         <Form.Item label="Tỉnh/Thành phố">
           <Select

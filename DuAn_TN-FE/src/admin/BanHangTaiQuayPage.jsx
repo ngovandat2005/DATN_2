@@ -108,7 +108,6 @@ const BanHangTaiQuayPage = () => {
     email: '',
     soDienThoai: '',
     ngaySinh: '',
-    gioiTinh: 'Nam',
     diaChi: ''
   });
   const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
@@ -738,7 +737,6 @@ const BanHangTaiQuayPage = () => {
       tenKhachHang: customerName,
       email: customerEmail,
       ngaySinh: "",
-      gioiTinh: "",
       diaChi: "",
       soDienThoai: customerPhone,
       trangThai: "",
@@ -1128,7 +1126,6 @@ const BanHangTaiQuayPage = () => {
         email: newCustomerForm.email,
         soDienThoai: newCustomerForm.soDienThoai,
         ngaySinh: newCustomerForm.ngaySinh ? new Date(newCustomerForm.ngaySinh).toISOString() : null,
-        gioiTinh: newCustomerForm.gioiTinh === 'Nam' ? true : false,
         diaChi: newCustomerForm.diaChi,
         trangThai: true,
         maThongBao: null,
@@ -1189,7 +1186,6 @@ const BanHangTaiQuayPage = () => {
         email: '',
         soDienThoai: '',
         ngaySinh: '',
-        gioiTinh: 'Nam',
         diaChi: ''
       });
       setFormErrors({});
@@ -2443,7 +2439,6 @@ const BanHangTaiQuayPage = () => {
             email: '',
             soDienThoai: '',
             ngaySinh: '',
-            gioiTinh: 'Nam',
             diaChi: ''
           });
           setFormErrors({});
@@ -2546,15 +2541,13 @@ const BanHangTaiQuayPage = () => {
             />
             <TextField
               fullWidth
-              select
-              label="Giới tính"
-              value={newCustomerForm.gioiTinh}
-              onChange={(e) => setNewCustomerForm(prev => ({ ...prev, gioiTinh: e.target.value }))}
+              label="Ngày sinh"
+              type="date"
+              value={newCustomerForm.ngaySinh}
+              onChange={(e) => setNewCustomerForm(prev => ({ ...prev, ngaySinh: e.target.value }))}
               sx={{ mb: 2 }}
-            >
-              <MenuItem value="Nam">Nam</MenuItem>
-              <MenuItem value="Nữ">Nữ</MenuItem>
-            </TextField>
+              InputLabelProps={{ shrink: true }}
+            />
           </Box>
         </DialogContent>
         <DialogActions sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', padding: '16px 24px' }}>
@@ -2566,7 +2559,6 @@ const BanHangTaiQuayPage = () => {
                 email: '',
                 soDienThoai: '',
                 ngaySinh: '',
-                gioiTinh: 'Nam',
                 diaChi: ''
               });
               setFormErrors({});

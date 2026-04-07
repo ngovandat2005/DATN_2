@@ -81,13 +81,12 @@ function Home() {
         if (productsResponse.ok) {
           const allProducts = await productsResponse.json();
           // Log sản phẩm nổi bật - CHỈ LẤY GIÀY NAM / UNISEX
-          const featured = allProducts.filter(p => p.trangThai === 1 && p.gioiTinh !== 1).slice(0, 8);
+          const featured = allProducts.filter(p => p.trangThai === 1).slice(0, 8);
           setFeaturedProducts(featured);
           
-          // Log sản phẩm giảm giá - CHỈ LẤY GIÀY NAM / UNISEX
+          // Log sản phẩm giảm giá
           const sales = allProducts.filter(p => 
             p.trangThai === 1 && 
-            p.gioiTinh !== 1 && 
             ((p.giaBanGoc && p.giaBan && p.giaBanGoc > p.giaBan) || p.phanTramGiam > 0)
           ).slice(0, 4);
           setOnSaleProducts(sales);

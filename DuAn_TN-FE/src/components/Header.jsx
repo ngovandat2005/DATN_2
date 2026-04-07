@@ -24,7 +24,7 @@ function Header() {
   const navigate = useNavigate();
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [featuredMenProducts, setFeaturedMenProducts] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
   const [userMenuItems, setUserMenuItems] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,9 +43,9 @@ function Header() {
         .then(res => setCategories(res.data))
         .catch(err => console.error("Lỗi lấy danh mục:", err));
 
-      axios.get(config.getApiUrl('api/san-pham/nam'))
-        .then(res => setFeaturedMenProducts(res.data.slice(0, 8)))
-        .catch(err => console.error("Lỗi lấy giày nam:", err));
+      axios.get(config.getApiUrl('api/san-pham/active'))
+        .then(res => setFeaturedProducts(res.data.slice(0, 8)))
+        .catch(err => console.error("Lỗi lấy sản phẩm:", err));
     };
 
     fetchMenuData();
@@ -85,7 +85,7 @@ function Header() {
   }, [location.pathname]);
 
   const renderMegaMenu = () => {
-    const finalProducts = featuredMenProducts.slice(0, 8); // Trình bày lại 8 sản phẩm như cũ
+    const finalProducts = featuredProducts.slice(0, 8); // Trình bày lại 8 sản phẩm như cũ
 
     return (
       <div className="mega-menu-content">
@@ -96,7 +96,7 @@ function Header() {
               <ul className="mega-list">
                 {brands.length > 0 ? brands.map(brand => (
                   <li key={brand.id}>
-                    <Link onClick={closeMenu} to={`/products?idThuongHieu=${brand.id}&gioiTinh=0`}>{brand.tenThuongHieu}</Link>
+                    <Link onClick={closeMenu} to={`/products?idThuongHieu=${brand.id}`}>{brand.tenThuongHieu}</Link>
                   </li>
                 )) : <li>Đang cập nhật...</li>}
               </ul>
@@ -106,7 +106,7 @@ function Header() {
               <ul className="mega-list">
                 {categories.length > 0 ? categories.map(cat => (
                   <li key={cat.id}>
-                    <Link onClick={closeMenu} to={`/products?idDanhMuc=${cat.id}&gioiTinh=0`}>{cat.tenDanhMuc}</Link>
+                    <Link onClick={closeMenu} to={`/products?idDanhMuc=${cat.id}`}>{cat.tenDanhMuc}</Link>
                   </li>
                 )) : <li>Đang cập nhật...</li>}
               </ul>
@@ -214,7 +214,7 @@ function Header() {
                 placement="bottomCenter" 
                 arrow
               >
-                <Link to="/products?gioiTinh=0" onClick={() => setMenuOpen(false)}>SẢN PHẨM</Link>
+                <Link to="/products" onClick={() => setMenuOpen(false)}>SẢN PHẨM</Link>
               </Dropdown>
             </Menu.Item>
             <Menu.Item key="sale">

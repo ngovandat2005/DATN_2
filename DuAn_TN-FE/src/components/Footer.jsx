@@ -92,7 +92,7 @@ function Footer() {
                 fontSize: '14px',
                 lineHeight: '1.6',
               }}>
-                123 Đường ABC,Quận Ba Đình, TP. Hà Nội
+                Số 10, Ngõ 20, Ba Đình, Hà Nội
               </Text>
             </div>
             <div style={{

@@ -1,485 +1,295 @@
 USE [master]
 GO
-/****** Object:  Database [KingStepp3]    Script Date: 07/04/2026 1:06:54 CH ******/
+IF EXISTS (SELECT name FROM sys.databases WHERE name = N'KingStepp3')
+BEGIN
+    ALTER DATABASE [KingStepp3] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE [KingStepp3];
+END
+GO
 CREATE DATABASE [KingStepp3]
- CONTAINMENT = NONE
- ON  PRIMARY 
-( NAME = N'KingStepp3', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\KingStepp3.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON 
-( NAME = N'KingStepp3_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\KingStepp3_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
- WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
-GO
-ALTER DATABASE [KingStepp3] SET COMPATIBILITY_LEVEL = 160
-GO
-IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
-begin
-EXEC [KingStepp3].[dbo].[sp_fulltext_database] @action = 'enable'
-end
-GO
-ALTER DATABASE [KingStepp3] SET ANSI_NULL_DEFAULT OFF 
-GO
-ALTER DATABASE [KingStepp3] SET ANSI_NULLS OFF 
-GO
-ALTER DATABASE [KingStepp3] SET ANSI_PADDING OFF 
-GO
-ALTER DATABASE [KingStepp3] SET ANSI_WARNINGS OFF 
-GO
-ALTER DATABASE [KingStepp3] SET ARITHABORT OFF 
-GO
-ALTER DATABASE [KingStepp3] SET AUTO_CLOSE OFF 
-GO
-ALTER DATABASE [KingStepp3] SET AUTO_SHRINK OFF 
-GO
-ALTER DATABASE [KingStepp3] SET AUTO_UPDATE_STATISTICS ON 
-GO
-ALTER DATABASE [KingStepp3] SET CURSOR_CLOSE_ON_COMMIT OFF 
-GO
-ALTER DATABASE [KingStepp3] SET CURSOR_DEFAULT  GLOBAL 
-GO
-ALTER DATABASE [KingStepp3] SET CONCAT_NULL_YIELDS_NULL OFF 
-GO
-ALTER DATABASE [KingStepp3] SET NUMERIC_ROUNDABORT OFF 
-GO
-ALTER DATABASE [KingStepp3] SET QUOTED_IDENTIFIER OFF 
-GO
-ALTER DATABASE [KingStepp3] SET RECURSIVE_TRIGGERS OFF 
-GO
-ALTER DATABASE [KingStepp3] SET  ENABLE_BROKER 
-GO
-ALTER DATABASE [KingStepp3] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
-GO
-ALTER DATABASE [KingStepp3] SET DATE_CORRELATION_OPTIMIZATION OFF 
-GO
-ALTER DATABASE [KingStepp3] SET TRUSTWORTHY OFF 
-GO
-ALTER DATABASE [KingStepp3] SET ALLOW_SNAPSHOT_ISOLATION OFF 
-GO
-ALTER DATABASE [KingStepp3] SET PARAMETERIZATION SIMPLE 
-GO
-ALTER DATABASE [KingStepp3] SET READ_COMMITTED_SNAPSHOT OFF 
-GO
-ALTER DATABASE [KingStepp3] SET HONOR_BROKER_PRIORITY OFF 
-GO
-ALTER DATABASE [KingStepp3] SET RECOVERY FULL 
-GO
-ALTER DATABASE [KingStepp3] SET  MULTI_USER 
-GO
-ALTER DATABASE [KingStepp3] SET PAGE_VERIFY CHECKSUM  
-GO
-ALTER DATABASE [KingStepp3] SET DB_CHAINING OFF 
-GO
-ALTER DATABASE [KingStepp3] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
-GO
-ALTER DATABASE [KingStepp3] SET TARGET_RECOVERY_TIME = 60 SECONDS 
-GO
-ALTER DATABASE [KingStepp3] SET DELAYED_DURABILITY = DISABLED 
-GO
-ALTER DATABASE [KingStepp3] SET ACCELERATED_DATABASE_RECOVERY = OFF  
-GO
-EXEC sys.sp_db_vardecimal_storage_format N'KingStepp3', N'ON'
-GO
-ALTER DATABASE [KingStepp3] SET QUERY_STORE = ON
-GO
-ALTER DATABASE [KingStepp3] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
 GO
 USE [KingStepp3]
 GO
-/****** Object:  Table [dbo].[ChatLieu]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+-- 1. Table ChatLieu
 CREATE TABLE [dbo].[ChatLieu](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	[TenChatLieu] [nvarchar](255) NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	[TrangThai] [int] NULL
+)
 GO
-/****** Object:  Table [dbo].[DanhGia]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[DanhGia](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[IdKhachHang] [int] NULL,
-	[IdSanPham] [int] NULL,
-	[SoSao] [int] NULL,
-	[BinhLuan] [varchar](255) NULL,
-	[NgayDanhGia] [datetime] NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[DanhMuc]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+-- 2. Table DanhMuc
 CREATE TABLE [dbo].[DanhMuc](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	[TenDanhMuc] [nvarchar](255) NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 3. Table ThuongHieu
+CREATE TABLE [dbo].[ThuongHieu](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenThuongHieu] [nvarchar](255) NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 4. Table XuatXu
+CREATE TABLE [dbo].[XuatXu](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenXuatXu] [nvarchar](255) NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 5. Table MauSac
+CREATE TABLE [dbo].[MauSac](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenMauSac] [nvarchar](255) NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 6. Table KichThuoc
+CREATE TABLE [dbo].[KichThuoc](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenKichThuoc] [nvarchar](255) NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 7. Table KhachHang (NO GENDER)
+CREATE TABLE [dbo].[KhachHang](
+	[id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenKhachHang] [nvarchar](255) NULL,
+	[Email] [nvarchar](255) NULL,
+	[NgaySinh] [date] NULL,
+	[DiaChi] [nvarchar](255) NULL,
+	[SoDienThoai] [varchar](10) NULL,
+	[matKhau] [nvarchar](255) NULL,
+	[TrangThai] [bit] NULL,
+	[MaThongBao] [nvarchar](255) NULL,
+	[ThoiGianThongBao] [date] NULL
+)
+GO
+
+-- 8. Table NhanVien (NO GENDER)
+CREATE TABLE [dbo].[NhanVien](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenNhanVien] [nvarchar](255) NOT NULL,
+	[Email] [nvarchar](255) NOT NULL UNIQUE,
+	[SoDienThoai] [varchar](10) NULL,
+	[NgaySinh] [date] NULL,
+	[DiaChi] [nvarchar](255) NULL,
+	[VaiTro] [bit] NULL, -- 1: Admin, 0: NhanVien
+	[MatKhau] [nvarchar](255) NULL,
+	[CCCD] [nvarchar](255) NULL UNIQUE,
+	[TrangThai] [bit] NOT NULL
+)
+GO
+
+-- 9. Table Voucher
+CREATE TABLE [dbo].[Voucher](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[MaVoucher] [nvarchar](255) NULL,
+	[TenVoucher] [nvarchar](255) NULL,
+	[LoaiVoucher] [nvarchar](255) NULL,
+	[MoTa] [nvarchar](255) NULL,
+	[SoLuong] [int] NULL,
+	[DonToiThieu] [float] NULL,
+	[GiaTri] [float] NULL,
+	[NgayBatDau] [datetime] NULL,
+	[NgayKetThuc] [datetime] NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 10. Table KhuyenMai
+CREATE TABLE [dbo].[KhuyenMai](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenKhuyenMai] [nvarchar](255) NULL UNIQUE,
+	[GiaTri] [float] NULL,
+	[NgayBatDau] [datetime] NULL,
+	[NgayKetThuc] [datetime] NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+-- 11. Table SanPham (NO GENDER)
+CREATE TABLE [dbo].[SanPham](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[TenSanPham] [nvarchar](255) NULL,
+	[NgayTao] [date] NULL,
+	[IdThuongHieu] [int] REFERENCES [ThuongHieu](Id),
+	[IdXuatXu] [int] REFERENCES [XuatXu](Id),
+	[IdChatLieu] [int] REFERENCES [ChatLieu](Id),
+	[IdDanhMuc] [int] REFERENCES [DanhMuc](Id),
+	[Images] [varchar](max) NULL,
 	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	[Ma] [varchar](255) NULL
+)
 GO
-/****** Object:  Table [dbo].[DonHang]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
+
+-- 12. Table SanPhamChiTiet
+CREATE TABLE [dbo].[SanPhamChiTiet](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[SoLuong] [int] NULL,
+	[NgaySanXuat] [date] NULL,
+	[IdSanPham] [int] REFERENCES [SanPham](Id),
+	[IdKichThuoc] [int] REFERENCES [KichThuoc](Id),
+	[IdMauSac] [int] REFERENCES [MauSac](Id),
+	[IdKhuyenMai] [int] REFERENCES [KhuyenMai](Id),
+	[NgayTao] [datetime] NULL,
+	[TrangThai] [int] NULL,
+	[GiaBan] [float] NULL,
+	[GiaBanGiamGia] [float] NULL,
+	[Ma] [varchar](255) NULL
+)
 GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+-- 13. Table DonHang
 CREATE TABLE [dbo].[DonHang](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[idNhanVien] [int] NULL,
-	[idKhachHang] [int] NULL,
-	[idGiamGia] [int] NULL,
+	[id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[idNhanVien] [int] REFERENCES [NhanVien](Id),
+	[idKhachHang] [int] REFERENCES [KhachHang](Id),
+	[idGiamGia] [int] REFERENCES [Voucher](Id),
 	[NgayMua] [date] NULL,
 	[NgayTao] [date] NULL,
 	[LoaiDonHang] [nvarchar](255) NULL,
 	[TrangThai] [int] NULL,
 	[TongTien] [float] NULL,
 	[TongTienGiamGia] [float] NULL,
-	[DiaChiGiaoHang] [varchar](255) NULL,
+	[DiaChiGiaoHang] [nvarchar](255) NULL,
 	[SoDienThoaiGiaoHang] [nvarchar](255) NULL,
 	[EmailGiaoHang] [nvarchar](255) NULL,
 	[TenNguoiNhan] [nvarchar](255) NULL,
 	[PhiVanChuyen] [int] NULL,
 	[IdService] [int] NULL,
-	[MaVanDon] [varchar](255) NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	[MaVanDon] [varchar](255) NULL
+)
 GO
-/****** Object:  Table [dbo].[donHangChiTiet]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+-- 14. Table donHangChiTiet
 CREATE TABLE [dbo].[donHangChiTiet](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[idDonHang] [int] NULL,
-	[idSanPhamChiTiet] [int] NULL,
+	[id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[idDonHang] [int] REFERENCES [DonHang](id),
+	[idSanPhamChiTiet] [int] REFERENCES [SanPhamChiTiet](Id),
 	[soLuong] [int] NULL,
 	[gia] [float] NULL,
-	[thanhTien] [float] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	[thanhTien] [float] NULL
+)
 GO
-/****** Object:  Table [dbo].[GioHangChiTiet]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+
+-- 15. Table GioHangChiTiet
 CREATE TABLE [dbo].[GioHangChiTiet](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[idSanPhamChiTiet] [int] NULL,
-	[idKhachHang] [int] NULL,
+	[id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[idSanPhamChiTiet] [int] REFERENCES [SanPhamChiTiet](Id),
+	[idKhachHang] [int] REFERENCES [KhachHang](id),
 	[soLuong] [int] NULL,
-	[gia] [float] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
+	[gia] [float] NULL
+)
 GO
-/****** Object:  Table [dbo].[KhachHang]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
+
+-- 16. Table DanhGia
+CREATE TABLE [dbo].[DanhGia](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[IdKhachHang] [int] REFERENCES [KhachHang](id),
+	[IdSanPham] [int] REFERENCES [SanPham](Id),
+	[SoSao] [int] NULL,
+	[BinhLuan] [nvarchar](max) NULL,
+	[NgayDanhGia] [datetime] NULL,
+	[TrangThai] [int] NULL
+)
 GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[KhachHang](
-	[id] [int] IDENTITY(1,1) NOT NULL,
-	[TenKhachHang] [varchar](30) NULL,
-	[Email] [nvarchar](255) NULL,
-	[NgaySinh] [datetime2](6) NULL,
-	[GioiTinh] [bit] NULL,
-	[DiaChi] [varchar](255) NULL,
-	[SoDienThoai] [varchar](10) NULL,
-	[matKhau] [nvarchar](255) NULL,
-	[TrangThai] [bit] NULL,
-	[MaThongBao] [nvarchar](255) NULL,
-	[ThoiGianThongBao] [date] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[KhuyenMai]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[KhuyenMai](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenKhuyenMai] [nvarchar](255) NULL,
-	[GiaTri] [float] NULL,
-	[NgayBatDau] [datetime] NULL,
-	[NgayKetThuc] [datetime] NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-UNIQUE NONCLUSTERED 
-(
-	[TenKhuyenMai] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[KichThuoc]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[KichThuoc](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenKichThuoc] [nvarchar](255) NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[MauSac]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[MauSac](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenMauSac] [nvarchar](255) NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[NhanVien]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[NhanVien](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenNhanVien] [nvarchar](255) NOT NULL,
-	[Email] [nvarchar](255) NOT NULL,
-	[SoDienThoai] [varchar](10) NULL,
-	[NgaySinh] [date] NOT NULL,
-	[GioiTinh] [bit] NOT NULL,
-	[DiaChi] [varchar](255) NULL,
-	[VaiTro] [bit] NULL,
-	[MatKhau] [nvarchar](255) NULL,
-	[CCCD] [nvarchar](255) NULL,
-	[TrangThai] [bit] NOT NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-UNIQUE NONCLUSTERED 
-(
-	[CCCD] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
-UNIQUE NONCLUSTERED 
-(
-	[Email] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[SanPham]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[SanPham](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenSanPham] [nvarchar](255) NULL,
-	[NgayTao] [date] NULL,
-	[IdThuongHieu] [int] NULL,
-	[IdXuatXu] [int] NULL,
-	[IdChatLieu] [int] NULL,
-	[IdDanhMuc] [int] NULL,
-	[Images] [varchar](255) NULL,
-	[TrangThai] [int] NULL,
-	[Ma] [varchar](255) NULL,
-	[GioiTinh] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[SanPhamChiTiet]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[SanPhamChiTiet](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[SoLuong] [int] NULL,
-	[NgaySanXuat] [date] NULL,
-	[IdSanPham] [int] NULL,
-	[IdKichThuoc] [int] NULL,
-	[IdMauSac] [int] NULL,
-	[IdKhuyenMai] [int] NULL,
-	[NgayTao] [datetime] NULL,
-	[TrangThai] [int] NULL,
-	[GiaBan] [float] NULL,
-	[GiaBanGiamGia] [float] NULL,
-	[Ma] [varchar](255) NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[ThuongHieu]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ThuongHieu](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenThuongHieu] [nvarchar](255) NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[TraHang]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[TraHang](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[IdDonHang] [int] NULL,
-	[IdKhachHang] [int] NULL,
-	[NgayYeuCau] [datetime] NULL,
-	[LyDo] [nvarchar](max) NULL,
-	[TrangThai] [int] NULL,
-	[TongTienHoan] [float] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[Voucher]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Voucher](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[MaVoucher] [nvarchar](255) NULL,
-	[TenVoucher] [nvarchar](255) NULL,
-	[LoaiVoucher] [nvarchar](255) NULL,
-	[MoTa] [varchar](255) NULL,
-	[SoLuong] [int] NULL,
-	[DonToiThieu] [float] NULL,
-	[GiaTri] [float] NULL,
-	[NgayBatDau] [datetime] NULL,
-	[NgayKetThuc] [datetime] NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[XuatXu]    Script Date: 07/04/2026 1:06:54 CH ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[XuatXu](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[TenXuatXu] [nvarchar](255) NULL,
-	[TrangThai] [int] NULL,
-PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[DanhGia]  WITH CHECK ADD FOREIGN KEY([IdKhachHang])
-REFERENCES [dbo].[KhachHang] ([id])
-GO
-ALTER TABLE [dbo].[DanhGia]  WITH CHECK ADD FOREIGN KEY([IdSanPham])
-REFERENCES [dbo].[SanPham] ([Id])
-GO
-ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD FOREIGN KEY([idGiamGia])
-REFERENCES [dbo].[Voucher] ([Id])
-GO
-ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD FOREIGN KEY([idKhachHang])
-REFERENCES [dbo].[KhachHang] ([id])
-GO
-ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD FOREIGN KEY([idNhanVien])
-REFERENCES [dbo].[NhanVien] ([Id])
-GO
-ALTER TABLE [dbo].[donHangChiTiet]  WITH CHECK ADD FOREIGN KEY([idDonHang])
-REFERENCES [dbo].[DonHang] ([id])
-GO
-ALTER TABLE [dbo].[donHangChiTiet]  WITH CHECK ADD FOREIGN KEY([idSanPhamChiTiet])
-REFERENCES [dbo].[SanPhamChiTiet] ([Id])
-GO
-ALTER TABLE [dbo].[GioHangChiTiet]  WITH CHECK ADD FOREIGN KEY([idKhachHang])
-REFERENCES [dbo].[KhachHang] ([id])
-GO
-ALTER TABLE [dbo].[GioHangChiTiet]  WITH CHECK ADD FOREIGN KEY([idSanPhamChiTiet])
-REFERENCES [dbo].[SanPhamChiTiet] ([Id])
-GO
-ALTER TABLE [dbo].[SanPham]  WITH CHECK ADD FOREIGN KEY([IdChatLieu])
-REFERENCES [dbo].[ChatLieu] ([Id])
-GO
-ALTER TABLE [dbo].[SanPham]  WITH CHECK ADD FOREIGN KEY([IdDanhMuc])
-REFERENCES [dbo].[DanhMuc] ([Id])
-GO
-ALTER TABLE [dbo].[SanPham]  WITH CHECK ADD FOREIGN KEY([IdThuongHieu])
-REFERENCES [dbo].[ThuongHieu] ([Id])
-GO
-ALTER TABLE [dbo].[SanPham]  WITH CHECK ADD FOREIGN KEY([IdXuatXu])
-REFERENCES [dbo].[XuatXu] ([Id])
-GO
-ALTER TABLE [dbo].[SanPhamChiTiet]  WITH CHECK ADD FOREIGN KEY([IdKhuyenMai])
-REFERENCES [dbo].[KhuyenMai] ([Id])
-GO
-ALTER TABLE [dbo].[SanPhamChiTiet]  WITH CHECK ADD FOREIGN KEY([IdKichThuoc])
-REFERENCES [dbo].[KichThuoc] ([Id])
-GO
-ALTER TABLE [dbo].[SanPhamChiTiet]  WITH CHECK ADD FOREIGN KEY([IdMauSac])
-REFERENCES [dbo].[MauSac] ([Id])
-GO
-ALTER TABLE [dbo].[SanPhamChiTiet]  WITH CHECK ADD FOREIGN KEY([IdSanPham])
-REFERENCES [dbo].[SanPham] ([Id])
-GO
-ALTER TABLE [dbo].[TraHang]  WITH CHECK ADD FOREIGN KEY([IdDonHang])
-REFERENCES [dbo].[DonHang] ([id])
-GO
-ALTER TABLE [dbo].[TraHang]  WITH CHECK ADD FOREIGN KEY([IdKhachHang])
-REFERENCES [dbo].[KhachHang] ([id])
-GO
-USE [master]
-GO
-ALTER DATABASE [KingStepp3] SET  READ_WRITE 
-GO
+
+-- INSERT DATA
+-- Chat Lieu
+INSERT INTO ChatLieu (TenChatLieu, TrangThai) VALUES (N'Da Bò', 1), (N'Vải Mesh', 1), (N'Vải Canvas', 1), (N'Da Tổng Hợp', 1), (N'Sợi Tổng Hợp', 1);
+
+-- Danh Muc
+INSERT INTO DanhMuc (TenDanhMuc, TrangThai) VALUES (N'Sneaker', 1), (N'Running', 1), (N'Basketball', 1), (N'Training', 1), (N'Lifestyle', 1);
+
+-- Thuong Hieu
+INSERT INTO ThuongHieu (TenThuongHieu, TrangThai) VALUES (N'Nike', 1), (N'Adidas', 1), (N'Puma', 1), (N'Vans', 1), (N'Converse', 1), (N'New Balance', 1);
+
+-- Xuat Xu
+INSERT INTO XuatXu (TenXuatXu, TrangThai) VALUES (N'Vietnam', 1), (N'USA', 1), (N'China', 1), (N'Indonesia', 1), (N'Thailand', 1);
+
+-- Mau Sac
+INSERT INTO MauSac (TenMauSac, TrangThai) VALUES (N'Trắng', 1), (N'Đen', 1), (N'Xám', 1), (N'Đỏ', 1), (N'Xanh Blue', 1);
+
+-- Kich Thuoc
+INSERT INTO KichThuoc (TenKichThuoc, TrangThai) VALUES ('38', 1), ('39', 1), ('40', 1), ('41', 1), ('42', 1), ('43', 1), ('44', 1);
+
+-- Nhan Vien (NO GENDER)
+INSERT INTO NhanVien (TenNhanVien, Email, SoDienThoai, NgaySinh, DiaChi, VaiTro, MatKhau, CCCD, TrangThai)
+VALUES 
+(N'Nguyễn Văn Admin', 'admin@kingstep.com', '0912345678', '1990-01-01', N'Hà Nội', 1, '123456', '123456789012', 1),
+(N'Trần Thị Nhân Viên', 'nhanvien@kingstep.com', '0922345678', '1995-05-05', N'TP HCM', 0, '123456', '123456789013', 1),
+(N'Lê Bảo Khang', 'khang@gmail.com', '0933456789', '2000-10-10', N'Đà Nẵng', 0, '123456', '123456789014', 1);
+
+-- Khach Hang (NO GENDER)
+INSERT INTO KhachHang (TenKhachHang, Email, SoDienThoai, NgaySinh, DiaChi, matKhau, TrangThai)
+VALUES 
+(N'Khách Lẻ', 'khachle@gmail.com', '0000000000', NULL, NULL, NULL, 1),
+(N'Phạm Văn A', 'phama@gmail.com', '0988777666', '1992-02-02', N'Hà Nội', '123456', 1),
+(N'Hoàng Thị B', 'hoangb@gmail.com', '0977666555', '1994-04-04', N'Nam Định', '123456', 1),
+(N'Nguyễn Văn C', 'vanc@gmail.com', '0966555444', '1996-06-06', N'Bắc Ninh', '123456', 1);
+
+-- Voucher
+INSERT INTO Voucher (MaVoucher, TenVoucher, LoaiVoucher, MoTa, SoLuong, DonToiThieu, GiaTri, NgayBatDau, NgayKetThuc, TrangThai)
+VALUES 
+('KINGSTEP10', N'Giảm 10%', 'PERCENT', N'Giảm 10% cho đơn hàng', 100, 500000, 10, '2026-01-01', '2026-12-31', 1),
+('WELCOME100K', N'Giảm 100k', 'CASH', N'Giảm thẳng 100k', 100, 1000000, 100000, '2026-01-01', '2026-12-31', 1);
+
+-- Khuyen Mai
+INSERT INTO KhuyenMai (TenKhuyenMai, GiaTri, NgayBatDau, NgayKetThuc, TrangThai)
+VALUES 
+(N'Xả Hàng Hè', 20, '2026-04-01', '2026-05-01', 1),
+(N'Mừng Lễ 30/4', 15, '2026-04-25', '2026-05-05', 1);
+
+-- SanPham (30 San Pham)
+INSERT INTO SanPham (TenSanPham, NgayTao, IdThuongHieu, IdXuatXu, IdChatLieu, IdDanhMuc, Images, TrangThai, Ma)
+VALUES 
+(N'Nike Air Force 1 07', '2026-04-07', 1, 1, 1, 1, 'af1_white.jpg', 1, 'SP001'),
+(N'Adidas Ultraboost 22', '2026-04-07', 2, 1, 2, 2, 'ub22_black.jpg', 1, 'SP002'),
+(N'Nike Air Jordan 1 Low', '2026-04-07', 1, 2, 1, 1, 'aj1_low.jpg', 1, 'SP003'),
+(N'Vans Old Skool Classic', '2026-04-07', 4, 1, 3, 5, 'vans_old.jpg', 1, 'SP004'),
+(N'Converse Chuck 70', '2026-04-07', 5, 1, 3, 5, 'cv_chuck.jpg', 1, 'SP005'),
+(N'Nike Dunk Low Panda', '2026-04-07', 1, 3, 1, 1, 'dunk_panda.jpg', 1, 'SP006'),
+(N'Adidas Forum Low', '2026-04-07', 2, 4, 1, 1, 'forum_low.jpg', 1, 'SP007'),
+(N'Puma Suede Classic', '2026-04-07', 3, 1, 1, 5, 'puma_suede.jpg', 1, 'SP008'),
+(N'New Balance 550', '2026-04-07', 6, 2, 1, 1, 'nb550.jpg', 1, 'SP009'),
+(N'Nike Air Max 90', '2026-04-07', 1, 1, 4, 1, 'am90.jpg', 1, 'SP010'),
+(N'Adidas Stan Smith', '2026-04-07', 2, 1, 1, 5, 'stansmith.jpg', 1, 'SP011'),
+(N'Nike Air Force 1 Shadow', '2026-04-07', 1, 1, 1, 1, 'af1_shadow.jpg', 1, 'SP012'),
+(N'Adidas NMD R1', '2026-04-07', 2, 3, 2, 2, 'nmd_r1.jpg', 1, 'SP013'),
+(N'Vans Slip-On Checkerboard', '2026-04-07', 4, 1, 3, 5, 'vans_slipon.jpg', 1, 'SP014'),
+(N'Converse Run Star Hike', '2026-04-07', 5, 2, 3, 5, 'cv_hike.jpg', 1, 'SP015'),
+(N'Nike Blazer Mid 77', '2026-04-07', 1, 1, 1, 5, 'blazer77.jpg', 1, 'SP016'),
+(N'Adidas Superstar', '2026-04-07', 2, 1, 1, 5, 'superstar.jpg', 1, 'SP017'),
+(N'Puma Cali Dream', '2026-04-07', 3, 4, 1, 5, 'puma_cali.jpg', 1, 'SP018'),
+(N'New Balance 2002R', '2026-04-07', 6, 1, 1, 2, 'nb2002r.jpg', 1, 'SP019'),
+(N'Nike Air Zoom Pegasus 39', '2026-04-07', 1, 1, 2, 2, 'pegasus39.jpg', 1, 'SP020'),
+(N'Adidas Yeezy Boost 350 V2', '2026-04-07', 2, 3, 5, 5, 'yeezy350.jpg', 1, 'SP021'),
+(N'Nike Lebron 19', '2026-04-07', 1, 2, 5, 3, 'lebron19.jpg', 1, 'SP022'),
+(N'Adidas Dame 8', '2026-04-07', 2, 3, 2, 3, 'dame8.jpg', 1, 'SP023'),
+(N'Vans Sk8-Hi Black', '2026-04-07', 4, 1, 3, 5, 'sk8hi.jpg', 1, 'SP024'),
+(N'Converse One Star Pro', '2026-04-07', 5, 1, 1, 5, 'onestar.jpg', 1, 'SP025'),
+(N'Nike Air Max 270', '2026-04-07', 1, 3, 2, 1, 'am270.jpg', 1, 'SP026'),
+(N'Adidas Ozweego', '2026-04-07', 2, 1, 1, 5, 'ozweego.jpg', 1, 'SP027'),
+(N'Puma RS-X3', '2026-04-07', 3, 3, 4, 5, 'rsx3.jpg', 1, 'SP028'),
+(N'New Balance 990v5', '2026-04-07', 6, 2, 1, 2, 'nb990.jpg', 1, 'SP029'),
+(N'Nike React Vision', '2026-04-07', 1, 5, 2, 2, 'reactvision.jpg', 1, 'SP030');
+
+-- SanPhamChiTiet (Bien the cho 30 san pham)
+-- Mỗi sản phẩm có vài size/màu để test
+INSERT INTO SanPhamChiTiet (SoLuong, NgaySanXuat, IdSanPham, IdKichThuoc, IdMauSac, IdKhuyenMai, NgayTao, TrangThai, GiaBan, GiaBanGiamGia, Ma)
+SELECT 50, '2026-01-01', s.Id, k.Id, m.Id, NULL, GETDATE(), 1, 2500000, NULL, s.Ma + '-' + k.TenKichThuoc + '-' + m.TenMauSac
+FROM SanPham s 
+CROSS JOIN (SELECT Id, TenKichThuoc FROM KichThuoc WHERE TenKichThuoc IN ('40','41','42')) k
+CROSS JOIN (SELECT Id, TenMauSac FROM MauSac WHERE TenMauSac IN (N'Trắng', N'Đen')) m;
+
+-- Done!
+PRINT 'KHOI TAO DATABASE KINGSTEP3 THANH CONG! KHONG CON GIOI TINH!';
