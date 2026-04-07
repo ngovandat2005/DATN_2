@@ -80,11 +80,11 @@ function Home() {
         const productsResponse = await fetch(config.getApiUrl('api/san-pham/getAll'));
         if (productsResponse.ok) {
           const allProducts = await productsResponse.json();
-          // Lọc sản phẩm nổi bật - CHỈ LẤY GIÀY NAM / UNISEX
+          // Log sản phẩm nổi bật - CHỈ LẤY GIÀY NAM / UNISEX
           const featured = allProducts.filter(p => p.trangThai === 1 && p.gioiTinh !== 1).slice(0, 8);
           setFeaturedProducts(featured);
           
-          // Lọc sản phẩm giảm giá - CHỈ LẤY GIÀY NAM / UNISEX
+          // Log sản phẩm giảm giá - CHỈ LẤY GIÀY NAM / UNISEX
           const sales = allProducts.filter(p => 
             p.trangThai === 1 && 
             p.gioiTinh !== 1 && 

@@ -71,7 +71,7 @@ const SalePage = () => {
                     })
                 );
 
-                // Lọc quyết liệt: Chỉ những sản phẩm CÓ KHUYẾN MÃI THỰC SỰ và là GIÀY NAM / UNISEX mới được hiện lên
+                // Log quyết liệt: Chỉ những sản phẩm CÓ KHUYẾN MÃI THỰC SỰ và là GIÀY NAM / UNISEX mới được hiện lên
                 const saleProducts = productsWithPrices.filter(p => p.isOnSale === true && String(p.gioiTinh) !== '1');
                 setProducts(saleProducts);
             } catch (error) {

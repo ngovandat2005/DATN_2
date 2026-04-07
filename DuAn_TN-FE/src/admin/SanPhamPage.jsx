@@ -34,7 +34,6 @@ const SanPhamPage = () => {
     giaGiamGia: "",
     trangThai: 1,
     images: "",
-    gioiTinh: 0 // ✅ THÊM: Mặc định là Nam
   });
   const [loading, setLoading] = useState(false);
   const [trangThai, setTrangThai] = useState("");
@@ -210,8 +209,7 @@ const SanPhamPage = () => {
         ...data,
         giaBan: Number(addForm.giaBan),
         giaGiamGia: addForm.giaGiamGia ? Number(addForm.giaGiamGia) : 0,
-        trangThai: Number(addForm.trangThai),
-        gioiTinh: 0 // ✅ LUÔN LUÔN là Nam
+        trangThai: Number(addForm.trangThai)
       });
       setShowAddModal(false);
       setAddForm({
@@ -266,8 +264,7 @@ const SanPhamPage = () => {
       giaBan: product.giaBan || "",
       giaGiamGia: product.giaGiamGia || "",
       trangThai: product.trangThai,
-      images: product.images || "",
-      gioiTinh: product.gioiTinh || 0 // ✅ THÊM: Lấy giới tính hiện tại
+      images: product.images || ""
     });
     setShowEditModal(true);
   };
@@ -300,8 +297,7 @@ const SanPhamPage = () => {
       giaBan: Number(editForm.giaBan),
       giaGiamGia: editForm.giaGiamGia ? Number(editForm.giaGiamGia) : 0,
       trangThai: Number(editForm.trangThai),
-      images: editForm.images,
-      gioiTinh: 0 // ✅ LUÔN LUÔN là Nam
+      images: editForm.images
     };
     if (editForm.idKhuyenMai) {
       data.khuyenMai = { id: editForm.idKhuyenMai };

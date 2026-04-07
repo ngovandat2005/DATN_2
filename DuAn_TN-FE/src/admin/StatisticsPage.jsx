@@ -225,7 +225,7 @@ function StatisticsPage() {
       key: 'image',
       render: (_, record) => (
         <img
-          src={getImageUrl(record.images || record.imanges)} // Hỗ trợ cả 2 field
+          src={getImageUrl(record.images || record.images)} // Hỗ trợ cả 2 field
           alt={record.productName || "Không có ảnh"}
           style={{
             width: 60,
@@ -237,7 +237,7 @@ function StatisticsPage() {
             background: "#f6f8fa"
           }}
           onError={(e) => {
-            console.error(`Product image failed to load: ${record.images || record.imanges}`);
+            console.error(`Product image failed to load: ${record.images || record.images}`);
             e.target.src = "/logo.png";
           }}
         />
@@ -306,7 +306,7 @@ function StatisticsPage() {
         <Space wrap size="large">
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <CalendarOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-            <Text strong style={{ marginRight: 12 }}>LỌC NHANH:</Text>
+            <Text strong style={{ marginRight: 12 }}>LOG NHANH:</Text>
             <Segmented 
               options={[
                 { label: 'Hôm nay', value: 'today' },

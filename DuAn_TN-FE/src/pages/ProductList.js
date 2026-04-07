@@ -228,7 +228,7 @@ function ProductList() {
       .catch(() => setLoading(false));
   }, []);
 
-  // Lọc sản phẩm theo filter
+  // Log sản phẩm theo filter
   const filteredProducts = products.filter((product) => {
     const matchSize =
       !filters.size ||
@@ -236,17 +236,17 @@ function ProductList() {
         (product.kichThuoc.tenKichThuoc === filters.size ||
           product.kichThuoc.size === filters.size));
     
-    // Lọc theo Brand ID
+    // Log theo Brand ID
     const matchBrandId =
       !filters.brandId ||
       (product.thuongHieu && String(product.thuongHieu.id) === String(filters.brandId));
     
-    // Lọc theo Category ID
+    // Log theo Category ID
     const matchCategoryId =
       !filters.categoryId ||
       (product.danhMuc && String(product.danhMuc.id) === String(filters.categoryId));
 
-    // Lọc theo Giới tính
+    // Log theo Giới tính
     const matchGender =
       !filters.gender ||
       String(product.gioiTinh) === String(filters.gender);
@@ -275,7 +275,7 @@ function ProductList() {
     setCurrentPage(1);
   }, [filters, priceRange]);
 
-  // ✅ THÊM: Cập nhật bộ lọc khi URL thay đổi (VD: bấm Nike -> Adidas ở Header)
+  // ✅ THÊM: Cập nhật bộ log khi URL thay đổi (VD: bấm Nike -> Adidas ở Header)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     setFilters(f => ({
@@ -355,7 +355,7 @@ function ProductList() {
       </div>
 
       <div className="product-list-inner" style={{ padding: '40px 32px' }}>
-        {/* Bộ lọc hiện đại hai tầng */}
+        {/* Bộ log hiện đại hai tầng */}
         <div
           style={{
             background: "#fff",

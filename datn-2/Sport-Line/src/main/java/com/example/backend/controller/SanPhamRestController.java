@@ -21,24 +21,19 @@ public class SanPhamRestController {
         return sanPhamService.getAllActive();
     }
 
-    // 2. Tách biệt sản phẩm NAM (0)
-    @GetMapping("/nam")
-    public ResponseEntity<?> getMenProducts() {
-        try {
-            return ResponseEntity.ok(sanPhamService.getProductsByGender(0));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Lỗi Backend: " + e.getMessage());
-        }
+    // 2. Lấy danh sách sản phẩm hiển thị
+    @GetMapping("/active")
+    public List<SanPham> getActive() {
+        return sanPhamService.getAllActive();
     }
 
-    // 4. API lọc thông minh toàn diện
+    // 4. API lọc thông minh
     @GetMapping("/filter")
     public List<SanPham> filter(
-            @RequestParam(required = false) Integer gioiTinh,
             @RequestParam(required = false) Integer idDanhMuc,
             @RequestParam(required = false) Integer idThuongHieu,
             @RequestParam(required = false) String search) {
-        return sanPhamService.searchAndFilter(gioiTinh, idDanhMuc, idThuongHieu, search);
+        return sanPhamService.searchAndFilter(idDanhMuc, idThuongHieu, search);
     }
 
     @GetMapping({ "/{id}", "/get/{id}" })

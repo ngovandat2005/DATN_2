@@ -17,13 +17,12 @@ const TRANG_THAI = [
 ];
 
 const formatImage = (raw) => {
-  if (!raw) return '';
+  if (!raw) return `${config.baseUrl}images/logo.png`;
   if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
   let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
   if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
   if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
-  // Sửa đường dẫn chuẩn theo backend admin
-  return `${config.baseUrl}api/san-pham/images/${firstImg}`;
+  return `${config.baseUrl}images/${firstImg}`;
 };
 
 const OrderDetailPage = () => {
@@ -36,7 +35,7 @@ const OrderDetailPage = () => {
   const [orderInfo, setOrderInfo] = useState(null);
   const userRole = getUserRole();
   const isAdmin = userRole === 'NHANVIEN';
-  
+
   // State cho chức năng thêm, sửa, xóa sản phẩm
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [availableProducts, setAvailableProducts] = useState([]);
@@ -46,18 +45,18 @@ const OrderDetailPage = () => {
   const [updateQtyLoading, setUpdateQtyLoading] = useState({});
   const [deleteProductLoading, setDeleteProductLoading] = useState({});
   const [productsLoading, setProductsLoading] = useState(false);
-  
+
   // State cho tìm kiếm và log sản phẩm
   const [search, setSearch] = useState('');
   const [filterColor, setFilterColor] = useState('');
   const [filterSize, setFilterSize] = useState('');
-  
+
   // State cho modal chọn số lượng
   const [showQtyModal, setShowQtyModal] = useState(false);
-  
+
   // State cho thông tin voucher
   const [voucherInfo, setVoucherInfo] = useState(null);
-  
+
   // 📦 Lấy danh sách sản phẩm có thể thêm
   const fetchAvailableProducts = useCallback(async () => {
     setProductsLoading(true);
@@ -100,15 +99,15 @@ const OrderDetailPage = () => {
     if (!selectedProduct) return 0;
     return ((selectedProduct.giaBanGiamGia || selectedProduct.giaBan) * addProductQty);
   }, [selectedProduct, addProductQty]);
-  
+
   // Memoize bảng sản phẩm để tránh re-render không cần thiết
   const productsTable = useMemo(() => {
     if (productsLoading) {
       return (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '200px',
           color: '#1976d2',
           fontSize: 16
@@ -117,7 +116,7 @@ const OrderDetailPage = () => {
         </div>
       );
     }
-    
+
     return (
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, tableLayout: 'fixed' }}>
         <thead>
@@ -135,9 +134,9 @@ const OrderDetailPage = () => {
           {filteredProducts.map(product => (
             <tr key={product.id} style={{ borderBottom: '1px solid #e3e8ee' }}>
               <td style={{ padding: '12px 8px', verticalAlign: 'middle', width: '80px' }}>
-                <div style={{ 
-                  width: 60, 
-                  height: 60, 
+                <div style={{
+                  width: 60,
+                  height: 60,
                   borderRadius: 6,
                   border: '1px solid #e3e8ee',
                   overflow: 'hidden',
@@ -153,9 +152,9 @@ const OrderDetailPage = () => {
                         ? `${config.baseUrl}images/${encodeURIComponent(product.images.trim())}`
                         : '/placeholder-image.jpg'}
                     alt={product.tenSanPham}
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
+                    style={{
+                      width: '100%',
+                      height: '100%',
                       objectFit: 'cover'
                     }}
                     onError={(e) => {
@@ -163,11 +162,11 @@ const OrderDetailPage = () => {
                       e.target.nextSibling.style.display = 'flex';
                     }}
                   />
-                  <div style={{ 
+                  <div style={{
                     display: 'none',
-                    width: '100%', 
-                    height: '100%', 
-                    alignItems: 'center', 
+                    width: '100%',
+                    height: '100%',
+                    alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 10,
                     color: '#999',
@@ -190,7 +189,7 @@ const OrderDetailPage = () => {
                 {product.kichThuoc}
               </td>
               <td style={{ padding: '12px 8px', verticalAlign: 'middle', textAlign: 'center', width: '80px' }}>
-                <span style={{ 
+                <span style={{
                   color: product.soLuong > 0 ? '#43b244' : '#e53935',
                   fontWeight: 600
                 }}>
@@ -237,7 +236,7 @@ const OrderDetailPage = () => {
       </table>
     );
   }, [filteredProducts, productsLoading]);
-  
+
   // Tối ưu hóa: luôn fetch lại sản phẩm khi mở modal để cập nhật tồn kho
   const handleOpenAddProductModal = useCallback(() => {
     if (orderInfo && orderInfo.trangThai !== 0) {
@@ -253,7 +252,7 @@ const OrderDetailPage = () => {
     // Luôn fetch lại để cập nhật tồn kho chính xác
     fetchAvailableProducts();
   }, [orderInfo, fetchAvailableProducts]);
-  
+
   // Tối ưu hóa: đóng modal và reset state
   const handleCloseAddProductModal = useCallback(() => {
     setShowAddProductModal(false);
@@ -278,7 +277,7 @@ const OrderDetailPage = () => {
           throw new Error(`Lỗi khi tải thông tin đơn hàng: ${res.status}`);
         }
         const info = await res.json();
-        
+
         // ✅ DEBUG: Log thông tin đơn hàng nhận được
         console.log('🔍 === DEBUG THÔNG TIN ĐƠN HÀNG ===');
         console.log('📊 orderInfo nhận được:', info);
@@ -286,9 +285,9 @@ const OrderDetailPage = () => {
         console.log('📊 orderInfo.tongTien:', info?.tongTien);
         console.log('📊 orderInfo.tongTienGiamGia:', info?.tongTienGiamGia);
         console.log('🔍 === END DEBUG ===');
-        
+
         setOrderInfo(info);
-        
+
         // ✅ THÊM: Fetch thông tin voucher nếu có
         if (info.idgiamGia) {
           try {
@@ -379,28 +378,28 @@ const OrderDetailPage = () => {
         }
       });
 
-      const res = await fetch(`http://localhost:8080/api/donhang/xac-nhan/${id}`, { 
+      const res = await fetch(`http://localhost:8080/api/donhang/xac-nhan/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
       // ✅ DEBUG: Log response status và headers
       console.log('🔍 Response status:', res.status);
       console.log('🔍 Response statusText:', res.statusText);
       console.log('🔍 Response headers:', Object.fromEntries(res.headers.entries()));
-      
+
       if (!res.ok) {
         // ✅ Xử lý lỗi từ backend giống KichThuocPage.jsx
         let errorMessage = 'Lỗi khi xác nhận đơn hàng';
-        
+
         try {
           // ✅ SỬA: Sử dụng response.text() trước như KichThuocPage.jsx
           const errorText = await res.text();
           console.log('🔍 Backend error response (text):', errorText);
-          
+
           if (errorText) {
             errorMessage = errorText;
-            
+
             // ✅ TH├èM: Thß╗¡ parse JSON nß║┐u response là JSON
             try {
               const errorData = JSON.parse(errorText);
@@ -414,26 +413,26 @@ const OrderDetailPage = () => {
               console.log('🔍 Response không phải JSON, sử dụng text gốc');
             }
           }
-          
+
           // ✅ DEBUG: Log để kiểm tra
           console.log('🔍 Final error message:', errorMessage);
-          
+
         } catch (textError) {
           console.warn('Không thể lấy error text:', textError);
           errorMessage = 'Lỗi khi xác nhận đơn hàng';
         }
-        
+
         // ✅ SỬA: Kiểm tra nếu là lỗi tồn kho không đủ (kiểm tra nhiều từ khóa)
-        const isInventoryError = errorMessage.toLowerCase().includes('tồn kho') || 
-                                errorMessage.toLowerCase().includes('không đủ') ||
-                                errorMessage.toLowerCase().includes('số lượng') ||
-                                errorMessage.toLowerCase().includes('inventory') ||
-                                errorMessage.toLowerCase().includes('stock') ||
-                                errorMessage.toLowerCase().includes('sản phẩm') ||
-                                errorMessage.toLowerCase().includes('nike air max') ||
-                                errorMessage.toLowerCase().includes('39') ||
-                                errorMessage.toLowerCase().includes('đen');
-        
+        const isInventoryError = errorMessage.toLowerCase().includes('tồn kho') ||
+          errorMessage.toLowerCase().includes('không đủ') ||
+          errorMessage.toLowerCase().includes('số lượng') ||
+          errorMessage.toLowerCase().includes('inventory') ||
+          errorMessage.toLowerCase().includes('stock') ||
+          errorMessage.toLowerCase().includes('sản phẩm') ||
+          errorMessage.toLowerCase().includes('nike air max') ||
+          errorMessage.toLowerCase().includes('39') ||
+          errorMessage.toLowerCase().includes('đen');
+
         if (isInventoryError) {
           Swal.fire({
             icon: 'warning',
@@ -483,7 +482,7 @@ const OrderDetailPage = () => {
 
       const updatedOrder = await res.json();
       setOrderInfo(updatedOrder);
-      
+
       // ✅ THÊM: Hiển thị thông báo thành công với thông tin chi tiết
       Swal.fire({
         icon: 'success',
@@ -507,18 +506,18 @@ const OrderDetailPage = () => {
         confirmButtonText: 'Tuyệt vời!',
         confirmButtonColor: '#27ae60'
       });
-      
+
       // ✅ THÊM: Refresh lại dữ liệu để cập nhật UI
       await refreshOrderData();
-      
-            } catch (err) {
-          console.error('Lỗi khi xác nhận đơn hàng:', err);
-          
-          // ✅ THÊM: Xử lý lỗi network hoặc lỗi khác
-          Swal.fire({
-            icon: 'error',
-            title: '❌ Lỗi hệ thống!',
-            html: `
+
+    } catch (err) {
+      console.error('Lỗi khi xác nhận đơn hàng:', err);
+
+      // ✅ THÊM: Xử lý lỗi network hoặc lỗi khác
+      Swal.fire({
+        icon: 'error',
+        title: '❌ Lỗi hệ thống!',
+        html: `
               <div style="text-align: left;">
                 <p style="color: #e74c3c; font-weight: 600; margin-bottom: 16px;">
                   Không thể kết nối với hệ thống để xác nhận đơn hàng!
@@ -537,11 +536,11 @@ const OrderDetailPage = () => {
                 </div>
               </div>
             `,
-            confirmButtonText: 'Thử lại',
-            confirmButtonColor: '#dc3545',
-            width: '600px'
-          });
-        }
+        confirmButtonText: 'Thử lại',
+        confirmButtonColor: '#dc3545',
+        width: '600px'
+      });
+    }
   };
 
   const handleHuy = async () => {
@@ -595,7 +594,7 @@ const OrderDetailPage = () => {
           Swal.showValidationMessage('Vui lòng chọn lý do hủy đơn hàng!');
           return false;
         }
-        
+
         let finalReason = selectedReason.value;
         if (finalReason === 'L├╜ do khác') {
           const customReason = document.getElementById('customReason').value.trim();
@@ -605,14 +604,14 @@ const OrderDetailPage = () => {
           }
           finalReason = customReason;
         }
-        
+
         return finalReason;
       },
       didOpen: () => {
         // Xß╗¡ l├╜ hiß╗çn/ẩn ô nhập lý do khác
         const reasonInputs = document.querySelectorAll('input[name="reason"]');
         const customReasonDiv = document.getElementById('customReasonDiv');
-        
+
         reasonInputs.forEach(input => {
           input.addEventListener('change', () => {
             if (input.value === 'Lý do khác') {
@@ -627,17 +626,17 @@ const OrderDetailPage = () => {
 
     if (formValues) {
       try {
-        const res = await fetch(`http://localhost:8080/api/donhang/huy/${id}`, { 
+        const res = await fetch(`http://localhost:8080/api/donhang/huy/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ghiChu: formValues })
         });
-        
+
         if (!res.ok) throw new Error('Lỗi khi hủy đơn hàng');
-        
+
         const updatedOrder = await res.json();
         setOrderInfo(updatedOrder);
-        
+
         Swal.fire({
           icon: 'success',
           title: 'Thành công!',
@@ -678,23 +677,23 @@ const OrderDetailPage = () => {
         wardCode: wardCode || '90737', // ✅ SỬA: Sử dụng wardCode từ form
         phiVanChuyenMoi: phiVanChuyenMoi || 0 // ✅ SỬA: Sử dụng tham số được truyền vào
       });
-      
+
       console.log('Gửi request cập nhật địa chỉ với params:', params.toString());
-      
+
       // Gọi API cập nhật địa chỉ và tính lại phí ship
-      const res = await fetch(`http://localhost:8080/api/donhang/sua-dia-chi?${params}`, { 
-          method: 'PUT',
+      const res = await fetch(`http://localhost:8080/api/donhang/sua-dia-chi?${params}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Lỗi khi cập nhật địa chỉ: ${res.status} - ${errorText}`);
       }
-      
+
       const result = await res.json();
       console.log('Kết quả cập nhật địa chỉ:', result);
-      
+
       // ✅ Cập nhật state với thông tin mới
       setOrderInfo(prev => ({
         ...prev,
@@ -705,7 +704,7 @@ const OrderDetailPage = () => {
         phiVanChuyen: result.phiVanChuyen,
         tongTien: result.tongTienMoi
       }));
-      
+
       // Hiển thị thông báo thành công với thông tin mới
       Swal.fire({
         icon: 'success',
@@ -721,13 +720,13 @@ const OrderDetailPage = () => {
         `,
         confirmButtonText: 'OK'
       });
-      
+
       // Refresh lại dữ liệu để cập nhật UI
       await refreshOrderData();
-      
+
     } catch (err) {
       console.error('Lỗi cập nhật địa chỉ:', err);
-      
+
       Swal.fire({
         icon: 'error',
         title: 'Lỗi!',
@@ -792,7 +791,7 @@ const OrderDetailPage = () => {
             setWards(data.data || []);
             setSelectedWard(''); // Reset phường/xã khi đổi quận
           }
-    } catch (err) {
+        } catch (err) {
           console.error('Lỗi khi lấy danh sách phường:', err);
         }
       };
@@ -803,27 +802,27 @@ const OrderDetailPage = () => {
   // ✅ SỬA: Hàm parse địa chỉ để lấy districtId và wardCode từ format hiện tại
   const parseDiaChiGiaoHang = (diaChiGiaoHang) => {
     if (!diaChiGiaoHang) return { diaChiChiTiet: '', wardCode: '', districtId: '', provinceName: '' };
-    
+
     // ✅ THÊM: Log để xem format thực tế
     console.log('🔍 Địa chỉ gốc:', diaChiGiaoHang);
-    
+
     // ✅ SỬA: Parse format hiện tại: "101 Đường K, Xã Vũ Chính, Thành phố Thái Bình, Thái Bình"
     const parts = diaChiGiaoHang.split(', ');
-    
+
     if (parts.length >= 4) {
       const diaChiChiTiet = parts[0]; // "101 Đường K"
       const wardName = parts[1];      // "Xã Vũ Chính" 
       const districtName = parts[2];  // "Thành phố Thái Bình"
       const provinceName = parts[3];  // "Thái Bình"
-      
-      return { 
-        diaChiChiTiet, 
+
+      return {
+        diaChiChiTiet,
         wardCode: wardName,        // Tạm thời lưu tên ward
         districtId: districtName,  // Tạm thời lưu tên district
-        provinceName 
+        provinceName
       };
     }
-    
+
     // Fallback: Parse theo format c┼⌐
     return { diaChiChiTiet: diaChiGiaoHang, wardCode: '', districtId: '', provinceName: '' };
   };
@@ -840,7 +839,7 @@ const OrderDetailPage = () => {
       });
       return;
     }
-    
+
     // ✅ SỬA: Parse địa chỉ hiện tại để tìm tỉnh/quận/phường
     let currentProvinceId = '';
     let currentDistrictId = '';
@@ -850,28 +849,28 @@ const OrderDetailPage = () => {
     let tempWards = [];
     // ✅ SỬA: Khởi tạo phí ship mới bằng phí ship hiện tại để tránh tăng giá
     let phiShipMoiTinhDuoc = orderInfo?.phiVanChuyen || 0;
-    
+
     if (orderInfo?.diaChiGiaoHang) {
       // ✅ SỬA: Sử dụng hàm parse mới
       const parsedDiaChi = parseDiaChiGiaoHang(orderInfo.diaChiGiaoHang);
       currentDiaChiChiTiet = parsedDiaChi.diaChiChiTiet;
-      
+
       // ✅ THÊM: Log để debug
       console.log('📍 Parse địa chỉ hiện tại:', parsedDiaChi);
-      
+
       // ✅ SỬA: Sử dụng wardCode và districtId trực tiếp từ parse
       if (parsedDiaChi.wardCode && parsedDiaChi.districtId) {
         currentWardCode = parsedDiaChi.wardCode;
         currentDistrictId = parsedDiaChi.districtId;
-        
+
         console.log('📍 Tìm thấy wardCode và districtId:', { currentWardCode, currentDistrictId });
-        
+
         // Tìm tỉnh theo tên
         const province = provinces.find(p => p.ProvinceName === parsedDiaChi.provinceName);
         if (province) {
           currentProvinceId = province.ProvinceID;
           console.log('📍 Tìm thấy tỉnh:', province);
-          
+
           // Fetch quận/huyện và phường/xã để hiển thị tên
           try {
             const districtRes = await fetch(`http://localhost:8080/api/ghn/districts/${currentProvinceId}`);
@@ -879,15 +878,15 @@ const OrderDetailPage = () => {
               const districtData = await districtRes.json();
               tempDistricts = districtData.data || [];
               console.log('📍 Load được districts:', tempDistricts.length);
-              
+
               // ✅ SỬA: Tìm quận/huyện theo tên thay vì theo ID
               const district = tempDistricts.find(d => d.DistrictName === currentDistrictId);
               if (district) {
                 console.log('📍 Tìm thấy district:', district);
-                
+
                 // ✅ SỬA: Cập nhật currentDistrictId thành ID thực
                 currentDistrictId = district.DistrictID;
-                
+
                 // Fetch phường/xã của quận này
                 try {
                   const wardRes = await fetch(`http://localhost:8080/api/ghn/wards/${currentDistrictId}`);
@@ -895,7 +894,7 @@ const OrderDetailPage = () => {
                     const wardData = await wardRes.json();
                     tempWards = wardData.data || [];
                     console.log('📍 Load được wards:', tempWards.length);
-                    
+
                     // ✅ SỬA: Tìm phường/xã theo tên và cập nhật currentWardCode
                     const ward = tempWards.find(w => w.WardName === currentWardCode);
                     if (ward) {
@@ -926,13 +925,13 @@ const OrderDetailPage = () => {
     // ✅ THÊM: Log để debug form HTML
     console.log('📍 Tạo form với dữ liệu:', {
       currentProvinceId,
-      currentDistrictId, 
+      currentDistrictId,
       currentWardCode,
       tempDistricts: tempDistricts.length,
       tempWards: tempWards.length,
       provinces: provinces.length
     });
-    
+
     const { value: formValues } = await Swal.fire({
       title: 'Cập nhật thông tin giao hàng',
       html: `
@@ -1020,15 +1019,15 @@ const OrderDetailPage = () => {
         // ✅ SỬA: Cập nhật state từ temp để form hiển thị đúng khi mở
         console.log('📍 didOpen - tempDistricts:', tempDistricts.length, tempDistricts);
         console.log('📍 didOpen - tempWards:', tempWards.length, tempWards);
-        
+
         setDistricts(tempDistricts);
         setWards(tempWards);
-        
+
         // ✅ THÊM: Xử lý sự kiện thay đổi tỉnh/quận
         const provinceSelect = document.getElementById('swal-province');
         const districtSelect = document.getElementById('swal-district');
         const wardSelect = document.getElementById('swal-ward');
-        
+
         provinceSelect.addEventListener('change', async (e) => {
           const provinceId = e.target.value;
           if (provinceId) {
@@ -1037,14 +1036,14 @@ const OrderDetailPage = () => {
               if (res.ok) {
                 const data = await res.json();
                 const districtOptions = data.data || [];
-                
+
                 // ✅ SỬA: Cập nhật state districts
                 setDistricts(districtOptions);
-                
-                districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>' + 
+
+                districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>' +
                   districtOptions.map(district => `<option value="${district.DistrictID}">${district.DistrictName}</option>`).join('');
                 districtSelect.disabled = false;
-                
+
                 // ✅ SỬA: Giữ nguyên giá trị đã chọn nếu có
                 if (currentDistrictId) {
                   const existingDistrict = districtOptions.find(d => d.DistrictID == currentDistrictId);
@@ -1056,11 +1055,11 @@ const OrderDetailPage = () => {
                 } else {
                   districtSelect.value = '';
                 }
-                
+
                 wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
                 wardSelect.disabled = true;
                 wardSelect.value = '';
-                
+
                 // ✅ SỬA: Reset state wards
                 setWards([]);
               }
@@ -1071,17 +1070,17 @@ const OrderDetailPage = () => {
             districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
             districtSelect.disabled = true;
             districtSelect.value = '';
-            
+
             wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
             wardSelect.disabled = true;
             wardSelect.value = '';
-            
+
             // ✅ SỬA: Reset cả 2 state
             setDistricts([]);
             setWards([]);
           }
         });
-        
+
         districtSelect.addEventListener('change', async (e) => {
           const districtId = e.target.value;
           if (districtId) {
@@ -1090,14 +1089,14 @@ const OrderDetailPage = () => {
               if (res.ok) {
                 const data = await res.json();
                 const wardOptions = data.data || [];
-                
+
                 // ✅ SỬA: Cập nhật state wards
                 setWards(wardOptions);
-                
-                wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>' + 
+
+                wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>' +
                   wardOptions.map(ward => `<option value="${ward.WardCode}">${ward.WardName}</option>`).join('');
                 wardSelect.disabled = false;
-                
+
                 // ✅ SỬA: Giữ nguyên giá trị đã chọn nếu có
                 if (currentWardCode) {
                   const existingWard = wardOptions.find(w => w.WardCode == currentWardCode);
@@ -1117,38 +1116,38 @@ const OrderDetailPage = () => {
             wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
             wardSelect.disabled = true;
             wardSelect.value = '';
-            
+
             // ✅ SỬA: Reset state wards
             setWards([]);
           }
-          
+
           // ✅ THÊM: Reset phí ship mới khi đổi quận
           document.getElementById('phi-ship-moi').textContent = '-- ₫';
-          
+
           // ✅ THÊM: Reset phí ship mới về phí ship hiện tại khi đổi quận
           phiShipMoiTinhDuoc = orderInfo?.phiVanChuyen || 0;
         });
-        
+
         // ✅ THÊM: Xử lý sự kiện thay đổi phường/xã để tính phí ship mới
         wardSelect.addEventListener('change', async (e) => {
           const wardCode = e.target.value;
           if (wardCode) {
             // ✅ THÊM: Kiểm tra xem có thực sự thay đổi địa chỉ không
-            const currentWardCode = orderInfo?.diaChiGiaoHang ? 
+            const currentWardCode = orderInfo?.diaChiGiaoHang ?
               parseDiaChiGiaoHang(orderInfo.diaChiGiaoHang).wardCode : '';
-            const currentDistrictId = orderInfo?.diaChiGiaoHang ? 
+            const currentDistrictId = orderInfo?.diaChiGiaoHang ?
               parseDiaChiGiaoHang(orderInfo.diaChiGiaoHang).districtId : '';
-            
+
             // ✅ THÊM: Nếu không thay đổi địa chỉ, giữ nguyên phí ship hiện tại
             if (wardCode === currentWardCode && districtSelect.value === currentDistrictId) {
               phiShipMoiTinhDuoc = orderInfo?.phiVanChuyen || 0;
               document.getElementById('phi-ship-moi').textContent = `${(orderInfo?.phiVanChuyen || 0).toLocaleString('vi-VN')} ₫`;
               return;
             }
-            
+
             // ✅ THÊM: Hiển thị loading khi đang tính phí
             document.getElementById('phi-ship-moi').textContent = 'Đang tính...';
-            
+
             try {
               // ✅ SỬA: Sử dụng format giống Payment.js
               const res = await fetch(`http://localhost:8080/api/ghn/calculate-fee`, {
@@ -1166,12 +1165,12 @@ const OrderDetailPage = () => {
                   height: 10
                 })
               });
-              
+
               if (res.ok) {
                 const data = await res.json();
                 // ✅ SỬA: Parse response giống Payment.js
                 let phiShipMoi = 0;
-                
+
                 if (data.data && data.data.total) {
                   phiShipMoi = data.data.total;
                 } else if (data.data && data.data.total_fee) {
@@ -1181,7 +1180,7 @@ const OrderDetailPage = () => {
                 } else if (data.total) {
                   phiShipMoi = data.total;
                 }
-                
+
                 if (phiShipMoi > 0) {
                   phiShipMoiTinhDuoc = phiShipMoi; // ✅ Lưu lại phí ship đã tính
                   document.getElementById('phi-ship-moi').textContent = `${phiShipMoi.toLocaleString('vi-VN')} ₫`;
@@ -1210,46 +1209,46 @@ const OrderDetailPage = () => {
         const districtId = document.getElementById('swal-district').value;
         const wardCode = document.getElementById('swal-ward').value;
         const diaChiChiTiet = document.getElementById('swal-input4').value.trim();
-        
+
         if (!tenNguoiNhan || !soDienThoai || !diaChiChiTiet || !provinceId || !districtId || !wardCode) {
           Swal.showValidationMessage('Vui lòng điền đầy đủ thông tin bắt buộc!');
           return false;
         }
-        
+
         // ✅ SỬA: Lấy tên trực tiếp từ DOM để tránh vấn đề state không đồng bộ
         const provinceSelect = document.getElementById('swal-province');
         const districtSelect = document.getElementById('swal-district');
         const wardSelect = document.getElementById('swal-ward');
-        
+
         // ✅ SỬA: Kiểm tra và lấy tên từ selectedIndex, fallback về tìm theo value
         let provinceName = '';
         let districtName = '';
         let wardName = '';
-        
+
         if (provinceSelect.selectedIndex > 0) {
           provinceName = provinceSelect.options[provinceSelect.selectedIndex].text;
         } else {
           const province = provinces.find(p => p.ProvinceID == provinceId);
           provinceName = province?.ProvinceName || '';
         }
-        
+
         if (districtSelect.selectedIndex > 0) {
           districtName = districtSelect.options[districtSelect.selectedIndex].text;
         } else {
           const district = districts.find(d => d.DistrictID == districtId);
           districtName = district?.DistrictName || '';
         }
-        
+
         if (wardSelect.selectedIndex > 0) {
           wardName = wardSelect.options[wardSelect.selectedIndex].text;
         } else {
           const ward = wards.find(w => w.WardCode == wardCode);
           wardName = ward?.WardName || '';
         }
-        
+
         // ✅ SỬA: Tạo địa chỉ với format đẹp, sử dụng tên từ DOM hoặc state
         const diaChiDayDu = `${diaChiChiTiet}, ${wardName}, ${districtName}, ${provinceName}`;
-        
+
         // ✅ THÊM: Log để debug
         console.log('📍 Tạo địa chỉ:', {
           diaChiChiTiet,
@@ -1258,11 +1257,11 @@ const OrderDetailPage = () => {
           provinceName,
           diaChiDayDu
         });
-        
+
         // ✅ THÊM: Lưu districtId và wardCode vào state để sử dụng sau
         setSelectedDistrict(districtId);
         setSelectedWard(wardCode);
-        
+
         return [tenNguoiNhan, soDienThoai, email, diaChiDayDu, districtId, wardCode];
       }
     });
@@ -1271,22 +1270,22 @@ const OrderDetailPage = () => {
       // ✅ SỬA: Sử dụng districtId và wardCode từ form thay vì từ state
       const districtId = formValues[4]; // districtId từ form
       const wardCode = formValues[5];   // wardCode từ form
-      
+
       // ✅ THÊM: Kiểm tra xem có thực sự thay đổi địa chỉ không
       const currentDiaChi = orderInfo?.diaChiGiaoHang ? parseDiaChiGiaoHang(orderInfo.diaChiGiaoHang) : {};
       const hasAddressChanged = currentDiaChi.districtId !== districtId || currentDiaChi.wardCode !== wardCode;
-      
+
       // ✅ THÊM: Nếu không thay đổi địa chỉ, sử dụng phí ship hiện tại
       if (!hasAddressChanged) {
         phiShipMoiTinhDuoc = orderInfo?.phiVanChuyen || 0;
         console.log('📍 Không thay đổi địa chỉ, giữ nguyên phí ship:', phiShipMoiTinhDuoc);
-        
+
         // ✅ THÊM: Cập nhật UI hiển thị phí ship mới
         const phiShipMoiElement = document.getElementById('phi-ship-moi');
         if (phiShipMoiElement) {
           phiShipMoiElement.textContent = `${phiShipMoiTinhDuoc.toLocaleString('vi-VN')} ₫`;
         }
-        
+
         // ✅ THÊM: Hiển thị thông báo cho người dùng
         Swal.fire({
           icon: 'info',
@@ -1295,15 +1294,15 @@ const OrderDetailPage = () => {
           confirmButtonText: 'OK'
         });
       }
-      
-      console.log('📍 Gửi lên backend:', { 
-        districtId, 
-        wardCode, 
-        phiShipMoiTinhDuoc, 
+
+      console.log('📍 Gửi lên backend:', {
+        districtId,
+        wardCode,
+        phiShipMoiTinhDuoc,
         hasAddressChanged,
         currentDiaChi: { districtId: currentDiaChi.districtId, wardCode: currentDiaChi.wardCode }
       });
-      
+
       // Gọi hàm cập nhật địa chỉ với districtId và wardCode thực tế
       await handleCapNhatDiaChi(formValues[3], formValues[1], formValues[0], formValues[2], districtId, wardCode, phiShipMoiTinhDuoc);
     }
@@ -1313,7 +1312,7 @@ const OrderDetailPage = () => {
   const handleCapNhatTrangThai = async (trangThaiMoi) => {
     try {
       const params = new URLSearchParams({ value: trangThaiMoi });
-      const res = await fetch(`http://localhost:8080/api/don-hang/${id}/trang-thai?${params}`, { 
+      const res = await fetch(`http://localhost:8080/api/don-hang/${id}/trang-thai?${params}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -1416,7 +1415,7 @@ const OrderDetailPage = () => {
           Swal.showValidationMessage('Vui lòng chọn lý do giao hàng không thành công!');
           return false;
         }
-        
+
         let finalReason = selectedReason.value;
         if (finalReason === 'L├╜ do khác') {
           const customReason = document.getElementById('customReason').value.trim();
@@ -1426,14 +1425,14 @@ const OrderDetailPage = () => {
           }
           finalReason = customReason;
         }
-        
+
         return finalReason;
       },
       didOpen: () => {
         // Xß╗¡ l├╜ hiß╗çn/ẩn ô nhập lý do khác
         const reasonInputs = document.querySelectorAll('input[name="reason"]');
         const customReasonDiv = document.getElementById('customReasonDiv');
-        
+
         reasonInputs.forEach(input => {
           input.addEventListener('change', () => {
             if (input.value === 'Lý do khác') {
@@ -1459,20 +1458,20 @@ const OrderDetailPage = () => {
         });
 
         // ✅ SỬA: Sử dụng API giao hàng không thành công với lý do
-        const res = await fetch(`http://localhost:8080/api/donhang/giao-khong-thanh-cong/${id}`, { 
+        const res = await fetch(`http://localhost:8080/api/donhang/giao-khong-thanh-cong/${id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ghiChu: formValues })
         });
-        
+
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(`Lỗi khi đánh dấu giao hàng không thành công: ${res.status} - ${errorText}`);
         }
-        
+
         const updatedOrder = await res.json();
         setOrderInfo(updatedOrder);
-        
+
         // ✅ THÊM: Hiển thị thông báo thành công với thông tin chi tiết
         Swal.fire({
           icon: 'success',
@@ -1497,13 +1496,13 @@ const OrderDetailPage = () => {
           confirmButtonText: 'Tuyệt vời!',
           confirmButtonColor: '#27ae60'
         });
-        
+
         // ✅ THÊM: Refresh lại dữ liệu để cập nhật UI
         await refreshOrderData();
-        
+
       } catch (err) {
         console.error('Lỗi khi đánh dấu giao hàng không thành công:', err);
-        
+
         // ✅ THÊM: Xử lý lỗi chi tiết
         Swal.fire({
           icon: 'error',
@@ -1538,30 +1537,30 @@ const OrderDetailPage = () => {
   const renderOrderStatusStepper = (currentStatus) => {
     // Tạo mảng các bước thực tế mà đơn hàng đã trải qua
     let actualSteps = [];
-    
+
     // Luôn có bước đầu tiên (chờ xác nhận)
     actualSteps.push(TRANG_THAI[0]);
-    
+
     // Nếu đơn hàng đã được xác nhận (trạng thái >= 1)
     if (currentStatus >= 1) {
       actualSteps.push(TRANG_THAI[1]);
     }
-    
+
     // Nếu đơn hàng đang chuẩn bị (trạng thái >= 2)
     if (currentStatus >= 2) {
       actualSteps.push(TRANG_THAI[2]);
     }
-    
+
     // Nếu đơn hàng đang giao (trạng thái >= 3)
     if (currentStatus >= 3) {
       actualSteps.push(TRANG_THAI[3]);
     }
-    
+
     // Nếu đơn hàng hoàn thành (trạng thái >= 4)
     if (currentStatus >= 4) {
       actualSteps.push(TRANG_THAI[4]);
     }
-    
+
     // Xử lý trường hợp đặc biệt: Nếu đơn hàng bị hủy (trạng thái = 5)
     // Sử dụng dữ liệu trangThaiTruocKhiHuy từ backend để hiển thị chính xác
     if (currentStatus === 5) {
@@ -1569,10 +1568,10 @@ const OrderDetailPage = () => {
       if (orderInfo && orderInfo.trangThaiTruocKhiHuy !== null && orderInfo.trangThaiTruocKhiHuy !== undefined) {
         // Có dữ liệu chính xác từ backend
         let stepsBeforeCancel = [];
-        
+
         // Luôn có bước đầu tiên (chờ xác nhận)
         stepsBeforeCancel.push(TRANG_THAI[0]);
-        
+
         // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
         if (orderInfo.trangThaiTruocKhiHuy >= 1) {
           stepsBeforeCancel.push(TRANG_THAI[1]); // Đã xác nhận
@@ -1583,10 +1582,10 @@ const OrderDetailPage = () => {
         if (orderInfo.trangThaiTruocKhiHuy >= 3) {
           stepsBeforeCancel.push(TRANG_THAI[3]); // Đang giao
         }
-        
+
         // Thêm bước hủy vào cuối
         actualSteps = [...stepsBeforeCancel, TRANG_THAI.find(t => t.value === 5)];
-        
+
         console.log('🎯 Đơn hàng bị hủy - Sử dụng dữ liệu từ backend:');
         console.log('📍 Trạng thái trước khi hủy:', orderInfo.trangThaiTruocKhiHuy);
         console.log('📍 Các bước hiển thị:', actualSteps.map(s => s.label));
@@ -1596,17 +1595,17 @@ const OrderDetailPage = () => {
         console.log('⚠️ Không có dữ liệu trangThaiTruocKhiHuy, sử dụng logic cũ');
       }
     }
-    
+
     // ✅ THÊM: Xử lý trường hợp giao hàng không thành công (trạng thái = 7)
     if (currentStatus === 7) {
       // Sử dụng dữ liệu trangThaiTruocKhiHuy từ backend để hiển thị chính xác
       if (orderInfo && orderInfo.trangThaiTruocKhiHuy !== null && orderInfo.trangThaiTruocKhiHuy !== undefined) {
         // Có dữ liệu chính xác từ backend
         let stepsBeforeFailed = [];
-        
+
         // Luôn có bước đầu ti├¬n (chờ xác nhận)
         stepsBeforeFailed.push(TRANG_THAI[0]);
-        
+
         // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
         if (orderInfo.trangThaiTruocKhiHuy >= 1) {
           stepsBeforeFailed.push(TRANG_THAI[1]); // Đã xác nhận
@@ -1617,10 +1616,10 @@ const OrderDetailPage = () => {
         if (orderInfo.trangThaiTruocKhiHuy >= 3) {
           stepsBeforeFailed.push(TRANG_THAI[3]); // Đang giao
         }
-        
+
         // Thêm bước giao hàng không thành công vào cuối
         actualSteps = [...stepsBeforeFailed, TRANG_THAI.find(t => t.value === 7)];
-        
+
         console.log('🎯 Đơn hàng giao hàng không thành công - Sử dụng dữ liệu từ backend:');
         console.log('📍 Trạng thái trước khi giao hàng không thành công:', orderInfo.trangThaiTruocKhiHuy);
         console.log('📍 Các bước hiển thị:', actualSteps.map(s => s.label));
@@ -1628,17 +1627,17 @@ const OrderDetailPage = () => {
         // Fallback: sử dụng logic cũ nếu không có dữ liệu từ backend
         // ✅ SỬA: Hiển thị đầy đủ quy trình đã đi qua
         actualSteps = [
-          TRANG_THAI[0], 
-          TRANG_THAI[1], 
-          TRANG_THAI[2], 
-          TRANG_THAI[3], 
+          TRANG_THAI[0],
+          TRANG_THAI[1],
+          TRANG_THAI[2],
+          TRANG_THAI[3],
           TRANG_THAI.find(t => t.value === 7)
-        ]; 
+        ];
         // Chờ xác nhận -> Đã xác nhận -> Đang chuẩn bị -> Đang giao -> Giao hàng không thành công
         console.log('⚠️ Không có dữ liệu trangThaiTruocKhiHuy, sử dụng logic cũ');
       }
     }
-    
+
     return (
       <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
         {actualSteps.filter(Boolean).map((tt, idx) => (
@@ -1728,28 +1727,28 @@ const OrderDetailPage = () => {
         const updatedOrder = await orderRes.json();
         setOrderInfo(updatedOrder);
       }
-      
+
       // Refresh danh sách sản phẩm
       const orderDetails = await fetch(`http://localhost:8080/api/donhangchitiet/don-hang/${id}`).then(res => res.json());
       const productDetailPromises = orderDetails.map(item =>
         fetch(`http://localhost:8080/api/san-pham-chi-tiet/spct/${item.idSanPhamChiTiet}`).then(res => res.json())
       );
       const productDetails = await Promise.all(productDetailPromises);
-              const joined = orderDetails.map((item, idx) => {
-          const prod = productDetails[idx];
-          return {
-            ...item,
-            tenSanPham: prod?.tenSanPham || '---',
-            anh: prod?.images || '',
-            mauSac: prod?.mauSac || '---',
-            kichThuoc: prod?.kichThuoc || '---',
-            ma: prod?.ma || '',
-            // ✅ SỬA: Sử dụng giá từ DonHangChiTiet thay vì từ sản phẩm
-            giaBan: prod?.giaBan,  // Giá gốc từ sản phẩm (để so sánh)
-            giaBanGiamGia: item.giaBanGiamGia || item.gia,  // Giá khuyến mãi từ DonHangChiTiet
-            gia: item.gia  // Giá thực tế đã lưu trong đơn hàng
-          };
-        });
+      const joined = orderDetails.map((item, idx) => {
+        const prod = productDetails[idx];
+        return {
+          ...item,
+          tenSanPham: prod?.tenSanPham || '---',
+          anh: prod?.images || '',
+          mauSac: prod?.mauSac || '---',
+          kichThuoc: prod?.kichThuoc || '---',
+          ma: prod?.ma || '',
+          // ✅ SỬA: Sử dụng giá từ DonHangChiTiet thay vì từ sản phẩm
+          giaBan: prod?.giaBan,  // Giá gốc từ sản phẩm (để so sánh)
+          giaBanGiamGia: item.giaBanGiamGia || item.gia,  // Giá khuyến mãi từ DonHangChiTiet
+          gia: item.gia  // Giá thực tế đã lưu trong đơn hàng
+        };
+      });
       setOrderProducts(joined);
     } catch (err) {
       console.error('Lỗi khi refresh dữ liệu:', err);
@@ -1768,7 +1767,7 @@ const OrderDetailPage = () => {
       });
       return;
     }
-    
+
     if (!selectedProduct || addProductQty < 1) {
       Swal.fire({
         icon: 'warning',
@@ -1788,23 +1787,23 @@ const OrderDetailPage = () => {
         gia: selectedProduct.giaBanGiamGia || selectedProduct.giaBan,
         thanhTien: (selectedProduct.giaBanGiamGia || selectedProduct.giaBan) * addProductQty,
       };
-      
+
       const res = await fetch('http://localhost:8080/api/donhangchitiet/them-sp-vao-don-hang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      
+
       if (!res.ok) throw new Error('Lỗi khi thêm sản phẩm vào đơn hàng');
-      
+
       setShowAddProductModal(false);
       setSelectedProduct(null);
       setAddProductQty(1);
       await refreshOrderData();
-      
+
       // Refresh lại danh sách sản phẩm có thể thêm để cập nhật tồn kho
       await fetchAvailableProducts();
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Thành công!',
@@ -1836,18 +1835,18 @@ const OrderDetailPage = () => {
       });
       return;
     }
-    
+
     if (newQty < 1) return;
-    
+
     const product = orderProducts.find(p => p.id === productId);
     if (!product) return;
-    
+
     setUpdateQtyLoading(prev => ({ ...prev, [productId]: true }));
-    
+
     try {
       // ✅ SỬA: Logic tính giá khuyến mãi chính xác hơn
       let giaBanCuoi = product.giaBan; // Giá mặc định
-      
+
       // Kiểm tra nếu có giá khuyến mãi và giá khuyến mãi > 0
       if (product.giaBanGiamGia && product.giaBanGiamGia > 0) {
         // Nếu giá khuyến mãi < giá gốc thì dùng giá khuyến mãi
@@ -1855,9 +1854,9 @@ const OrderDetailPage = () => {
           giaBanCuoi = product.giaBanGiamGia;
         }
       }
-      
+
       const thanhTien = giaBanCuoi * newQty;
-      
+
       console.log('🔍 === DEBUG UPDATE QUANTITY ===');
       console.log('📊 Product:', {
         id: product.id,
@@ -1869,40 +1868,40 @@ const OrderDetailPage = () => {
         thanhTien: thanhTien
       });
       console.log('🔍 === END DEBUG ===');
-      
-              // ✅ SỬA: Gửi đầy đủ thông tin giá để backend cập nhật đúng
-        const res = await fetch(`http://localhost:8080/api/donhangchitiet/updateOnline/${productId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            soLuong: newQty,
-            thanhTien: thanhTien,
-            gia: giaBanCuoi,                    // ✅ THÊM: Giá cuối cùng (có thể là giá khuyến mãi)
-            giaBanGiamGia: product.giaBanGiamGia, // ✅ THÊM: Giá khuyến mãi gốc
-            giaBan: product.giaBan,             // ✅ THÊM: Giá gốc
-          }),
-        });
-      
+
+      // ✅ SỬA: Gửi đầy đủ thông tin giá để backend cập nhật đúng
+      const res = await fetch(`http://localhost:8080/api/donhangchitiet/updateOnline/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          soLuong: newQty,
+          thanhTien: thanhTien,
+          gia: giaBanCuoi,                    // ✅ THÊM: Giá cuối cùng (có thể là giá khuyến mãi)
+          giaBanGiamGia: product.giaBanGiamGia, // ✅ THÊM: Giá khuyến mãi gốc
+          giaBan: product.giaBan,             // ✅ THÊM: Giá gốc
+        }),
+      });
+
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'Lỗi khi cập nhật số lượng!');
       }
-      
+
       // ✅ SỬA: Cập nhật UI ngay lập tức với đầy đủ thông tin
-      setOrderProducts(prev => prev.map(p => 
-        p.id === productId 
-          ? { 
-              ...p, 
-              soLuong: newQty, 
-              thanhTien: thanhTien,
-              // ✅ TH├èM: Đảm bảo giß╗» nguy├¬n giá khuyến mãi và giá gốc
-              giaBanGiamGia: product.giaBanGiamGia, // Sß╗¡ dß╗Ñng tß╗½ product gốc
-              giaBan: product.giaBan,               // Sß╗¡ dß╗Ñng tß╗½ product gốc
-              gia: giaBanCuoi                       // Cß║¡p nhß║¡t giá cuối cùng
-            }
+      setOrderProducts(prev => prev.map(p =>
+        p.id === productId
+          ? {
+            ...p,
+            soLuong: newQty,
+            thanhTien: thanhTien,
+            // ✅ TH├èM: Đảm bảo giß╗» nguy├¬n giá khuyến mãi và giá gốc
+            giaBanGiamGia: product.giaBanGiamGia, // Sß╗¡ dß╗Ñng tß╗½ product gốc
+            giaBan: product.giaBan,               // Sß╗¡ dß╗Ñng tß╗½ product gốc
+            gia: giaBanCuoi                       // Cß║¡p nhß║¡t giá cuối cùng
+          }
           : p
       ));
-      
+
       // ✅ THÊM: Log để debug sau khi cập nhật UI
       console.log('🔍 === DEBUG SAU KHI UPDATE UI ===');
       console.log('📊 Product sau khi update:', {
@@ -1913,19 +1912,19 @@ const OrderDetailPage = () => {
         giaBan: product.giaBan
       });
       console.log('🔍 === END DEBUG ===');
-      
+
       // Refresh lại dữ liệu để đảm bảo đồng bộ
       await refreshOrderData();
-      
+
       // Refresh lại danh sách sản phẩm có thể thêm để cập nhật tồn kho
       await fetchAvailableProducts();
-      
+
     } catch (err) {
       console.error('Số lượng tồn kho không đủ:', err);
       Swal.fire({
         icon: 'error',
         title: 'Lỗi!',
-        text: 'Số lượng tồn kho không đủ ' ,
+        text: 'Số lượng tồn kho không đủ ',
         confirmButtonText: 'OK'
       });
     } finally {
@@ -1956,7 +1955,7 @@ const OrderDetailPage = () => {
       });
       return;
     }
-    
+
     const result = await Swal.fire({
       title: 'Xác nhận xóa sản phẩm',
       text: 'Bạn có chắc chắn muốn xóa sản phẩm này khỏi đơn hàng?',
@@ -1970,19 +1969,19 @@ const OrderDetailPage = () => {
 
     if (result.isConfirmed) {
       setDeleteProductLoading(prev => ({ ...prev, [productId]: true }));
-      
+
       try {
         const res = await fetch(`http://localhost:8080/api/donhangchitiet/deleteOnline/${productId}`, {
           method: 'DELETE',
         });
-        
+
         if (!res.ok) throw new Error('Lỗi khi xóa sản phẩm khỏi đơn hàng');
-        
+
         await refreshOrderData();
-        
+
         // Refresh lại danh sách sản phẩm có thể thêm để cập nhật tồn kho
         await fetchAvailableProducts();
-        
+
         Swal.fire({
           icon: 'success',
           title: 'Thành công!',
@@ -1996,15 +1995,15 @@ const OrderDetailPage = () => {
           title: 'Lỗi!',
           text: 'Lỗi khi xóa sản phẩm: ' + err.message,
           confirmButtonText: 'OK'
-      });
+        });
       } finally {
         setDeleteProductLoading(prev => ({ ...prev, [productId]: false }));
       }
     }
   };
 
-  if (loading) return <div style={{padding: 32}}>Đang tải...</div>;
-  if (error) return <div style={{padding: 32, color: 'red'}}>{error} <button onClick={() => navigate(-1)}>Quay lại</button></div>;
+  if (loading) return <div style={{ padding: 32 }}>Đang tải...</div>;
+  if (error) return <div style={{ padding: 32, color: 'red' }}>{error} <button onClick={() => navigate(-1)}>Quay lại</button></div>;
 
   return (
     <div style={{ padding: 32, maxWidth: 1100, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(25,118,210,0.08)' }}>
@@ -2021,7 +2020,7 @@ const OrderDetailPage = () => {
         }}>
           <div style={{ fontWeight: 700, color: '#1976d2', marginBottom: 12, fontSize: 16 }}>Trạng thái đơn hàng</div>
           {renderOrderStatusStepper(orderInfo.trangThai)}
-          
+
           {/* Nút chức năng: Phân quyền theo vai trò */}
           <div style={{ marginTop: 16 }}>
             {/* 1. Nút Hủy đơn (Chỉ khách hàng thấy khi đơn mới - Trạng thái 0) */}
@@ -2047,21 +2046,21 @@ const OrderDetailPage = () => {
                     >✅ Sửa địa chỉ</button>
                   </>
                 )}
-                
+
                 {orderInfo.trangThai === 1 && (
                   <button
                     style={{ padding: '8px 20px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
                     onClick={() => handleConfirmCapNhatTrangThai(2, 'chuẩn bị hàng')}
                   >📦 Chuẩn bị hàng</button>
                 )}
-                
+
                 {orderInfo.trangThai === 2 && (
                   <button
                     style={{ padding: '8px 20px', background: '#ff9800', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
                     onClick={() => handleConfirmCapNhatTrangThai(3, 'giao hàng')}
                   >🚚 Giao hàng</button>
                 )}
-                
+
                 {orderInfo.trangThai === 3 && (
                   <>
                     <button
@@ -2080,7 +2079,7 @@ const OrderDetailPage = () => {
         </div>
       )}
       <h2 style={{ color: '#1976d2', fontWeight: 800, marginBottom: 24 }}>Chi tiết đơn hàng #{id}</h2>
-      
+
       {/* Thông tin khách hàng và địa chỉ giao hàng */}
       {orderInfo && (
         <div style={{
@@ -2115,7 +2114,7 @@ const OrderDetailPage = () => {
           </div>
         </div>
       )}
-      
+
       <h3 style={{ color: '#1976d2', fontWeight: 700, marginBottom: 16 }}>🛍️ Chi tiết sản phẩm</h3>
       {/* Danh sách sản phẩm dạng card/table đẹp */}
       <div style={{ background: '#f8fafc', borderRadius: 12, padding: 24, marginBottom: 24 }}>
@@ -2127,7 +2126,7 @@ const OrderDetailPage = () => {
               <div style={{ width: 100, height: 90, marginRight: 24 }}>
                 {sp.anh && sp.anh.trim() !== '' ? (
                   <img
-                    src={config.getApiUrl(formatImage(sp.anh))}
+                    src={formatImage(sp.anh)}
                     alt={sp.tenSanPham}
                     style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                     onError={(e) => {
@@ -2136,17 +2135,17 @@ const OrderDetailPage = () => {
                     }}
                   />
                 ) : null}
-                <div 
-                  style={{ 
-                    width: 100, 
-                    height: 90, 
-                    background: '#f0f0f0', 
-                    borderRadius: 8, 
-                    display: (sp.anh && sp.anh.trim() !== '') ? 'none' : 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: 12, 
-                    color: '#999' 
+                <div
+                  style={{
+                    width: 100,
+                    height: 90,
+                    background: '#f0f0f0',
+                    borderRadius: 8,
+                    display: (sp.anh && sp.anh.trim() !== '') ? 'none' : 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    color: '#999'
                   }}
                 >
                   Không có ảnh
@@ -2154,28 +2153,18 @@ const OrderDetailPage = () => {
               </div>
               <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
                 <div>{sp.tenSanPham}</div>
-                {sp.ma && (
-                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
-                    Mã: {sp.ma}
-                  </div>
-                )}
               </div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Màu: {sp.mauSac}</div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Size: {sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
-                {/* ✅ SỬA: Hiển thị giá gốc và giá khuyến mãi nếu có */}
-                {sp.gia && sp.giaBanGiamGia && sp.giaBanGiamGia > 0 && sp.giaBanGiamGia < sp.giaBan ? (
-                  <>
-                    <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '14px' }}>
-                      {sp.giaBan?.toLocaleString('vi-VN')} ₫
-                    </span>
-                    <div style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: '16px' }}>
-                      {sp.gia?.toLocaleString('vi-VN')} ₫
-                    </div>
-                  </>
+                {/* 🎯 DIỆT SÂU 11đ: Chỉ hiện giá thực tế nếu nó > 1000đ, nếu không hiện giá gốc */}
+                {sp.gia && sp.gia > 1000 ? (
+                  <div style={{ color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
+                    {sp.gia.toLocaleString('vi-VN')} ₫
+                  </div>
                 ) : (
                   <div style={{ color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
-                    {(sp.gia || sp.giaBan)?.toLocaleString('vi-VN')} ₫
+                    {sp.giaBan?.toLocaleString('vi-VN')} ₫
                   </div>
                 )}
               </div>
@@ -2186,12 +2175,12 @@ const OrderDetailPage = () => {
                   value={sp.soLuong}
                   onChange={e => handleUpdateQuantity(sp.id, Number(e.target.value))}
                   disabled={!isAdmin || updateQtyLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)}
-                  style={{ 
-                    width: 48, 
-                    padding: '6px 8px', 
-                    borderRadius: 6, 
-                    border: '1px solid #e3e8ee', 
-                    fontSize: 15, 
+                  style={{
+                    width: 48,
+                    padding: '6px 8px',
+                    borderRadius: 6,
+                    border: '1px solid #e3e8ee',
+                    fontSize: 15,
                     textAlign: 'center',
                     opacity: (!isAdmin || updateQtyLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)) ? 0.6 : 1
                   }}
@@ -2201,19 +2190,19 @@ const OrderDetailPage = () => {
                 )}
               </div>
               <div style={{ flex: 1, fontWeight: 700, color: '#009688', fontSize: 16 }}>{sp.thanhTien?.toLocaleString('vi-VN')} ₫</div>
-              
+
               {/* Nút xóa sản phẩm - CHỈ ADMIN MỚI THẤY */}
               {isAdmin && (
                 <div style={{ flex: '0 0 auto', marginLeft: 16 }}>
                   <button
-                    style={{ 
-                      background: (deleteProductLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)) ? '#ccc' : '#e53935', 
-                      color: '#fff', 
-                      border: 'none', 
-                      borderRadius: 6, 
-                      padding: '8px 18px', 
-                      fontWeight: 600, 
-                      cursor: (deleteProductLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)) ? 'not-allowed' : 'pointer' 
+                    style={{
+                      background: (deleteProductLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)) ? '#ccc' : '#e53935',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '8px 18px',
+                      fontWeight: 600,
+                      cursor: (deleteProductLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)) ? 'not-allowed' : 'pointer'
                     }}
                     onClick={() => handleDeleteProduct(sp.id)}
                     disabled={deleteProductLoading[sp.id] || (orderInfo && orderInfo.trangThai !== 0)}
@@ -2228,15 +2217,15 @@ const OrderDetailPage = () => {
         {/* Nút thêm sản phẩm - CHỈ ADMIN MỚI THẤY */}
         {isAdmin && (
           <div style={{ textAlign: 'left', marginTop: 24 }}>
-            <button 
-              style={{ 
-                background: (orderInfo && orderInfo.trangThai !== 0) ? '#ccc' : '#1976d2', 
-                color: '#fff', 
-                border: 'none', 
-                borderRadius: 6, 
-                padding: '10px 28px', 
-                fontWeight: 600, 
-                fontSize: 16, 
+            <button
+              style={{
+                background: (orderInfo && orderInfo.trangThai !== 0) ? '#ccc' : '#1976d2',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '10px 28px',
+                fontWeight: 600,
+                fontSize: 16,
                 opacity: (orderInfo && orderInfo.trangThai !== 0) ? 0.6 : 1
               }}
               onClick={handleOpenAddProductModal}
@@ -2267,8 +2256,8 @@ const OrderDetailPage = () => {
           <span>Tổng cộng:</span>
           <span>{tongTienHienThi.toLocaleString()}đ</span>
         </div>
-        
-        
+
+
         {/* Thông tin bổ sung */}
         {orderInfo && (
           <div style={{ marginTop: 16, padding: 12, background: '#f8fafc', borderRadius: 8, fontSize: 14 }}>
@@ -2281,7 +2270,7 @@ const OrderDetailPage = () => {
               </div>
             )}
             <div>
-              <strong>Trạng thái:</strong> 
+              <strong>Trạng thái:</strong>
               <span style={{
                 background: TRANG_THAI.find(t => t.value === orderInfo.trangThai)?.color || '#999',
                 color: '#fff',
@@ -2293,7 +2282,7 @@ const OrderDetailPage = () => {
                 {TRANG_THAI.find(t => t.value === orderInfo.trangThai)?.label || 'Không xác định'}
               </span>
             </div>
-            
+
             {/* ✅ THÊM: Hiển thị lý do cho trạng thái 5 và 7 */}
             {(orderInfo.trangThai === 5 || orderInfo.trangThai === 7) && orderInfo.ghiChu && (
               <div style={{ marginTop: 8 }}>
@@ -2313,7 +2302,7 @@ const OrderDetailPage = () => {
           </div>
         )}
       </div>
-      
+
       {/* Modal thêm sản phẩm */}
       {showAddProductModal && (
         <div style={{
@@ -2352,33 +2341,33 @@ const OrderDetailPage = () => {
                 ×
               </button>
             </div>
-            
+
             {/* Bộ log màu sắc và size */}
             <Box display="flex" gap={2} mb={2}>
-              <TextField 
-                select 
-                label="Màu sắc" 
-                value={filterColor} 
-                onChange={e => setFilterColor(e.target.value)} 
-                size="small" 
+              <TextField
+                select
+                label="Màu sắc"
+                value={filterColor}
+                onChange={e => setFilterColor(e.target.value)}
+                size="small"
                 sx={{ minWidth: 120 }}
               >
                 <MenuItem value="">Tất cả</MenuItem>
                 {colorOptions.map(color => <MenuItem key={color} value={color}>{color}</MenuItem>)}
               </TextField>
-              <TextField 
-                select 
-                label="Size" 
-                value={filterSize} 
-                onChange={e => setFilterSize(e.target.value)} 
-                size="small" 
+              <TextField
+                select
+                label="Size"
+                value={filterSize}
+                onChange={e => setFilterSize(e.target.value)}
+                size="small"
                 sx={{ minWidth: 100 }}
               >
                 <MenuItem value="">Tất cả</MenuItem>
                 {sizeOptions.map(size => <MenuItem key={size} value={size}>{size}</MenuItem>)}
               </TextField>
             </Box>
-            
+
             {/* Thanh tìm kiếm sản phẩm */}
             <div style={{ marginBottom: 16 }}>
               <TextField
@@ -2388,23 +2377,23 @@ const OrderDetailPage = () => {
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
-            
+
             {/* Bảng danh sách sản phẩm */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ 
-                background: '#f8fafc', 
-                borderRadius: 8, 
-                padding: 16, 
+              <div style={{
+                background: '#f8fafc',
+                borderRadius: 8,
+                padding: 16,
                 marginBottom: 16,
                 border: '1px solid #e3e8ee'
               }}>
                 <h4 style={{ margin: '0 0 12px 0', color: '#1976d2' }}>Danh sách sản phẩm có thể thêm:</h4>
-                                <div style={{ overflow: 'auto', maxHeight: '400px', minHeight: '200px' }}>
+                <div style={{ overflow: 'auto', maxHeight: '400px', minHeight: '200px' }}>
                   {productsTable}
                 </div>
               </div>
             </div>
-            
+
             {/* Nút hành động */}
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button
@@ -2464,7 +2453,7 @@ const OrderDetailPage = () => {
                 ×
               </button>
             </div>
-            
+
             <div style={{ marginBottom: 20 }}>
               <TextField
                 type="number"
@@ -2476,13 +2465,13 @@ const OrderDetailPage = () => {
                 inputProps={{ min: 1, max: selectedProduct?.soLuong }}
                 sx={{
                   '& .MuiInputBase-input': {
-                    margin: '10px',      
+                    margin: '10px',
                   },
                 }}
                 disabled={!id}
               />
             </div>
-            
+
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowQtyModal(false)}

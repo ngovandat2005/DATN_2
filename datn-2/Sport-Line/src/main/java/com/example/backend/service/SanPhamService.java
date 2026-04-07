@@ -14,21 +14,19 @@ public class SanPhamService {
     @Autowired
     private SanPhamInterface sanPhamRepo;
 
-    // 1. Lấy tất cả Sản phẩm NAM (Bỏ qua nữ hoàn toàn)
+    // 1. Lấy tất cả Sản phẩm đang kinh doanh
     public List<SanPham> getAllActive() {
-        return sanPhamRepo.findAllByTrangThaiAndGioiTinh(1, 0); 
+        return sanPhamRepo.findAllByTrangThai(1); 
     }
 
-    // 2. Chỉ phục vụ cho giày Nam
-    public List<SanPham> getProductsByGender(Integer gender) {
-        // Luôn trả về giới tính 0 bất kể đầu vào
-        return sanPhamRepo.findAllByTrangThaiAndGioiTinh(1, 0);
+    // 2. Lấy sản phẩm theo trạng thái
+    public List<SanPham> getProducts() {
+        return sanPhamRepo.findAllByTrangThai(1);
     }
 
-    // 3. Hệ thống tìm kiếm - LUÔN LUÔN là giày Nam
-    public List<SanPham> searchAndFilter(Integer gender, Integer idCategory, Integer idBrand, String search) {
-        // Cưỡng chế giới tính là 0 để xóa sạch dữ liệu nữ
-        return sanPhamRepo.filterProducts(0, idCategory, idBrand, search);
+    // 3. Hệ thống tìm kiếm
+    public List<SanPham> searchAndFilter(Integer idCategory, Integer idBrand, String search) {
+        return sanPhamRepo.filterProducts(idCategory, idBrand, search);
     }
 
     public SanPham getById(Integer id) {
@@ -36,20 +34,17 @@ public class SanPhamService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
     }
 
-    // 4. Tạo mới sản phẩm (Bắt buộc phải có Giới tính từ đây)
+    // 4. Tạo mới sản phẩm
     public SanPham create(SanPham sanPham) {
         Optional<SanPham> existing = sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
         if (existing.isPresent()) {
             throw new RuntimeException("Tên sản phẩm đã tồn tại!");
         }
-        if (sanPham.getGioiTinh() == null) {
-            sanPham.setGioiTinh(0); // Mặc định là Nam nếu không chọn
-        }
         sanPham.setTrangThai(1);
         return sanPhamRepo.save(sanPham);
     }
 
-    // 5. Cập nhật và lưu lại chuẩn Giới tính
+    // 5. Cập nhật sản phẩm
     public SanPham update(Integer id, SanPham sanPham) {
         SanPham current = sanPhamRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
@@ -61,7 +56,6 @@ public class SanPhamService {
         current.setChatLieu(sanPham.getChatLieu());
         current.setXuatXu(sanPham.getXuatXu());
         current.setImages(sanPham.getImages());
-        current.setGioiTinh(sanPham.getGioiTinh()); // ✅ Chuẩn hóa giới tính
 
         return sanPhamRepo.save(current);
     }
@@ -73,8 +67,8 @@ public class SanPhamService {
         sanPhamRepo.save(sanPham);
     }
 
-    // Lấy sản phẩm nổi bật theo giới tính cho Mega Menu
-    public List<SanPham> getFeaturedByGender(Integer gender) {
-        return sanPhamRepo.findFeaturedByGender(gender);
+    // Lấy sản phẩm nổi bật cho trang chủ
+    public List<SanPham> getFeaturedProducts() {
+        return sanPhamRepo.findFeaturedProducts();
     }
 }

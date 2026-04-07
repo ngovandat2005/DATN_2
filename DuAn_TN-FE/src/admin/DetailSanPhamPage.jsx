@@ -332,7 +332,7 @@ const DetailSanPhamPage = () => {
 
   // 🪄 HÀM DỌN DẸP DỮ LIỆU RÁC (THẦN TỐC)
   const handleCleanUpPrices = async () => {
-    // 1. Lọc ra những biến thể "bị lỗi" (không có KM nhưng lại có giá giảm rác trong DB)
+    // 1. Log ra những biến thể "bị lỗi" (không có KM nhưng lại có giá giảm rác trong DB)
     const variantsToFix = chiTietList.filter(ct => {
       const promo = ct.khuyenMai;
       const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
