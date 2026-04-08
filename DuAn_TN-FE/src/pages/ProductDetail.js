@@ -402,6 +402,9 @@ function ProductDetail() {
                 .catch(err => console.error("Lỗi khi cập nhật giỏ hàng:", err));
             }
 
+            // ✅ TRIGGER: Thông báo cho các component khác (Header/CartBadge) biết để cập nhật số lượng
+            window.dispatchEvent(new Event('cartChanged'));
+
             Swal.fire({
               icon: "success",
               title: "Thành công",
@@ -775,7 +778,7 @@ function ProductDetail() {
                   <img
                     src={
                       item.images 
-                        ? `${config.baseUrl}images/${item.images.split(",")[0].trim()}`
+                        ? (item.images.startsWith('http') ? item.images.split(",")[0].trim() : `${config.baseUrl}images/${item.images.split(",")[0].trim()}`)
                         : "/logo.png"
                     }
                     alt={item.tenSanPham}

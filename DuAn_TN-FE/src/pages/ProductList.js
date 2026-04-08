@@ -49,10 +49,9 @@ const slugify = (s) =>
 // - Luôn sử dụng ảnh local trong publog/products theo brand + tên sản phẩm
 const getProductImage = (product) => {
   if (!product?.images) return "/logo.png";
-  // nếu có nhiều ảnh thì lấy ảnh đầu tiên
   const firstImage = product.images.split(",")[0].trim();
-  // Sửa đường dẫn chuẩn theo backend admin
-  return `${config.baseUrl}images/${firstImage}`;
+  if (firstImage.startsWith("http")) return firstImage;
+  return `${config.baseUrl}images/${encodeURIComponent(firstImage)}`;
 };
 
 // Hàm hiển thị giá với giá gạch đi

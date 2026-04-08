@@ -265,9 +265,9 @@ public class VoucherService {
         String loai = voucher.getLoaiVoucher();
         double giaTri = voucher.getGiaTri();
 
-        if ("PHAN_TRAM".equalsIgnoreCase(loai) || "Giảm giá %".equalsIgnoreCase(loai)) {
+        if ("PHAN_TRAM".equalsIgnoreCase(loai) || "PERCENT".equalsIgnoreCase(loai) || "Giảm giá %".equalsIgnoreCase(loai)) {
             giam = tongTien * (giaTri / 100.0);
-        } else if ("TIEN_MAT".equalsIgnoreCase(loai) || "Giảm giá số tiền".equalsIgnoreCase(loai)) {
+        } else if ("TIEN_MAT".equalsIgnoreCase(loai) || "CASH".equalsIgnoreCase(loai) || "Giảm giá số tiền".equalsIgnoreCase(loai)) {
             giam = giaTri;
         }
 

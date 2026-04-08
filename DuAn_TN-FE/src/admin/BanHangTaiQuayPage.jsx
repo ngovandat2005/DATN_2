@@ -140,11 +140,11 @@ const BanHangTaiQuayPage = () => {
     if (typeof img === 'string' && img.includes(',')) img = img.split(',')[0];
     img = img.trim();
     if (!img) return '/logo192.png';
-    if (img.startsWith('http')) return img;
+    if (img.startsWith("http")) return img.split(',')[0].trim();
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
 
     // Sử dụng API endpoint thay vì static resource
-    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
+    return `${config.baseUrl}images/${encodeURIComponent(img.split(',')[0].trim())}`;
   };
 
   // Thêm state cho tổng tiền và tổng tiền giảm giá từ BE

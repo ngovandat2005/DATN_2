@@ -52,7 +52,7 @@ Sau khi cấu hình, hệ thống sẽ:
 
 ## 🔍 Kiểm tra hoạt động
 
-1. **Khởi động backend**: `mvn spring-boot:run`
+1. **Khởi động backend**: ` ./mvnw spring-boot:run`
 2. **Khởi động frontend**: `npm start`
 3. **Vào trang thanh toán** và chọn địa chỉ giao hàng
 4. **Kiểm tra phí ship** được tính tự động

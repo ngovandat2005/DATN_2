@@ -404,7 +404,16 @@ public class DonHangService {
 
     private double tinhTienGiamVoucher(double total, Voucher v) {
         if (v == null) return 0.0;
-        double giam = (v.getLoaiVoucher() != null && (v.getLoaiVoucher().equalsIgnoreCase("PHAN_TRAM") || v.getLoaiVoucher().contains("%"))) ? total * v.getGiaTri() / 100.0 : v.getGiaTri();
+        String loai = v.getLoaiVoucher();
+        double giaTri = (v.getGiaTri() != null) ? v.getGiaTri() : 0.0;
+        double giam = 0.0;
+
+        if (loai != null && (loai.equalsIgnoreCase("PHAN_TRAM") || loai.equalsIgnoreCase("PERCENT") || loai.contains("%"))) {
+            giam = total * giaTri / 100.0;
+        } else {
+            giam = giaTri;
+        }
+
         return Math.min(giam, total);
     }
 

@@ -171,13 +171,13 @@ function Home() {
                 { 
                   name: 'CRISTIANO RONALDO', 
                   brand: 'NIKE', 
-                  img: '/img/cr7_shoe.png',
+                  img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
                   desc: 'Huyền thoại Nike Mercurial CR7 bạc đế vàng.'
                 },
                 { 
                   name: 'LIONEL MESSI', 
                   brand: 'ADIDAS', 
-                  img: '/img/messi_shoe.png',
+                  img: 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?auto=format&fit=crop&w=800&q=80',
                   desc: 'Phong cách Adidas Samba Hồng chuyên nghiệp.'
                 },
                 { 

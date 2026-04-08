@@ -21,6 +21,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:///E:/MauGiay/");
+                .addResourceLocations("file:C:/Users/ngova/Downloads/khang-fe-be-khang-fe/datn-2/Sport-Line/product-images/");
     }
 }

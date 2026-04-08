@@ -119,7 +119,7 @@ function Header() {
                     <Link onClick={closeMenu} to={`/products/${p.id}`} key={p.id} className="mega-product-card">
                       <div className="mega-product-img">
                         <img 
-                          src={p.images ? `${config.baseUrl}images/${p.images.split(',')[0].trim()}` : `${config.baseUrl}images/logo.png`} 
+                          src={p.images ? (p.images.startsWith('http') ? p.images.split(',')[0].trim() : `${config.baseUrl}images/${p.images.split(',')[0].trim()}`) : `${config.baseUrl}images/logo.png`} 
                           alt={p.tenSanPham} 
                           onError={(e) => { e.target.src = '/img/logo.png' }}
                         />

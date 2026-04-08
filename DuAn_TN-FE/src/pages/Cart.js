@@ -78,10 +78,24 @@ function Cart() {
   const calculateItemPrice = (item) => {
     const spct = item.sanPhamChiTiet;
     if (!spct) return 0;
-    // Chốt hạ giá: Chỉ sử dụng giá giảm nếu nó > 1000đ và nhỏ hơn giá gốc
-    return (spct.giaBanGiamGia && spct.giaBanGiamGia > 1000 && spct.giaBanGiamGia < spct.giaBan)
-      ? spct.giaBanGiamGia
-      : spct.giaBan;
+    
+    const originalPrice = spct.giaBan || 0;
+    
+    // Ưu tiên 1: Kiểm tra KhuyenMai (nếu có và đang hoạt động)
+    const promo = spct.khuyenMai;
+    if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+        const promoPrice = Math.round(originalPrice * (1 - promo.giaTri / 100));
+        if (promoPrice > 1000 && promoPrice < originalPrice) {
+            return promoPrice;
+        }
+    }
+    
+    // Ưu tiên 2: Kiểm tra giaBanGiamGia trực tiếp
+    if (spct.giaBanGiamGia && spct.giaBanGiamGia > 1000 && spct.giaBanGiamGia < originalPrice) {
+        return spct.giaBanGiamGia;
+    }
+    
+    return originalPrice;
   };
 
   const total = cart.reduce((sum, item) => sum + (calculateItemPrice(item) * item.soLuong), 0);
@@ -121,9 +135,12 @@ function Cart() {
                 <tr key={item.id} className="gx-cart-row">
                   <td className="gx-cart-product">
                     <img
-                      src={sp?.images ? `${config.baseUrl}images/${sp.images.split(',')[0].trim()}` : `${config.baseUrl}images/logo.png`}
+                      src={sp?.images ? (sp.images.startsWith('http') ? sp.images.split(',')[0].trim() : `${config.baseUrl}images/${sp.images.split(',')[0].trim()}`) : '/logo.png'}
                       alt={sp?.tenSanPham}
-                      onError={(e) => { e.target.src = `${config.baseUrl}images/logo.png` }}
+                      onError={(e) => { 
+                        e.target.onerror = null;
+                        e.target.src = '/logo.png'; 
+                      }}
                       style={{ width: 80, height: 80, objectFit: 'cover', marginRight: 12, borderRadius: 8 }}
                     />
                     <div className="gx-cart-info">

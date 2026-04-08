@@ -88,7 +88,7 @@ const SalePage = () => {
         if (!product?.images) return "/img/logo.png";
         const firstImage = product.images.split(",")[0].trim();
         // Sửa đường dẫn chuẩn theo backend admin
-        return `${config.baseUrl}images/${firstImage}`;
+        return firstImage.startsWith('http') ? firstImage : `${config.baseUrl}images/${firstImage}`;
     };
 
     if (loading) {

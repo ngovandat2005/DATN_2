@@ -46,9 +46,20 @@ const CartBadge = () => {
 
     fetchCartCount();
 
+    // ✅ Lắng nghe sự kiện thay đổi giỏ hàng từ các component khác
+    const handleCartChanged = () => {
+      console.log('🛒 Nhận được sự kiện cartChanged, đang cập nhật lại số lượng badge...');
+      fetchCartCount();
+    };
+
+    window.addEventListener('cartChanged', handleCartChanged);
+
     // Cập nhật mỗi 30 giây
     const interval = setInterval(fetchCartCount, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('cartChanged', handleCartChanged);
+    };
   }, []);
 
   return (

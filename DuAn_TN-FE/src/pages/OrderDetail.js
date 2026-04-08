@@ -146,11 +146,7 @@ const OrderDetailPage = () => {
                   justifyContent: 'center'
                 }}>
                   <img
-                    src={product.images && product.images.includes(',')
-                      ? `${config.baseUrl}images/${encodeURIComponent(product.images.split(',')[0].trim())}`
-                      : product.images
-                        ? `${config.baseUrl}images/${encodeURIComponent(product.images.trim())}`
-                        : '/placeholder-image.jpg'}
+                    src={formatImage(product.images)}
                     alt={product.tenSanPham}
                     style={{
                       width: '100%',
