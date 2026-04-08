@@ -1,0 +1,207 @@
+/* PREMIUM PRODUCT DETAIL STYLES */
+
+.product-detail-page {
+    padding: 40px 10%;
+    background-color: #fcfcfc;
+    min-height: 100vh;
+}
+
+.product-detail-card {
+    background: #ffffff;
+    padding: 50px;
+    border-radius: 40px;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.05);
+}
+
+/* Image Section */
+.product-detail-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 30px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-detail-image img {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.product-detail-image:hover img {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+/* Info Section */
+.product-detail-info {
+    padding-left: 20px;
+}
+
+.product-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #111;
+    margin-bottom: 20px !important;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+}
+
+.price-container {
+    padding: 20px 0;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+}
+
+.old-price {
+    font-size: 1.2rem;
+    color: #999;
+    text-decoration: line-through;
+    margin-right: 15px;
+}
+
+.current-price {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #ff4d4f; /* Vibrant Red/Coral */
+}
+
+.discount-tag {
+    background: #ff4d4f;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+/* Variant Pill Buttons */
+.variant-selector {
+    margin: 30px 0;
+}
+
+.variant-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.variant-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pill-option {
+    min-width: 60px;
+    height: 45px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    border: 2px solid #eee !important;
+    transition: all 0.3s ease !important;
+    background: #fff !important;
+    color: #333 !important;
+}
+
+.pill-option:hover {
+    border-color: #111 !important;
+}
+
+.pill-option.active {
+    background: #111 !important;
+    color: #fff !important;
+    border-color: #111 !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* Actions */
+.product-actions {
+    display: flex;
+    gap: 20px;
+    margin-top: 40px;
+}
+
+.btn-buy-now {
+    flex: 2;
+    height: 60px !important;
+    background: #111 !important;
+    border: none !important;
+    border-radius: 15px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+.btn-add-cart {
+    flex: 1;
+    height: 60px !important;
+    border: 2px solid #111 !important;
+    color: #111 !important;
+    border-radius: 15px !important;
+    font-weight: 800 !important;
+}
+
+.btn-add-cart:hover {
+    background: #f0f0f0 !important;
+}
+
+/* Tabs */
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+    background: transparent !important;
+    border: none !important;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #666;
+    padding: 15px 30px !important;
+    transition: all 0.3s ease;
+}
+
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+    color: #111 !important;
+    border-bottom: 3px solid #111 !important;
+}
+
+.product-info-tabs {
+    margin-top: 80px;
+}
+
+/* Related Products */
+.related-products-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.premium-product-card {
+    transition: all 0.4s ease;
+    border-radius: 25px !important;
+    overflow: hidden !important;
+    background: #fff;
+    border: 1px solid #f0f0f0 !important;
+}
+
+.premium-product-card:hover {
+    transform: translateY(-15px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.08) !important;
+}
+
+@media (max-width: 991px) {
+    .product-detail-page {
+        padding: 20px 5%;
+    }
+    .product-detail-card {
+        padding: 20px;
+        border-radius: 20px;
+    }
+    .product-title {
+        font-size: 2rem;
+        margin-top: 30px !important;
+    }
+}

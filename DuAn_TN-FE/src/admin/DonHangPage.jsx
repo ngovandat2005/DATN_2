@@ -31,7 +31,7 @@ const DonHangPage = () => {
     if (!img) return '/logo.png';
     if (img.startsWith('http')) return img;
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
-    
+
     // Sử dụng static resource mapping từ WebConfig (/images/**)
     return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
@@ -47,12 +47,12 @@ const DonHangPage = () => {
   // Thêm các state cho filter và search hóa đơn online
   const [filterStatus, setFilterStatus] = useState(-1); // ✅ Mặc định là Tất cả
   const [searchText, setSearchText] = useState('');
-  
+
   // State cho tìm kiếm đơn hàng online với API
   const [searchFromDateOnline, setSearchFromDateOnline] = useState('');
   const [searchToDateOnline, setSearchToDateOnline] = useState('');
   const [isSearchingOnline, setIsSearchọngOnline] = useState(false);
-  
+
   // State cho modal hủy đơn hàng
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderToCancel, setSelectedOrderToCancel] = useState(null);
@@ -132,7 +132,7 @@ const DonHangPage = () => {
     setIsSearchingPOS(true);
     setLoadingPOS(true);
     setErrorPOS('');
-    
+
     try {
       const params = new URLSearchParams();
       if (searchCustomerName.trim()) {
@@ -147,13 +147,13 @@ const DonHangPage = () => {
       if (searchStatus >= 0) {
         params.append('trangThai', searchStatus);
       }
-      
+
       const url = `http://localhost:8080/api/donhang/search-pos?${params.toString()}`;
       const res = await fetch(url);
-      
+
       if (!res.ok) throw new Error('Lỗi khi tìm kiếm đơn hàng POS');
       const data = await res.json();
-      
+
       setOrdersPOS(Array.isArray(data) ? data : []);
     } catch (err) {
       setErrorPOS(err.message || 'Lỗi không xác định');
@@ -168,15 +168,15 @@ const DonHangPage = () => {
     setIsSearchọngOnline(true);
     setLoadingOnline(true);
     setErrorOnline('');
-    
+
     try {
       const params = new URLSearchParams();
-      
+
       // Thêm searchText nếu có
       if (searchText.trim()) {
         params.append('searchText', searchText.trim());
       }
-      
+
       // Thêm filter ngày nếu có
       if (searchFromDateOnline) {
         params.append('tuNgay', searchFromDateOnline);
@@ -184,16 +184,16 @@ const DonHangPage = () => {
       if (searchToDateOnline) {
         params.append('denNgay', searchToDateOnline);
       }
-      
+
       const url = `http://localhost:8080/api/donhang/search-online?${params.toString()}`;
       console.log('🔍 Searchọng online orders with URL:', url);
-      
+
       const res = await fetch(url);
       if (!res.ok) throw new Error('Lỗi khi tìm kiếm đơn hàng online');
-      
+
       const data = await res.json();
       console.log('🔍 Response data:', data);
-      
+
       // Map lại dữ liệu cho đúng format bảng
       const mappedData = (Array.isArray(data) ? data : []).map(item => ({
         id: item.id,
@@ -206,14 +206,14 @@ const DonHangPage = () => {
         trangThai: item.trangThai,
         ghiChu: item.ghiChu,
       }));
-      
+
       // Sắp xếp theo ngày tạo từ mới đến cũ
       mappedData.sort((a, b) => {
         const dateA = new Date(a.ngayTao || 0);
         const dateB = new Date(b.ngayTao || 0);
         return dateB - dateA; // Giảm dần (mới nhất trước)
       });
-      
+
       setOrdersOnline(mappedData);
     } catch (err) {
       console.error('🔍 Error searchọng online orders:', err);
@@ -265,7 +265,7 @@ const DonHangPage = () => {
       default:
         url = 'http://localhost:8080/api/donhang/don-online';
     }
-    
+
     if (!url) {
       setOrdersOnline([]);
       setLoadingOnline(false);
@@ -275,7 +275,7 @@ const DonHangPage = () => {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Lỗi khi lấy dữ liệu đơn hàng online');
       let data = await res.json();
-      
+
       // Map lại dữ liệu cho đúng format bảng
       data = (Array.isArray(data) ? data : []).map(item => ({
         id: item.id,
@@ -288,14 +288,14 @@ const DonHangPage = () => {
         trangThai: item.trangThai ?? status,
         ghiChu: item.ghiChu, // Lấy trực tiếp từ DonHangDTO
       }));
-      
+
       // ✅ SỬA: Sắp xếp theo mã đơn hàng từ cao xuống thấp (thay vì theo ngày)
       data.sort((a, b) => {
         const orderIdA = Number(a.id) || 0;
         const orderIdB = Number(b.id) || 0;
         return orderIdB - orderIdA; // Giảm dần (mã cao nhất trước)
       });
-      
+
       setOrdersOnline(data);
     } catch (err) {
       setErrorOnline(err.message || 'Lỗi không xác định');
@@ -419,10 +419,10 @@ const DonHangPage = () => {
       setShowCancelModal(false);
       setSelectedOrderToCancel(null);
       setCancelReason('');
-      
+
       // Refresh lại danh sách đơn hàng
       fetchOrdersOnline(Number(filterStatus));
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Thành công!',
@@ -470,9 +470,9 @@ const DonHangPage = () => {
       // Sử dụng API cũ để lấy đơn hàng POS
       const res = await fetch('http://localhost:8080/api/donhang/getAllHoanThanh');
       if (!res.ok) throw new Error('Lỗi khi lấy dữ liệu đơn hàng POS');
-      
+
       let data = await res.json();
-      
+
       // Debug: Log dữ liệu gốc từ API
       console.log('=== RAW DATA FROM API (getAllHoanThanh) ===');
       console.log('Total orders:', data.length);
@@ -481,7 +481,7 @@ const DonHangPage = () => {
         console.log('Available fields:', Object.keys(data[0]));
       }
       console.log('========================');
-      
+
       // ✅ THÊM: Nếu dữ liệu thiếu thông tin nhân viên, fetch bổ sung
       if (Array.isArray(data) && data.length > 0) {
         const enhancedData = await Promise.all(data.map(async (order) => {
@@ -498,7 +498,7 @@ const DonHangPage = () => {
               order.tenNhanVien = 'Không xác định';
             }
           }
-          
+
           // Nếu thiếu thông tin khách hàng, fetch bổ sung
           if (!order.tenKhachHang && order.idkhachHang) {
             try {
@@ -512,55 +512,55 @@ const DonHangPage = () => {
               order.tenKhachHang = 'Khách vãng lai';
             }
           }
-          
+
           return order;
         }));
-        
+
         data = enhancedData;
       }
-      
+
       // Sắp xếp theo ngày mua từ mới nhất đến cũ nhất
       const sortedData = Array.isArray(data) ? data.sort((a, b) => {
         // Ưu tiên ngayMua trước, nếu không có thì dùng ngayTao
         const getDateValue = (order) => {
           const dateStr = order.ngayMua || order.ngayTao;
           if (!dateStr) return new Date(0);
-          
+
           // Kiểm tra format date
           console.log(`Parsing date: "${dateStr}" for order ${order.id}`);
           const date = new Date(dateStr);
-          
+
           // Kiểm tra xem date có hợp lệ không
           if (isNaN(date.getTime())) {
             console.warn(`Invalid date: "${dateStr}" for order ${order.id}`);
             return new Date(0);
           }
-          
+
           return date;
         };
-        
+
         const dateA = getDateValue(a);
         const dateB = getDateValue(b);
-        
+
         // Debug: Log để kiểm tra thứ tự sắp xếp
         console.log(`Comparing: Order ${a.id} (${dateA}) vs Order ${b.id} (${dateB})`);
-        
+
         // Nếu cùng ngày, sắp xếp theo ID giảm dần (mới nhất trước)
         if (dateA.getTime() === dateB.getTime()) {
           console.log(`Same date, sorting by ID: ${b.id} vs ${a.id}`);
           return b.id - a.id; // ID lớn hơn (mới hơn) lên đầu
         }
-        
+
         return dateB - dateA; // Sắp xếp giảm dần theo ngày (mới nhất trước)
       }) : [];
-      
+
       // Debug: Log kết quả sắp xếp cuối cùng
       console.log('=== FINAL SORTED ORDERS ===');
       sortedData.forEach((order, index) => {
         console.log(`${index + 1}. Order #${order.id}: ngayMua=${order.ngayMua}, ngayTao=${order.ngayTao}, nhanVien=${order.tenNhanVien}`);
       });
       console.log('===========================');
-      
+
       setOrdersPOS(sortedData);
     } catch (err) {
       console.error('❌ Error fetchọng POS orders:', err);
@@ -590,7 +590,7 @@ const DonHangPage = () => {
           >{tt.label}</button>
         ))}
       </div>
-      
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
         {/* Ô tìm kiếm */}
         <input
@@ -606,7 +606,7 @@ const DonHangPage = () => {
             fontSize: 15,
           }}
         />
-        
+
         {/* Log từ ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Từ ngày:</label>
@@ -622,7 +622,7 @@ const DonHangPage = () => {
             }}
           />
         </div>
-        
+
         {/* Log đến ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Đến ngày:</label>
@@ -638,7 +638,7 @@ const DonHangPage = () => {
             }}
           />
         </div>
-        
+
         {/* Nút tìm kiếm */}
         <button
           onClick={searchOrdersOnline}
@@ -657,7 +657,7 @@ const DonHangPage = () => {
         >
           {isSearchingOnline ? '🔍 Đang tìm...' : '🔍 Tìm kiếm'}
         </button>
-        
+
         {/* Nút reset */}
         <button
           onClick={resetSearchOnline}
@@ -675,15 +675,15 @@ const DonHangPage = () => {
           🔄 Reset
         </button>
       </div>
-    </div>  
+    </div>
   );
 
   // Render filter tìm kiếm đơn hàng POS
   const renderPOSSearchBar = () => (
-    <div style={{ 
-      background: '#f8f9fa', 
-      padding: '20px', 
-      borderRadius: '12px', 
+    <div style={{
+      background: '#f8f9fa',
+      padding: '20px',
+      borderRadius: '12px',
       margin: '24px 0 16px 0',
       border: '1px solid #e3e8ee'
     }}>
@@ -758,7 +758,7 @@ const DonHangPage = () => {
             }}
           >
             <option value={-1}>Tất cả</option>
-            <option value={0}>Chờ thanh toán</option>
+            <option value={0}>Chờ vận chuyển</option>
             <option value={1}>Đã thanh toán</option>
           </select>
         </div>
@@ -830,10 +830,10 @@ const DonHangPage = () => {
     <div style={{ padding: '0 24px 24px 24px' }}>
       {/* Thông báo kết quả tìm kiếm */}
       {isSearchingPOS && (
-        <div style={{ 
-          background: '#e3f2fd', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
+        <div style={{
+          background: '#e3f2fd',
+          padding: '12px 16px',
+          borderRadius: 8,
           marginBottom: 16,
           border: '1px solid #2196f3',
           color: '#1976d2',
@@ -842,13 +842,13 @@ const DonHangPage = () => {
           🔍 Đang tìm kiếm đơn hàng POS...
         </div>
       )}
-      
+
       {/* Hiển thị thông tin tìm kiếm nếu có */}
       {(searchCustomerName || searchFromDate || searchToDate || searchStatus >= 0) && !isSearchingPOS && (
-        <div style={{ 
-          background: '#f3e5f5', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
+        <div style={{
+          background: '#f3e5f5',
+          padding: '12px 16px',
+          borderRadius: 8,
           marginBottom: 16,
           border: '1px solid #9c27b0',
           color: '#7b1fa2',
@@ -867,56 +867,56 @@ const DonHangPage = () => {
           )}
         </div>
       )}
-      
+
       <table style={{ width: '100%', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', overflow: 'hidden' }}>
-      <thead>
-        <tr style={{ background: '#e3f0ff', color: '#1976d2', fontWeight: 700 }}>
-          <th style={{ padding: 12 }}>Mã đơn</th>
-          <th style={{ padding: 12 }}>Nhân viên</th>
-          <th style={{ padding: 12 }}>Khách hàng</th>
-          <th style={{ padding: 12 }}>SĐT</th>
-          <th style={{ padding: 12 }}>Ngày tạo</th>
-          <th style={{ padding: 12 }}>Ngày Thanh Toán</th>
-          <th style={{ padding: 12 }}>Tổng tiền</th>
-          <th style={{ padding: 12 }}>Trạng thái</th>
-          <th style={{ padding: 12 }}>Hành động</th>
-        </tr>
-      </thead>
-      <tbody>
-        {orders.length === 0 ? (
-          <tr><td colSpan={9} style={{ textAlign: 'center', color: '#888', padding: 24 }}>Không có đơn hàng nào</td></tr>
-        ) : (
-          orders.map(order => (
-            <tr key={order.id} style={{ borderBottom: '1px solid #e3e8ee', fontSize: 16 }}>
-              <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>#{order.id}</td>
-              <td style={{ padding: 12 }}>{order.tenNhanVien || '-'}</td>
-              <td style={{ padding: 12 }}>{getTenKhachHang(order.idkhachHang)}</td>
-              <td style={{ padding: 12 }}>{getSdtKhachHang(order.idkhachHang)}</td>
-              <td style={{ padding: 12 }}>{order.ngayTao || order.ngayMua || '-'}</td>
-              <td style={{ padding: 12 }}>{order.ngayMua || order.ngayTao || '-'}</td>
-              <td style={{ padding: 12, color: '#1976d2', fontWeight: 700 }}>{order.tongTien?.toLocaleString()} đ</td>
-              <td style={{ padding: 12 }}>
-                <span style={{
-                  background: order.trangThai === 1 ? '#43b244' : '#ff9800',
-                  color: '#fff',
-                  borderRadius: 8,
-                  padding: '4px 14px',
-                  fontWeight: 600,
-                  fontSize: 15,
-                  whiteSpace: 'nowrap',
-                  display: 'inline-block'
-                }}>{order.trangThai === 1 ? 'Đã thanh toán' : 'Chờ thanh toán'}</span>
-              </td>
-              <td style={{ padding: 12 }}>
-                <button style={{ padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate(`/admin-panel/pos-orders/${order.id}`)}>
-                  Xem chi tiết
-                </button>
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+        <thead>
+          <tr style={{ background: '#e3f0ff', color: '#1976d2', fontWeight: 700 }}>
+            <th style={{ padding: 12 }}>Mã đơn</th>
+            <th style={{ padding: 12 }}>Nhân viên</th>
+            <th style={{ padding: 12 }}>Khách hàng</th>
+            <th style={{ padding: 12 }}>SĐT</th>
+            <th style={{ padding: 12 }}>Ngày tạo</th>
+            <th style={{ padding: 12 }}>Ngày Thanh Toán</th>
+            <th style={{ padding: 12 }}>Tổng tiền</th>
+            <th style={{ padding: 12 }}>Trạng thái</th>
+            <th style={{ padding: 12 }}>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.length === 0 ? (
+            <tr><td colSpan={9} style={{ textAlign: 'center', color: '#888', padding: 24 }}>Không có đơn hàng nào</td></tr>
+          ) : (
+            orders.map(order => (
+              <tr key={order.id} style={{ borderBottom: '1px solid #e3e8ee', fontSize: 16 }}>
+                <td style={{ padding: 12, textAlign: 'center', fontWeight: 600 }}>#{order.id}</td>
+                <td style={{ padding: 12 }}>{order.tenNhanVien || '-'}</td>
+                <td style={{ padding: 12 }}>{getTenKhachHang(order.idkhachHang)}</td>
+                <td style={{ padding: 12 }}>{getSdtKhachHang(order.idkhachHang)}</td>
+                <td style={{ padding: 12 }}>{order.ngayTao || order.ngayMua || '-'}</td>
+                <td style={{ padding: 12 }}>{order.ngayMua || order.ngayTao || '-'}</td>
+                <td style={{ padding: 12, color: '#1976d2', fontWeight: 700 }}>{order.tongTien?.toLocaleString()} đ</td>
+                <td style={{ padding: 12 }}>
+                  <span style={{
+                    background: order.trangThai === 1 ? '#43b244' : '#ff9800',
+                    color: '#fff',
+                    borderRadius: 8,
+                    padding: '4px 14px',
+                    fontWeight: 600,
+                    fontSize: 15,
+                    whiteSpace: 'nowrap',
+                    display: 'inline-block'
+                  }}>{order.trangThai === 1 ? 'Đã thanh toán' : 'Chờ thanh toán'}</span>
+                </td>
+                <td style={{ padding: 12 }}>
+                  <button style={{ padding: '6px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate(`/admin-panel/pos-orders/${order.id}`)}>
+                    Xem chi tiết
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 
@@ -951,10 +951,10 @@ const DonHangPage = () => {
                 {chiTietSanPham.map((sp, idx) => (
                   <tr key={idx}>
                     <td style={{ padding: 8, textAlign: 'center' }}>
-                      <img 
-                        src={getImageUrl(sp.anh)} 
-                        alt={sp.tenSanPham} 
-                        style={{ width: 50, height: 45, objectFit: 'cover', borderRadius: 4, border: '1px solid #eee' }} 
+                      <img
+                        src={getImageUrl(sp.anh)}
+                        alt={sp.tenSanPham}
+                        style={{ width: 50, height: 45, objectFit: 'cover', borderRadius: 4, border: '1px solid #eee' }}
                         onError={(e) => { e.target.src = '/logo.png'; }}
                       />
                     </td>
@@ -1010,13 +1010,13 @@ const DonHangPage = () => {
   const renderOrdersOnline = (orders) => (
     <div style={{ width: '100%', marginTop: 0, background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', overflow: 'hidden', borderCollapse: 'collapse' }}>
       {renderFilterBar()}
-      
+
       {/* Thông báo kết quả tìm kiếm */}
       {isSearchingOnline && (
-        <div style={{ 
-          background: '#e3f2fd', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
+        <div style={{
+          background: '#e3f2fd',
+          padding: '12px 16px',
+          borderRadius: 8,
           margin: '0 24px 16px 24px',
           border: '1px solid #2196f3',
           color: '#1976d2',
@@ -1025,13 +1025,13 @@ const DonHangPage = () => {
           🔍 Đang tìm kiếm đơn hàng online...
         </div>
       )}
-      
+
       {/* Hiển thị thông tin tìm kiếm nếu có */}
       {(searchText || searchFromDateOnline || searchToDateOnline) && !isSearchingOnline && (
-        <div style={{ 
-          background: '#f3e5f5', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
+        <div style={{
+          background: '#f3e5f5',
+          padding: '12px 16px',
+          borderRadius: 8,
           margin: '0 24px 16px 24px',
           border: '1px solid #9c27b0',
           color: '#7b1fa2',
@@ -1049,13 +1049,13 @@ const DonHangPage = () => {
           )}
         </div>
       )}
-      
+
       {/* ✅ THÊM: Thông báo đặc biệt cho đơn hàng giao hàng không thành công */}
       {filterStatus === 7 && !isSearchingOnline && (
-        <div style={{ 
-          background: '#fff3e0', 
-          padding: '12px 16px', 
-          borderRadius: 8, 
+        <div style={{
+          background: '#fff3e0',
+          padding: '12px 16px',
+          borderRadius: 8,
           margin: '0 24px 16px 24px',
           border: '1px solid #ff9800',
           color: '#e65100',
@@ -1066,7 +1066,7 @@ const DonHangPage = () => {
           <small style={{ color: '#666' }}>💡 Các đơn hàng này đã được đánh dấu là giao hàng không thành công. Bạn có thể xem chi tiết để biết thêm thông tin.</small>
         </div>
       )}
-      
+
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#e3f0ff', color: '#1976d2', fontWeight: 700 }}>
@@ -1101,7 +1101,7 @@ const DonHangPage = () => {
                   <td style={{ padding: 12, fontWeight: 700, color: '#1976d2' }}>{order.maDon}</td>
                   <td style={{ padding: 12 }}>{order.tenNguoiNhan || 'Chưa có thông tin'}</td>
                   <td style={{ padding: 12 }}>{order.ngayTao || order.ngayMua || '-'}</td>
-                  <td style={{ padding: 12 }}>{order.soDienThoaiGiaoHang|| '---'}</td>
+                  <td style={{ padding: 12 }}>{order.soDienThoaiGiaoHang || '---'}</td>
                   <td style={{ padding: 12, fontWeight: 700 }}>{order.thanhTien?.toLocaleString()}đ</td>
                   <td style={{ padding: 12 }}>
                     <span style={{
@@ -1164,7 +1164,7 @@ const DonHangPage = () => {
                           cursor: 'pointer',
                           marginRight: 8
                         }}
-                        // onClick={...} // TODO: Thêm logic xác nhận đơn nếu cần
+                      // onClick={...} // TODO: Thêm logic xác nhận đơn nếu cần
                       >Xác nhận</button>
                     )}
 
@@ -1227,39 +1227,39 @@ const DonHangPage = () => {
           <>
             {renderPOSSearchBar()}
             {loadingPOS ? <div style={{ padding: 32, textAlign: 'center', color: '#1976d2' }}>Đang tải dữ liệu...</div>
-            : errorPOS ? <div style={{ color: 'red', padding: 32, textAlign: 'center' }}>{errorPOS}</div>
-            : renderOrdersPOS(ordersPOS)}
+              : errorPOS ? <div style={{ color: 'red', padding: 32, textAlign: 'center' }}>{errorPOS}</div>
+                : renderOrdersPOS(ordersPOS)}
           </>
         )}
         {activeTab === 'ONLINE' && (
           loadingOnline ? <div style={{ padding: 32, textAlign: 'center', color: '#1976d2' }}>Đang tải dữ liệu...</div>
-          : errorOnline ? <div style={{ color: 'red', padding: 32, textAlign: 'center' }}>{errorOnline}</div>
-          : renderOrdersOnline(filteredOrdersOnline)
+            : errorOnline ? <div style={{ color: 'red', padding: 32, textAlign: 'center' }}>{errorOnline}</div>
+              : renderOrdersOnline(filteredOrdersOnline)
         )}
       </div>
       {activeTab === 'POS' && renderDetailModalPOS()}
-      
+
       {/* Modal hủy đơn hàng online */}
       {showCancelModal && selectedOrderToCancel && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(0,0,0,0.5)', zIndex: 9999,
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <div style={{ 
-            background: '#fff', borderRadius: 12, minWidth: 400, maxWidth: 500, 
-            padding: 32, boxShadow: '0 4px 24px rgba(0,0,0,0.15)' 
+          <div style={{
+            background: '#fff', borderRadius: 12, minWidth: 400, maxWidth: 500,
+            padding: 32, boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
           }}>
             <h3 style={{ color: '#e53935', marginBottom: 20, textAlign: 'center' }}>
               🚫 Hủy đơn hàng #{selectedOrderToCancel.maDon}
             </h3>
-            
+
             <div style={{ marginBottom: 24 }}>
               <p style={{ color: '#666', marginBottom: 16, textAlign: 'center' }}>
-                Đơn hàng này đang ở trạng thái <strong>"Đang giao"</strong>.<br/>
+                Đơn hàng này đang ở trạng thái <strong>"Đang giao"</strong>.<br />
                 Vui lòng nhập lý do giao hàng không thành công:
               </p>
-              
+
               <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
@@ -1277,7 +1277,7 @@ const DonHangPage = () => {
                 required
               />
             </div>
-            
+
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
               <button
                 onClick={closeCancelModal}
@@ -1296,7 +1296,7 @@ const DonHangPage = () => {
               >
                 Hủy bỏ
               </button>
-              
+
               <button
                 onClick={handleCancelOrder}
                 disabled={isCancelling || !cancelReason.trim()}

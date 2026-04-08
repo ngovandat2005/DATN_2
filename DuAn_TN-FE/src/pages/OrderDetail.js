@@ -7,11 +7,11 @@ import { getUserRole } from '../utils/authUtils';
 
 // Thêm mảng trạng thái giống DonHangPage
 const TRANG_THAI = [
-  { value: 0, label: 'Chờ thanh toán', color: '#ff9800' },
+  { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
   { value: 1, label: 'Chờ vận chuyển', color: '#43b244' },
   { value: 2, label: 'Chờ nhận', color: '#1976d2' },
   { value: 3, label: 'Chờ nhận', color: '#1976d2' },
-  { value: 4, label: 'Chờ nhận', color: '#1976d2' },
+  { value: 4, label: 'Đã giao', color: '#009688' },
   { value: 5, label: 'Đã hủy', color: '#e53935' }
 ];
 
@@ -1545,10 +1545,10 @@ const OrderDetailPage = () => {
     if (currentStatus >= 2 && currentStatus <= 4) {
       actualSteps.push(TRANG_THAI[2]); // Chỉ hiển thị 1 bước "Chờ nhận"
     } else if (currentStatus > 4) {
-        // Nếu đã qua bước hoàn thành nhưng đang ở trạng thái khác (ví dụ: Đã hủy)
-        // Vẫn có thể muốn hiện bước "Chờ nhận" đã qua? 
-        // Theo yêu cầu gộp, ta cứ hiện bước Chờ nhận nếu đã từng qua hoặc đang ở đó
-        actualSteps.push(TRANG_THAI[2]);
+      // Nếu đã qua bước hoàn thành nhưng đang ở trạng thái khác (ví dụ: Đã hủy)
+      // Vẫn có thể muốn hiện bước "Chờ nhận" đã qua? 
+      // Theo yêu cầu gộp, ta cứ hiện bước Chờ nhận nếu đã từng qua hoặc đang ở đó
+      actualSteps.push(TRANG_THAI[2]);
     }
 
     // Xử lý trường hợp đặc biệt: Nếu đơn hàng bị hủy (trạng thái = 5)
@@ -1584,9 +1584,9 @@ const OrderDetailPage = () => {
     }
 
     if (currentStatus === 7) {
-        // Theo yêu cầu "bên khách hàng bỏ đi", ta có thể chuyển nó về trạng thái 5 hoặc ẩn đi
-        // Ở đây ta cứ trả về stepper tối giản hoặc null nếu không muốn hiện
-        return null; 
+      // Theo yêu cầu "bên khách hàng bỏ đi", ta có thể chuyển nó về trạng thái 5 hoặc ẩn đi
+      // Ở đây ta cứ trả về stepper tối giản hoặc null nếu không muốn hiện
+      return null;
     }
 
     return (

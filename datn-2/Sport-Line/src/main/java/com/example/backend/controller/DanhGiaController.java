@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/danh-gia")
-@CrossOrigin("*")
 public class DanhGiaController {
 
     @Autowired

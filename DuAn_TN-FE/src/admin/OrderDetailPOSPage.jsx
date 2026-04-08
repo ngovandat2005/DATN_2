@@ -134,7 +134,7 @@ const OrderDetailPOSPage = () => {
                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Voucher: <span style={{ fontWeight: 400, color: '#e74c3c' }}>{tenVoucher}</span></div>
              )}
              <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>Tổng tiền: <span style={{ fontWeight: 400 }}>{order?.tongTien?.toLocaleString()} đ</span></div>
-             <div style={{ fontWeight: 700, fontSize: 18 }}>Trạng thái: <span style={{ fontWeight: 400 }}>{order?.trangThai === 1 ? 'Đã thanh toán' : 'Chờ thanh toán'}</span></div>
+             <div style={{ fontWeight: 700, fontSize: 18 }}>Trạng thái: <span style={{ fontWeight: 400 }}>{order?.trangThai === 1 ? 'Đã xác nhận' : 'Chờ xác nhận'}</span></div>
            </div>
           <h3 style={{ color: '#1976d2', margin: '32px 0 18px 0', fontWeight: 800, fontSize: 24 }}>Chi tiết sản phẩm trong đơn hàng</h3>
           <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', padding: 24, marginBottom: 24 }}>

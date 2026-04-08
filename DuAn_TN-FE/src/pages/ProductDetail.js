@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Row,
   Col,
@@ -9,6 +9,13 @@ import {
   Tag,
   message,
   Modal,
+  Tabs,
+  Badge,
+  Rate,
+  List,
+  Avatar,
+  Input,
+  Card
 } from "antd";
 import { useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -16,7 +23,16 @@ import axios from "axios";
 import { getCustomerId, isLoggedIn } from "../utils/authUtils";
 import config from '../config/config';
 import '../styles/Home.css';
-import { Rate, List, Avatar, Input } from "antd";
+import '../styles/ProductDetail.css';
+import { 
+  FileTextOutlined, 
+  CommentOutlined, 
+  StarFilled,
+  HomeOutlined,
+  ShoppingOutlined,
+  ThunderboltFilled,
+  CheckCircleFilled
+} from "@ant-design/icons";
 const { Title, Paragraph, Text } = Typography;
 const { TextArea } = Input;
 
@@ -35,19 +51,17 @@ function ProductDetail() {
   const [error, setError] = useState(null);
   // ⭐ SẢN PHẨM LIÊN QUAN
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState("1");
+  const reviewRef = useRef(null);
+
+  const scrollToReviews = () => {
+    setActiveTab("2");
+    setTimeout(() => {
+      reviewRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
   // ⭐ REVIEW
-  const [reviews, setReviews] = useState([
-    {
-      user: "Nguyễn Văn A",
-      rating: 5,
-      comment: "Giày rất đẹp, đi êm chân."
-    },
-    {
-      user: "Trần Minh",
-      rating: 4,
-      comment: "Form đẹp, giao hàng nhanh."
-    }
-  ]);
+  const [reviews, setReviews] = useState([]);
 
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
@@ -181,6 +195,19 @@ function ProductDetail() {
 
   }, [id]);
 
+  // ✅ FETCH REVIEWS FROM BACKEND
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await axios.get(config.getApiUrl(`api/danh-gia/san-pham/${id}`));
+        setReviews(res.data || []);
+      } catch (err) {
+        console.error("Lỗi lấy đánh giá:", err);
+      }
+    };
+    fetchReviews();
+  }, [id]);
+
   // ✅ THÊM: Lấy giỏ hàng khi load trang để tính tồn kho khả dụng
   useEffect(() => {
     if (isLoggedIn() && customerId) {
@@ -246,9 +273,16 @@ function ProductDetail() {
       return variantColor === selectedColor && variantSize === selectedSize;
     });
     setCurrentVariant(found || null);
-
-    setQuantity(1); // reset số lượng khi đổi biến thể
-  }, [selectedColor, selectedSize, variants]);
+    
+    // ✅ CẬP NHẬT: Reset số lượng về 1 (hoặc 0 nếu hết hàng)
+    const currentStock = found?.soLuong || 0;
+    const itemsInCart = cartItems.find(item => 
+      (item.sanPhamChiTiet?.id === found?.id) || 
+      (item.idSanPhamChiTiet === found?.id)
+    )?.soLuong || 0;
+    
+    setQuantity(currentStock - itemsInCart > 0 ? 1 : 0);
+  }, [selectedColor, selectedSize, variants, cartItems]);
 
   // Lấy số lượng còn lại của biến thể hiện tại
   const stock = currentVariant?.soLuong || 0;
@@ -452,23 +486,38 @@ function ProductDetail() {
     return `${config.baseUrl}images/${encodeURIComponent(img)}`;
   };
 
-  const handleSubmitReview = () => {
-    if (!newReview) {
+  const handleSubmitReview = async () => {
+    if (!isLoggedIn()) {
+      checkLoginAndRedirect();
+      return;
+    }
+
+    if (!newReview.trim()) {
       message.warning("Vui lòng nhập đánh giá!");
       return;
     }
 
-    const review = {
-      user: "Khách hàng",
-      rating: newRating,
-      comment: newReview
-    };
+    try {
+      const reviewRequest = {
+        idKhachHang: customerId,
+        idSanPham: Number(id),
+        soSao: newRating,
+        binhLuan: newReview.trim()
+      };
 
-    setReviews([review, ...reviews]);
-    setNewReview("");
-    setNewRating(5);
-
-    message.success("Cảm ơn bạn đã đánh giá!");
+      await axios.post(config.getApiUrl('api/danh-gia/them'), reviewRequest);
+      
+      // Refresh reviews list
+      const res = await axios.get(config.getApiUrl(`api/danh-gia/san-pham/${id}`));
+      setReviews(res.data || []);
+      
+      setNewReview("");
+      setNewRating(5);
+      message.success("Cảm ơn bạn đã đánh giá!");
+    } catch (err) {
+      console.error("Lỗi gửi đánh giá:", err);
+      message.error("Gửi đánh giá thất bại: " + (err.response?.data || err.message));
+    }
   };
   // ✅ THÊM: Helper function để xác định giá hiển thị
   const getDisplayPrice = (variant) => {
@@ -514,25 +563,28 @@ function ProductDetail() {
   return (
     <div className="product-detail-page">
       <div className="product-detail-card">
-        <Row gutter={32}>
-          <Col span={10} className="product-detail-image">
-            <Image
-              src={getProductImage(currentVariant || variants[0])}
-              alt={currentVariant?.tenSanPham || variants[0]?.tenSanPham || 'Sản phẩm'}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/logo.png";
-              }}
-            />
+        <Row gutter={[48, 48]}>
+          <Col xs={24} lg={11} className="product-detail-image-col">
+            <div className="product-detail-image">
+              <Image
+                src={getProductImage(currentVariant || variants[0])}
+                alt={currentVariant?.tenSanPham || variants[0]?.tenSanPham || 'Sản phẩm'}
+                preview={true}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/logo.png";
+                }}
+              />
+            </div>
           </Col>
-          <Col span={14} className="product-detail-info">
+          <Col xs={24} lg={13} className="product-detail-info">
             {/* 1. Tên Sản Phẩm */}
-            <Title level={2} style={{ marginBottom: '15px', color: '#111', fontWeight: '700' }}>
+            <Title level={1} className="product-title">
               {product?.tenSanPham || product?.name || variants[0]?.sanPham?.tenSanPham || "Hệ thống đang tải tên..."}
             </Title>
 
             {/* 2. Giá Tiền */}
-            <div style={{ marginBottom: '15px' }}>
+            <div className="price-container">
               {(() => {
                 const variant = currentVariant || variants[0];
                 const originalPrice = variant?.giaBan || 0;
@@ -550,27 +602,29 @@ function ProductDetail() {
                   }
                 }
 
-                if (hasDiscount) {
-                  return (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Text delete style={{ fontSize: '18px', color: '#999' }}>
-                        {originalPrice.toLocaleString()}₫
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                    {hasDiscount ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <Text className="old-price">{originalPrice.toLocaleString()}₫</Text>
+                        <Text className="current-price">{finalPrice.toLocaleString()}₫</Text>
+                        <span className="discount-tag">-{promo.giaTri}% OFF</span>
+                      </div>
+                    ) : (
+                      <Text className="current-price">{originalPrice.toLocaleString()}₫</Text>
+                    )}
+
+                    <div 
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', marginLeft: 'auto' }} 
+                      onClick={scrollToReviews}
+                    >
+                      <Rate disabled value={5} style={{ fontSize: 14, color: '#fadb14' }} />
+                      <Text type="secondary" style={{ marginLeft: 8, fontSize: 14, fontWeight: '600' }}>
+                        {reviews.length} đánh giá
                       </Text>
-                      <Text strong style={{ color: "#f5222d", fontSize: '28px' }}>
-                        {finalPrice.toLocaleString()}₫
-                      </Text>
-                      <Tag color="red" style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                        -{promo.giaTri}%
-                      </Tag>
                     </div>
-                  );
-                } else {
-                  return (
-                    <Text strong style={{ color: "#f5222d", fontSize: '28px' }}>
-                      {originalPrice.toLocaleString()}₫
-                    </Text>
-                  );
-                }
+                  </div>
+                );
               })()}
             </div>
 
@@ -581,79 +635,44 @@ function ProductDetail() {
               </Tag>
             </div>
 
-            {/* 4. Tình trạng tồn kho */}
-            <div style={{ marginBottom: '20px' }}>
-              <Tag color={stock > 0 ? (availableToBuy > 0 ? "green" : "orange") : "red"} style={{ fontSize: '13px', padding: '2px 10px', borderRadius: '4px' }}>
-                {selectedColor && selectedSize
-                  ? stock > 0
-                    ? availableToBuy > 0
-                      ? `Tình trạng: Còn ${availableToBuy} sản phẩm có thể thêm (Tổng kho: ${stock})`
-                      : `Tình trạng: Đã đạt giới hạn giỏ hàng (Tổng: ${stock})`
-                    : `Tình trạng: Đã hết hàng cho lựa chọn này`
-                  : "Chọn màu sắc và kích thước để xem tồn kho"}
-              </Tag>
+            <div className="stock-info" style={{ marginTop: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <CheckCircleFilled style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }} />
+                <span style={{ fontWeight: 700, fontSize: '1.1rem', color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>
+                  {selectedColor && selectedSize
+                    ? stock > 0
+                      ? availableToBuy > 0
+                        ? `CÒN HÀNG (${availableToBuy} đôi có sẵn)`
+                        : `VỪA HẾT (Đã có trong giỏ hàng)`
+                      : `HẾT HÀNG`
+                    : "VUI LÒNG CHỌN SIZE & MÀU"}
+                </span>
+              </div>
             </div>
-            <div className="product-description-box">
-              <Title level={4}>Mô tả sản phẩm</Title>
 
-              <Paragraph>
-                {product?.moTa || "Giày thể thao cao cấp với thiết kế hiện đại, phù hợp chạy bộ và hoạt động hàng ngày."}
-              </Paragraph>
-
-              <ul className="product-features">
-                <li>✔ Chất liệu vải thoáng khí, mang lại cảm giác thoải mái</li>
-                <li>✔ Đế cao su chống trượt, tăng độ bám</li>
-                <li>✔ Thiết kế thể thao hiện đại</li>
-                <li>✔ Phù hợp chạy bộ, tập gym và đi chơi</li>
-                <li>✔ Form giày ôm chân, dễ phối đồ</li>
-              </ul>
-            </div>
-            <div className="product-service">
-              <div>🚚 Giao hàng toàn quốc</div>
-              <div>💰 Thanh toán khi nhận hàng</div>
-              <div>🔄 Đổi trả trong 7 ngày</div>
-            </div>
-            <div style={{ margin: "16px 0" }}>
-              <div style={{ marginBottom: 8 }}>
-                <span>Chọn màu: </span>
-
+            <div className="variant-selector">
+              <span className="variant-label">Chọn Màu Sắc</span>
+              <div className="variant-options">
                 {availableColors.map((color) => {
-                  // ✅ KIỂM TRA: Màu này có khớp với size đang chọn không?
-                  const isCompatible = !selectedSize || variants.some(v => 
-                    v.mauSac?.tenMauSac === color.tenMauSac && 
-                    v.kichThuoc?.tenKichThuoc === selectedSize
-                  );
-
+                  const isActive = selectedColor === color.tenMauSac;
                   return (
                     <Button
                       key={color.id}
-                      disabled={!isCompatible}
-                      type={
-                        selectedColor === color.tenMauSac ? "primary" : "default"
-                      }
-                      style={{
-                        marginRight: 8,
-                        background:
-                          !isCompatible 
-                            ? '#f5f5f5' 
-                            : (color.tenMauSac && color.tenMauSac.toLowerCase() !== "trắng"
-                              ? color.tenMauSac
-                              : undefined),
-                        color:
-                          !isCompatible
-                            ? '#bfbfbf'
-                            : (color.tenMauSac && ["đen", "black"].includes(color.tenMauSac.toLowerCase())
-                              ? "#fff"
-                              : "#222"),
-                        border:
-                          selectedColor === color.tenMauSac
-                            ? "2px solid #1890ff"
-                            : undefined,
-                        opacity: isCompatible ? 1 : 0.5,
-                        cursor: isCompatible ? 'pointer' : 'not-allowed'
-                      }}
+                      className={`pill-option ${isActive ? 'active' : ''}`}
                       onClick={() => {
-                        setSelectedColor(color.tenMauSac);
+                        if (isActive) {
+                          setSelectedColor(null);
+                          setSelectedSize(null);
+                        } else {
+                          setSelectedColor(color.tenMauSac);
+                          // Auto-select first compatible size if only ONE size exists
+                          const compatibleSizes = variants.filter(v => v.mauSac?.tenMauSac === color.tenMauSac);
+                          if (compatibleSizes.length === 1) {
+                            setSelectedSize(compatibleSizes[0].kichThuoc?.tenKichThuoc);
+                          } else {
+                            setSelectedSize(null);
+                          }
+                        }
                       }}
                     >
                       {color.tenMauSac}
@@ -661,141 +680,214 @@ function ProductDetail() {
                   );
                 })}
               </div>
-              <div style={{ marginBottom: 8 }}>
-                <span>Chọn size: </span>
-                {availableSizes.map((size) => {
-                  // ✅ KIỂM TRA: Size này có khớp với màu đang chọn không?
-                  const isCompatible = !selectedColor || variants.some(v => 
-                    v.kichThuoc?.tenKichThuoc === size.tenKichThuoc && 
-                    v.mauSac?.tenMauSac === selectedColor
-                  );
+            </div>
 
-                  return (
-                    <Button
-                      key={size.id}
-                      disabled={!isCompatible}
-                      type={
-                        selectedSize === size.tenKichThuoc ? "primary" : "default"
-                      }
-                      style={{
-                        marginRight: 8,
-                        border:
-                          selectedSize === size.tenKichThuoc
-                            ? "2px solid #1890ff"
-                            : undefined,
-                        opacity: isCompatible ? 1 : 0.5,
-                      }}
-                      onClick={() => setSelectedSize(size.tenKichThuoc)}
-                    >
-                      {size.tenKichThuoc}
-                    </Button>
-                  );
-                })}
+            {selectedColor && (
+              <div className="variant-selector" style={{ marginTop: 24, animation: 'fadeIn 0.3s ease' }}>
+                <span className="variant-label">Chọn Kích Thước ({selectedColor})</span>
+                <div className="variant-options">
+                  {availableSizes
+                    .filter(size => variants.some(v => v.mauSac?.tenMauSac === selectedColor && v.kichThuoc?.tenKichThuoc === size.tenKichThuoc))
+                    .map((size) => (
+                      <Button
+                        key={size.id}
+                        className={`pill-option ${selectedSize === size.tenKichThuoc ? 'active' : ''}`}
+                        onClick={() => {
+                          if (selectedSize === size.tenKichThuoc) {
+                            setSelectedSize(null);
+                          } else {
+                            setSelectedSize(size.tenKichThuoc);
+                          }
+                        }}
+                      >
+                        {size.tenKichThuoc}
+                      </Button>
+                    ))}
+                </div>
               </div>
-              <div style={{ marginBottom: 8 }}>
-                <span>Số lượng: </span>
+            )}
+            <div className="quantity-selector" style={{ marginTop: 30 }}>
+              <span className="variant-label">Số Lượng</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <InputNumber
-                  min={1}
+                  min={availableToBuy > 0 ? 1 : 0}
                   value={quantity}
                   onChange={(val) => setQuantity(val)}
-                  style={{ width: 80, marginLeft: 8 }}
+                  style={{ 
+                    width: 100, 
+                    height: 45, 
+                    borderRadius: 12, 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    borderColor: quantity > availableToBuy ? '#ff4d4f' : '' 
+                  }}
                 />
+                {quantity > availableToBuy && (
+                  <Text type="danger" style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                    ✕ Vượt quá số lượng có sẵn ({availableToBuy})
+                  </Text>
+                )}
               </div>
-              <div className="product-detail-actions">
-                <Button type="primary" size="large" onClick={handleBuy}>
-                  Mua ngay
-                </Button>
-                <Button size="large" onClick={handleAddToCart}>
-                  Thêm vào giỏ hàng
-                </Button>
-              </div>
+            </div>
+
+            <div className="product-actions" style={{ marginTop: 40 }}>
+              <Button 
+                type="primary" 
+                size="large" 
+                className="btn-buy-now" 
+                icon={<ThunderboltFilled />}
+                onClick={handleBuy}
+                disabled={availableToBuy <= 0 || quantity > availableToBuy}
+              >
+                Mua Ngay
+              </Button>
+              <Button 
+                size="large" 
+                className="btn-add-cart" 
+                icon={<ShoppingOutlined />}
+                onClick={handleAddToCart}
+                disabled={availableToBuy <= 0 || quantity > availableToBuy}
+              >
+                Giỏ Hàng
+              </Button>
             </div>
           </Col>
         </Row>
 
-        {/* ⭐ PHẦN ĐÁNH GIÁ */}
-        <div className="product-review-section">
+        <div className="product-info-tabs" style={{ marginTop: 50 }} ref={reviewRef}>
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            type="card"
+            items={[
+              {
+                key: "1",
+                label: (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FileTextOutlined /> Mô tả & Đặc điểm
+                  </span>
+                ),
+                children: (
+                  <div className="product-description-box" style={{ padding: '20px', background: '#fff', borderRadius: 8 }}>
+                    <Paragraph>
+                      {product?.moTa || "Giày thể thao cao cấp với thiết kế hiện đại, phù hợp chạy bộ và hoạt động hàng ngày."}
+                    </Paragraph>
+                    <ul className="product-features">
+                      <li>✔ Chất liệu vải thoáng khí, mang lại cảm giác thoải mái</li>
+                      <li>✔ Đế cao su chống trượt, tăng độ bám</li>
+                      <li>✔ Thiết kế thể thao hiện đại</li>
+                      <li>✔ Phù hợp chạy bộ, tập gym và đi chơi</li>
+                      <li>✔ Form giày ôm chân, dễ phối đồ</li>
+                    </ul>
+                  </div>
+                )
+              },
+              {
+                key: "2",
+                label: (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CommentOutlined /> Đánh giá <Badge count={reviews.length} offset={[10, -5]} size="small" style={{ backgroundColor: '#ff6600' }} />
+                  </span>
+                ),
+                children: (
+                  <div className="product-review-section" style={{ padding: '20px', background: '#fff', borderRadius: 8 }}>
+                    <Title level={3}>Đánh giá sản phẩm</Title>
+                    <div className="review-form" style={{ marginBottom: 40, padding: 20, background: '#f9f9f9', borderRadius: 12 }}>
+                      <div style={{ marginBottom: 15 }}>
+                        <Text strong>Viết đánh giá của bạn: </Text>
+                        <Rate value={newRating} onChange={setNewRating} style={{ marginLeft: 15 }} />
+                      </div>
+                      <TextArea
+                        rows={3}
+                        placeholder="Hãy chia sẻ cảm nhận về sản phẩm này nhé..."
+                        value={newReview}
+                        onChange={(e) => setNewReview(e.target.value)}
+                        style={{ borderRadius: 8 }}
+                      />
+                      <Button
+                        type="primary"
+                        style={{ marginTop: 15, height: 40, borderRadius: 8, padding: '0 30px' }}
+                        onClick={handleSubmitReview}
+                      >
+                        Gửi đánh giá ngay
+                      </Button>
+                    </div>
 
-          <Title level={3}>Đánh giá sản phẩm</Title>
+                    <List
+                      itemLayout="horizontal"
+                      dataSource={reviews}
+                      renderItem={(item) => (
+                        <List.Item style={{ padding: '20px 0' }}>
+                          <List.Item.Meta
+                            avatar={<Avatar size={50} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.khachHang?.id}`}/>}
+                            title={
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                                <Text strong style={{ fontSize: 16 }}>{item.khachHang?.tenKhachHang || "Khách hàng ẩn danh"}</Text>
+                                <Rate disabled value={item.soSao} style={{ fontSize: 12 }} />
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {item.ngayDanhGia ? new Date(item.ngayDanhGia).toLocaleDateString() : ""}
+                                </Text>
+                              </div>
+                            }
+                            description={
+                              <Text style={{ color: '#444', fontSize: 15 }}>{item.binhLuan}</Text>
+                            }
+                          />
+                        </List.Item>
+                      )}
+                      locale={{ emptyText: "Chưa có đánh giá nào cho sản phẩm này." }}
+                    />
+                  </div>
+                )
+              }
+            ]}
+          />
+        </div>
 
-          {/* FORM REVIEW */}
-          <div className="review-form">
-
-            <div style={{ marginBottom: 10 }}>
-              <span>Đánh giá của bạn: </span>
-              <Rate value={newRating} onChange={setNewRating} />
-            </div>
-
-            <TextArea
-              rows={3}
-              placeholder="Viết đánh giá của bạn..."
-              value={newReview}
-              onChange={(e) => setNewReview(e.target.value)}
-            />
-
-            <Button
-              type="primary"
-              style={{ marginTop: 10 }}
-              onClick={handleSubmitReview}
-            >
-              Gửi đánh giá
-            </Button>
-
+        {/* ⭐ SẢN PHẨM KHÁC */}
+        <div className="related-products" style={{ marginTop: 100 }}>
+          <div className="related-products-header">
+            <Title level={2} style={{ fontSize: '2.5rem', fontWeight: 800 }}>DÀNH RIÊNG CHO BẠN</Title>
+            <Text type="secondary" style={{ fontSize: 16 }}>Khám phá các mẫu giày thể thao tương tự đang được ưa chuộng</Text>
           </div>
 
-          {/* DANH SÁCH REVIEW */}
-          <List
-            itemLayout="horizontal"
-            dataSource={reviews}
-            renderItem={(item) => (
-              <List.Item>
-                <List.Item.Meta
-                  avatar={<Avatar>{item.user[0]}</Avatar>}
-                  title={
-                    <div>
-                      <Text strong>{item.user}</Text>
-                      <Rate disabled value={item.rating} style={{ marginLeft: 10 }} />
+          <Row gutter={[32, 32]}>
+            {relatedProducts.map((item) => (
+              <Col xs={12} sm={12} md={8} lg={6} key={item.id}>
+                <Card
+                  className="premium-product-card"
+                  hoverable
+                  onClick={() => navigate(`/products/${item.id}`)}
+                  cover={
+                    <div style={{ padding: 20, background: '#f8f9fa', display: 'flex', justifyContent: 'center' }}>
+                      <img
+                        src={
+                          item.images 
+                            ? (item.images.startsWith('http') ? item.images.split(',')[0].trim() : `${config.baseUrl}images/${item.images.split(',')[0].trim()}`)
+                            : '/logo.png'
+                        }
+                        alt={item.tenSanPham}
+                        style={{ width: '85%', aspectRatio: '1/1', objectFit: 'contain' }}
+                      />
                     </div>
                   }
-                  description={item.comment}
-                />
-              </List.Item>
-            )}
-          />
-
-        </div>
-        {/* ⭐ SẢN PHẨM KHÁC */}
-        <div className="related-products">
-          <Title level={3}>Sản phẩm khác</Title>
-
-          <Row gutter={[20, 20]}>
-            {relatedProducts.map((item) => (
-              <Col span={6} key={item.id}>
-                <div
-                  className="product-card"
-                  onClick={() => navigate(`/products/${item.id}`)}
                 >
-                  <img
-                    src={
-                      item.images 
-                        ? (item.images.startsWith('http') ? item.images.split(",")[0].trim() : `${config.baseUrl}images/${item.images.split(",")[0].trim()}`)
-                        : "/logo.png"
+                  <Card.Meta 
+                    title={<Text strong style={{ fontSize: 16 }}>{item.tenSanPham}</Text>}
+                    description={
+                      <div>
+                        <Text type="danger" style={{ fontSize: 18, fontWeight: 800 }}>{item.giaBan?.toLocaleString()}₫</Text>
+                        <div style={{ marginTop: 5 }}>
+                          <Rate disabled value={5} style={{ fontSize: 10 }} />
+                        </div>
+                      </div>
                     }
-                    alt={item.tenSanPham}
-                    className="related-img"
                   />
-
-                  <h4>{item.tenSanPham}</h4>
-
-                  <p className="price">
-                    {(item.giaBan || 0).toLocaleString()}₫
-                  </p>
-                </div>
+                </Card>
               </Col>
             ))}
           </Row>
         </div>
-
 
       </div>
 

@@ -1913,7 +1913,7 @@ const Payment = () => {
 
       if (paymentMethod === 'cod') {
         // ✅ COD: Hiển thị thông báo thành công và chuyển trang sau delay
-        toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ thanh toán.', {
+        toast.success('🎊 Đặt hàng thành công! Đang chờ xác nhận.', {
           position: "top-center",
           autoClose: 5000,
         });
