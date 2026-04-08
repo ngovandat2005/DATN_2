@@ -29,14 +29,23 @@ import {
 
 const TRANG_THAI = [
   { value: -1, label: "Tất cả", color: "#1976d2", bg: "#e3f2fd", icon: <ReceiptIcon fontSize="small" /> },
-  { value: 0, label: "Chờ xác nhận", color: "#ff9800", bg: "#fff3e0", icon: <AccessTimeIcon fontSize="small" /> },
-  { value: 1, label: "Đã xác nhận", color: "#43b244", bg: "#e8f5e9", icon: <CheckCircleIcon fontSize="small" /> },
-  { value: 2, label: "Đang chuẩn bị", color: "#1976d2", bg: "#e3f2fd", icon: <InventoryIcon fontSize="small" /> },
-  { value: 3, label: "Đang giao", color: "#1976d2", bg: "#e3f2fd", icon: <LocalShippingIcon fontSize="small" /> },
-  { value: 4, label: "Hoàn thành", color: "#009688", bg: "#e0f2f1", icon: <CheckCircleIcon fontSize="small" /> },
+  { value: 0, label: "Chờ thanh toán", color: "#ff9800", bg: "#fff3e0", icon: <AccessTimeIcon fontSize="small" /> },
+  { value: 1, label: "Chờ vận chuyển", color: "#43b244", bg: "#e8f5e9", icon: <CheckCircleIcon fontSize="small" /> },
+  { value: "cho-nhan", label: "Chờ nhận", color: "#1976d2", bg: "#e3f2fd", icon: <LocalShippingIcon fontSize="small" /> },
   { value: 5, label: "Đã hủy", color: "#e53935", bg: "#ffebee", icon: <CancelIcon fontSize="small" /> },
-  { value: 7, label: "Giao thất bại", color: "#9c27b0", bg: "#f3e5f5", icon: <ErrorOutlineIcon fontSize="small" /> },
 ];
+
+const GET_STATUS_INFO = (value) => {
+  switch (value) {
+    case 0: return { label: "Chờ thanh toán", color: "#ff9800", icon: <AccessTimeIcon fontSize="small" /> };
+    case 1: return { label: "Chờ vận chuyển", color: "#43b244", icon: <CheckCircleIcon fontSize="small" /> };
+    case 2:
+    case 3:
+    case 4: return { label: "Chờ nhận", color: "#1976d2", icon: <LocalShippingIcon fontSize="small" /> };
+    case 5: return { label: "Đã hủy", color: "#e53935", icon: <CancelIcon fontSize="small" /> };
+    default: return { label: "Không xác định", color: "#757575", icon: <ErrorOutlineIcon fontSize="small" /> };
+  }
+};
 
 const OrderHistory = () => {
   const theme = useTheme();
@@ -59,21 +68,25 @@ const OrderHistory = () => {
       const customerId = localStorage.getItem("customerId") || localStorage.getItem("userId") || 1;
 
       let url = `http://localhost:8080/api/donhang/khach/${customerId}`;
-      if (filterStatus !== -1) {
+      if (filterStatus !== -1 && filterStatus !== "cho-nhan") {
         url = `http://localhost:8080/api/donhang/khach/${customerId}/trangthai/${filterStatus}`;
       }
 
       const response = await axios.get(url);
       let data = response.data || [];
-      
+
+      if (filterStatus === "cho-nhan") {
+        data = data.filter(o => [2, 3, 4].includes(o.trangThai));
+      }
+
       // Sắp xếp ID giảm dần
       data.sort((a, b) => b.id - a.id);
 
       // Filter theo search
       if (searchText.trim()) {
         const s = searchText.toLowerCase();
-        data = data.filter(o => 
-          o.id.toString().includes(s) || 
+        data = data.filter(o =>
+          o.id.toString().includes(s) ||
           (o.tenNguoiNhan && o.tenNguoiNhan.toLowerCase().includes(s))
         );
       }
@@ -88,7 +101,7 @@ const OrderHistory = () => {
   };
 
   const totalAmount = orders.reduce((sum, o) => sum + (o.tongTien || 0), 0);
-  const pendingCount = orders.filter(o => [0,1,2,3].includes(o.trangThai)).length;
+  const pendingCount = orders.filter(o => [0, 1, 2, 3].includes(o.trangThai)).length;
 
   return (
     <Box sx={{ bgcolor: "#f4f6f8", minHeight: "100vh", py: 4 }}>
@@ -172,12 +185,12 @@ const OrderHistory = () => {
         ) : (
           <Grid container spacing={2}>
             {orders.map(order => {
-              const status = TRANG_THAI.find(t => t.value === order.trangThai) || TRANG_THAI[1];
+              const status = GET_STATUS_INFO(order.trangThai);
               return (
                 <Grid item xs={12} key={order.id}>
-                  <Card 
-                    sx={{ 
-                      borderRadius: 2, 
+                  <Card
+                    sx={{
+                      borderRadius: 2,
                       cursor: 'pointer',
                       transition: '0.3s',
                       '&:hover': { boxShadow: 4, transform: 'translateY(-2px)' }
