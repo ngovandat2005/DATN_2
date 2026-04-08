@@ -71,6 +71,12 @@ export default function KhachHangPage() {
       key: 'ngaySinh',
       render: (value) => value ? new Date(value).toLocaleDateString('vi-VN') : ''
     },
+    {
+      title: 'Giới Tính',
+      dataIndex: 'gioiTinh',
+      key: 'gioiTinh',
+      render: value => value ? 'Nam' : 'Nữ'
+    },
     { title: 'Địa Chỉ', dataIndex: 'diaChi', key: 'diaChi' },
     {
       title: 'Hành Động',
@@ -105,26 +111,13 @@ export default function KhachHangPage() {
     form.setFieldsValue({
       ...customer,
       ngaySinh: customer.ngaySinh ? moment(customer.ngaySinh) : null,
+      gioiTinh: customer.gioiTinh === true || customer.gioiTinh === 1 ? 'Nam' : 'Nữ',
       trangThai: customer.trangThai ? 1 : 0,
     });
     showModal();
   };
 
-  const onFinish = async (values) => {
-    const actionText = editingCustomer ? "Cập nhật" : "Thêm mới";
-    const result = await Swal.fire({
-      title: `Xác nhận ${actionText.toLowerCase()} khách hàng?`,
-      text: "Vui lòng kiểm tra kỹ thông tin khách hàng trước khi xác nhận.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
+  const onFinish = (values) => {
     // Map giá trị đúng với backend
     const dataSend = {
       ...values,
@@ -132,6 +125,7 @@ export default function KhachHangPage() {
       email: values.email,
       soDienThoai: values.soDienThoai,
       ngaySinh: values.ngaySinh ? values.ngaySinh.toISOString() : null,
+      gioiTinh: values.gioiTinh === 'Nam' ? true : false,
       diaChi: values.diaChi,
       trangThai: values.trangThai === 1 ? true : false,
       maThongBao: null,
@@ -165,7 +159,7 @@ export default function KhachHangPage() {
         })
         .catch(error => {
           Swal.fire({
-            icon: 'error',
+            icon: 'success',
             title: 'Cập nhật thất bại',
             toast: true,
             position: 'top-end',
@@ -240,7 +234,7 @@ export default function KhachHangPage() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ trangThai: 1 }}
+          initialValues={{ gioiTinh: 'Nam', trangThai: 1 }}
         >
           {editingCustomer && (
             <Form.Item name="id" label="ID">
@@ -274,6 +268,16 @@ export default function KhachHangPage() {
             rules={[{ required: true, message: 'Vui lòng chọn Ngày Sinh!' }]}
           >
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" prefix={<CalendarOutlined />} />
+          </Form.Item>
+          <Form.Item
+            name="gioiTinh"
+            label="Giới Tính"
+            rules={[{ required: true, message: 'Vui lòng chọn Giới Tính!' }]}
+          >
+            <Select prefix={<QuestionCircleOutlined />} placeholder="Chọn Giới Tính">
+              <Option value="Nam">Nam</Option>
+              <Option value="Nữ">Nữ</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="diaChi"

@@ -20,7 +20,7 @@ export default function DiaChiPage() {
   //     Tinh: 'TP. Hồ Chí Minh',
   //     Quan: 'Quận 1',
   //     Phuong: 'Bến Nghé',
-  //     DiaChiCuThe: 'Số 10, Ngõ 20, Ba Đình, Hà Nội',
+  //     DiaChiCuThe: '123 Đường Lê Lợi',
   //     TrangThai: 'Đang hoạt động',
   //   },
   //   {

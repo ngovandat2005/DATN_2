@@ -4,36 +4,50 @@ import com.example.backend.entity.SanPham;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
-public interface SanPhamInterface extends JpaRepository<SanPham, Integer> {
+public interface SanPhamInterface extends JpaRepository<SanPham,Integer> {
 
-    // 0. Lấy tất cả sản phẩm đang kinh doanh
+    // Lấy sản phẩm theo trạng thái
     List<SanPham> findAllByTrangThai(Integer trangThai);
 
-    // 2. Tìm kiếm theo tên (thuần)
+    // Tìm theo tên sản phẩm
     Optional<SanPham> findByTenSanPhamIgnoreCase(String tenSanPham);
 
-    // 3. Hệ thống lọc sản phẩm Mega
+    // Tìm theo full điều kiện
+    List<SanPham> findByTenSanPhamAndDanhMuc_IdAndThuongHieu_IdAndChatLieu_IdAndXuatXu_Id(
+            String tenSanPham,
+            Integer idDanhMuc,
+            Integer idThuongHieu,
+            Integer idChatLieu,
+            Integer idXuatXu
+    );
+
+    // Tìm theo danh mục + thương hiệu + chất liệu + xuất xứ
+    List<SanPham> findByDanhMuc_IdAndThuongHieu_IdAndChatLieu_IdAndXuatXu_Id(
+            Integer idDanhMuc,
+            Integer idThuongHieu,
+            Integer idChatLieu,
+            Integer idXuatXu
+    );
+
+    // Filter linh hoạt
     @Query("""
         SELECT s FROM SanPham s
         WHERE (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
           AND (:idThuongHieu IS NULL OR s.thuongHieu.id = :idThuongHieu)
-          AND (:search IS NULL OR s.tenSanPham LIKE %:search% OR s.ma LIKE %:search%)
-          AND (s.trangThai = 1)
+          AND (:idChatLieu IS NULL OR s.chatLieu.id = :idChatLieu)
+          AND (:idXuatXu IS NULL OR s.xuatXu.id = :idXuatXu)
+          AND (:trangThai IS NULL OR s.trangThai = :trangThai)
     """)
-    List<SanPham> filterProducts(
-        @Param("idDanhMuc") Integer idDanhMuc,
-        @Param("idThuongHieu") Integer idThuongHieu,
-        @Param("search") String search
+    List<SanPham> filterSanPham(
+            @Param("idDanhMuc") Integer idDanhMuc,
+            @Param("idThuongHieu") Integer idThuongHieu,
+            @Param("idChatLieu") Integer idChatLieu,
+            @Param("idXuatXu") Integer idXuatXu,
+            @Param("trangThai") Integer trangThai
     );
 
-    // 4. Lấy sản phẩm mới nhất cho trang chủ
-    @Query("""
-        SELECT s FROM SanPham s
-        WHERE s.trangThai = 1 
-        ORDER BY s.id DESC
-    """)
-    List<SanPham> findFeaturedProducts();
 }

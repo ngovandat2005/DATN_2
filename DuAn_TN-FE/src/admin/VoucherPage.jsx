@@ -16,7 +16,7 @@ export default function VoucherPage() {
   const [vouchers, setVouchers] = useState([]);
   const [filteredVouchers, setFilteredVouchers] = useState([]);
   const [selectedVoucherType, setSelectedVoucherType] = useState('Giảm giá %');
-
+  
   // ✅ THÊM: State cho tìm kiếm và log
   const [searchText, setSearchText] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -90,19 +90,19 @@ export default function VoucherPage() {
     console.log('📊 Vouchers gốc:', vouchers.length);
     console.log('🔎 Search text:', searchText);
     console.log('🏷️ Selected type:', selectedType);
-
+    
     // ✅ Nếu không có filter, hiển thị tất cả voucher
     if (!searchText && !selectedType) {
       console.log('✅ Không có filter, hiển thị tất cả voucher');
       setFilteredVouchers(vouchers);
       return;
     }
-
+    
     let filtered = [...vouchers];
 
     // Log theo text tìm kiếm (tên hoặc mã voucher)
     if (searchText) {
-      filtered = filtered.filter(voucher =>
+      filtered = filtered.filter(voucher => 
         voucher.tenVoucher?.toLowerCase().includes(searchText.toLowerCase()) ||
         voucher.maVoucher?.toLowerCase().includes(searchText.toLowerCase())
       );
@@ -141,10 +141,10 @@ export default function VoucherPage() {
   };
 
   const columns = [
-    {
-      title: 'STT',
+    { 
+      title: 'STT', 
       key: 'stt',
-      render: (text, record, index) => index + 1
+      render: (text, record, index) => index + 1 
     },
     { title: 'Mã Voucher', dataIndex: 'maVoucher', key: 'maVoucher' },
     { title: 'Tên Voucher', dataIndex: 'tenVoucher', key: 'tenVoucher' },
@@ -156,7 +156,7 @@ export default function VoucherPage() {
     { title: 'Ngày Bắt Đầu', dataIndex: 'ngayBatDau', key: 'ngayBatDau', render: (value) => value ? moment(value).format('DD/MM/YYYY') : '' },
     { title: 'Ngày Kết Thúc', dataIndex: 'ngayKetThuc', key: 'ngayKetThuc', render: (value) => value ? moment(value).format('DD/MM/YYYY') : '' },
     { title: 'Trạng Thái', dataIndex: 'trangThai', key: 'trangThai', render: (value) => value === 1 ? <span style={{ color: "green" }}>Đang hoạt động</span> : <span style={{ color: "red" }}>Hết Hạn</span> },
-
+    
     {
       title: 'Hành Động',
       key: 'actions',
@@ -164,7 +164,7 @@ export default function VoucherPage() {
         <Space size="middle">
           <Button type="primary" onClick={() => handleEdit(record)}>Sửa</Button>
           {/* <Button type="danger" onClick={() =>handleDeleteVoucher(record.id)}>Xóa</Button> */}
-
+          
         </Space>
       ),
     },
@@ -199,21 +199,7 @@ export default function VoucherPage() {
     showModal();
   };
 
-  const onFinish = async (values) => {
-    const actionText = editingVoucher ? "Cập nhật" : "Thêm mới";
-    const result = await Swal.fire({
-      title: `Xác nhận ${actionText.toLowerCase()} voucher?`,
-      text: "Vui lòng kiểm tra kỹ thông tin voucher trước khi xác nhận.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
+  const onFinish = (values) => {
     // ✅ SỬA: Bỏ validation ở FE vì đã có ở BE
     // Đảm bảo đúng định dạng dữ liệu gửi lên
     const dataSend = {
@@ -260,7 +246,7 @@ export default function VoucherPage() {
             // Nếu có response từ server
             errorMessage = error.response.data || error.response.statusText;
           }
-
+          
           Swal.fire({
             icon: 'error',
             title: 'Cập nhật thất bại',
@@ -308,7 +294,7 @@ export default function VoucherPage() {
             // Nếu có response từ server
             errorMessage = error.response.data || error.response.statusText;
           }
-
+          
           Swal.fire({
             icon: 'error',
             title: 'Thêm thất bại',
@@ -326,54 +312,54 @@ export default function VoucherPage() {
   };
 
   const handleDeleteVoucher = (id) => {
-    Swal.fire({
-      title: 'Bạn có chắc chắn muốn xóa vĩnh viễn voucher này không?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Có',
-      cancelButtonText: 'Không',
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`http://localhost:8080/api/voucher/delete/${id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
+  Swal.fire({
+    title: 'Bạn có chắc chắn muốn xóa vĩnh viễn voucher này không?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Có',
+    cancelButtonText: 'Không',
+    reverseButtons: true,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`http://localhost:8080/api/voucher/delete/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
+        .then(async response => {
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Có lỗi xảy ra!');
+          }
+          return response.text();
         })
-          .then(async response => {
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(errorText || 'Có lỗi xảy ra!');
-            }
-            return response.text();
-          })
-          .then(msg => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Xóa voucher thành công!',
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 1500,
-              width: 250
-            });
-            // Reload lại danh sách voucher
-            fetchVouchers(); // ✅ SỬA: Sử dụng function đã tạo
-          })
-          .catch(error => {
-            Swal.fire({
-              icon: 'error',
-              title: 'Xóa voucher thất bại',
-              text: error.message || 'Vui lòng thử lại!',
-              toast: true,
-              position: 'top-end',
-              showConfirmButton: false,
-              timer: 3000,
-              width: 300
-            });
+        .then(msg => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Xóa voucher thành công!',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 1500,
+            width: 250
           });
-      }
-    });
-  };
+          // Reload lại danh sách voucher
+          fetchVouchers(); // ✅ SỬA: Sử dụng function đã tạo
+        })
+        .catch(error => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Xóa voucher thất bại',
+            text: error.message || 'Vui lòng thử lại!',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            width: 300
+          });
+        });
+    }
+  });
+};
 
   return (
     <div className="admin-content-page">
@@ -413,10 +399,10 @@ export default function VoucherPage() {
             </Select>
           </Col>
           <Col span={4}>
-            <Button
-              type="default"
-              onClick={resetFilters}
-              loading={loading}
+            <Button 
+              type="default" 
+              onClick={resetFilters} 
+              loading={loading} 
               icon={<ReloadOutlined />}
               style={{ width: '100%' }}
             >
@@ -431,11 +417,11 @@ export default function VoucherPage() {
           </Col>
         </Row>
       </Card>
-      <Table
-        dataSource={filteredVouchers}
-        columns={columns}
-        rowKey="id"
-        pagination={false}
+      <Table 
+        dataSource={filteredVouchers} 
+        columns={columns} 
+        rowKey="id" 
+        pagination={false} 
         loading={loading}
       />
 
@@ -475,8 +461,8 @@ export default function VoucherPage() {
             label="Loại Voucher"
             rules={[{ required: true, message: 'Vui lòng chọn Loại Voucher!' }]}
           >
-            <Select
-              prefix={<TagOutlined />}
+            <Select 
+              prefix={<TagOutlined />} 
               placeholder="Chọn Loại Voucher"
               onChange={(value) => setSelectedVoucherType(value)}
             >
@@ -506,9 +492,9 @@ export default function VoucherPage() {
                 validator(_, value) {
                   const loaiVoucher = getFieldValue('loaiVoucher');
                   const donToiThieu = getFieldValue('donToiThieu');
-
+                  
                   if (!value) return Promise.resolve();
-
+                  
                   if (loaiVoucher === 'Giảm giá số tiền') {
                     if (donToiThieu && value > donToiThieu) {
                       return Promise.reject(new Error('Giá trị không được lớn hơn đơn tối thiểu!'));
@@ -523,14 +509,14 @@ export default function VoucherPage() {
               }),
             ]}
           >
-            <InputNumber
-              min={0}
+            <InputNumber 
+              min={0} 
               max={selectedVoucherType === 'Giảm giá %' ? 100 : undefined}
-              style={{ width: '100%' }}
-              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => value.replace(/\s?|(,*)/g, '')}
-              prefix={<PoundOutlined />}
-              placeholder={selectedVoucherType === 'Giảm giá %' ? 'Nhập % (1-100)' : 'Nhập số tiền'}
+              style={{ width: '100%' }} 
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} 
+              parser={value => value.replace(/\s?|(,*)/g, '')} 
+              prefix={<PoundOutlined />} 
+              placeholder={selectedVoucherType === 'Giảm giá %' ? 'Nhập % (1-100)' : 'Nhập số tiền'} 
             />
           </Form.Item>
           <Form.Item
@@ -540,16 +526,16 @@ export default function VoucherPage() {
           >
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" prefix={<CalendarOutlined />} />
           </Form.Item>
-          <Form.Item
+                    <Form.Item
             name="ngayKetThuc"
             label="Ngày Kết Thúc"
             rules={[{ required: true, message: 'Vui lòng chọn Ngày Kết Thúc!' }]}
           >
             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" prefix={<CalendarOutlined />} />
           </Form.Item>
-
-
-
+          
+         
+          
           <Form.Item
             name="donToiThieu"
             label="Đơn Tối Thiểu"

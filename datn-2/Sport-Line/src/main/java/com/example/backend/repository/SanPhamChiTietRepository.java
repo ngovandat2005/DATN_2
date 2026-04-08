@@ -5,7 +5,9 @@ import com.example.backend.dto.SPCTDTO;
 import com.example.backend.dto.SanPhamDonHangResponse;
 import com.example.backend.entity.SanPhamChiTiet;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -29,14 +31,12 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                     spct.giaBanGiamGia,
                     kt.tenKichThuoc,
                     ms.tenMauSac,
-                    km.id,
-                    km.tenKhuyenMai 
+                    spct.khuyenMai.id 
                 )
                 FROM SanPhamChiTiet spct
                 JOIN spct.sanPham sp
                 JOIN spct.kichThuoc kt
                 JOIN spct.mauSac ms
-                LEFT JOIN spct.khuyenMai km
                 WHERE sp.trangThai = 1
                           And spct.trangThai = 1
             """
@@ -55,14 +55,12 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                 spct.giaBanGiamGia,
                 kt.tenKichThuoc,
                 ms.tenMauSac,
-                km.id,
-                km.tenKhuyenMai
+                spct.khuyenMai.id
             )
             FROM SanPhamChiTiet spct
             JOIN spct.sanPham sp
             JOIN spct.kichThuoc kt
             JOIN spct.mauSac ms
-            LEFT JOIN spct.khuyenMai km
                     WHERE spct.id = :id
             """
     )
@@ -100,14 +98,12 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
                 spct.giaBanGiamGia,
                 kt.tenKichThuoc,
                 ms.tenMauSac,
-                km.id,
-                km.tenKhuyenMai 
+                spct.khuyenMai.id 
             )
             FROM SanPhamChiTiet spct
             JOIN spct.sanPham sp
             JOIN spct.kichThuoc kt
             JOIN spct.mauSac ms
-            LEFT JOIN spct.khuyenMai km
             WHERE LOWER(sp.tenSanPham) LIKE LOWER(CONCAT('%', :keyword, '%'))
             """
     )
@@ -141,7 +137,13 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
 
 
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE SanPhamChiTiet spct SET spct.soLuong = spct.soLuong + :soLuongTra WHERE spct.id = :id")
+    void updateSoLuongSauKhiTra(@Param("id") Integer id, @Param("soLuongTra") Integer soLuongTra);
 
-
-
+    @Modifying
+    @Transactional // Cần thiết cho các thao tác UPDATE/DELETE
+    @Query("UPDATE SanPhamChiTiet s SET s.soLuong = s.soLuong + :soLuong WHERE s.id = :id")
+    void updateStock(@Param("id") Integer id, @Param("soLuong") Integer soLuong);
 }

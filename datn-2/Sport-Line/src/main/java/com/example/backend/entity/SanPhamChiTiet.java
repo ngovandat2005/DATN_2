@@ -1,10 +1,9 @@
 package com.example.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.*;
+import java.time.LocalDateTime;
 import java.sql.Date;
 
 @Getter
@@ -22,27 +21,30 @@ public class SanPhamChiTiet {
     @Column(name = "SoLuong")
     private Integer soLuong;
 
-    @Column(name = "Ma") // ✅ THÊM: Mã biến thể (SKU)
+    @Column(name = "Ma")
     private String ma;
 
     @Column(name = "NgaySanXuat")
     private Date ngaySanXuat;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "IdSanPham", referencedColumnName = "Id")
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("sanPhamChiTiets")
+    @ManyToOne
+    @JoinColumn(name = "IdSanPham")
+    @JsonIgnoreProperties({"sanPhamChiTiets", "danhGias", "hibernateLazyInitializer", "handler"})
     private SanPham sanPham;
 
     @ManyToOne
-    @JoinColumn(name = "IdKichThuoc", referencedColumnName = "Id")
+    @JoinColumn(name = "IdKichThuoc")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private KichThuoc kichThuoc;
 
     @ManyToOne
-    @JoinColumn(name = "IdMauSac", referencedColumnName = "Id")
+    @JoinColumn(name = "IdMauSac")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MauSac mauSac;
 
     @ManyToOne
-    @JoinColumn(name = "IdKhuyenMai", referencedColumnName = "Id")
+    @JoinColumn(name = "IdKhuyenMai")
+    @JsonIgnoreProperties({"sanPhamChiTiets", "hibernateLazyInitializer", "handler"})
     private KhuyenMai khuyenMai;
 
     @Column(name = "NgayTao")
@@ -56,20 +58,4 @@ public class SanPhamChiTiet {
 
     @Column(name = "GiaBanGiamGia")
     private Double giaBanGiamGia;
-
-    // Getter thủ công để fallback về giaBan nếu giaBanGiamGia bị null
-    public Double getGiaBanGiamGia() {
-        if (giaBanGiamGia == null || giaBanGiamGia <= 0) {
-            return giaBan;
-        }
-        return giaBanGiamGia;
-    }
-
-    @PrePersist
-    @PreUpdate
-    private void ensureGiaBanGiamGia() {
-        if (giaBanGiamGia == null || giaBanGiamGia <= 0) {
-            giaBanGiamGia = giaBan;
-        }
-    }
 }

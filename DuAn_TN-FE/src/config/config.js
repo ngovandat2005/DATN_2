@@ -1,16 +1,14 @@
 // File cấu hình cho API endpoints và OAuth settings
 const config = {
   // Sử dụng URL tương đối khi có proxy trong development
-  API_BASE_URL: process.env.NODE_ENV === 'development' ? '' : (process.env.REACT_APP_API_URL || 'http://localhost:8080'),
-  baseUrl: 'http://localhost:8080/', // ✅ THÊM: Đường dẫn gốc cho ảnh Backend
-  
+  API_BASE_URL: 'http://localhost:8080',
   // Các cấu hình khác
   APP_NAME: 'Shoe Store',
   VERSION: '1.0.0',
-  
+
   // Cấu hình cho development
   IS_DEV: process.env.NODE_ENV === 'development',
-  
+
   // API Endpoints
   ENDPOINTS: {
     LOGIN: '/api/auth/dang-nhap',
@@ -29,7 +27,7 @@ const config = {
       USERS: '/api/admin/nguoi-dung'
     }
   },
-  
+
   // Helper function để tạo URL API
   getApiUrl: (endpoint) => {
     const baseUrl = config.API_BASE_URL;

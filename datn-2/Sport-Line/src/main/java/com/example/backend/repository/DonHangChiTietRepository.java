@@ -40,7 +40,7 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet,I
 
     List<DonHangChiTiet> findByDonHang_Id(Integer donHangId);
 
-    // Huy: Thống kê sản phẩm bán ra theo khoảng ngày
+    // Thống kê Queries
     @Query("SELECT COALESCE(SUM(dhct.soLuong), 0) FROM DonHangChiTiet dhct JOIN dhct.donHang dh WHERE dh.trangThai IN (1, 4) AND dh.ngayMua BETWEEN :startDate AND :endDate")
     Integer sumProductsSoldByDateRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 

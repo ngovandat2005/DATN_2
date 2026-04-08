@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Checkbox, Button, Space, Typography, Tag, Row, Col, Tooltip, message } from 'antd';
+import { Card, Checkbox, Button, message, Space, Typography, Tag, Row, Col, Modal } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -23,7 +23,12 @@ const ApDungKhuyenMaiPage = () => {
   const [filterKichThuoc, setFilterKichThuoc] = useState('');
   const [errorState, setErrorState] = useState(null);
 
-  const fetchPromotionDetails = useCallback(async () => {
+  useEffect(() => {
+    fetchPromotionDetails();
+    fetchSPCTList();
+  }, [khuyenMaiId]);
+
+  const fetchPromotionDetails = async () => {
     try {
       const response = await axios.get(`http://localhost:8080/api/khuyenmai/${khuyenMaiId}`);
       setPromotion(response.data);
@@ -39,9 +44,9 @@ const ApDungKhuyenMaiPage = () => {
         width: 250
       });
     }
-  }, [khuyenMaiId]);
+  };
 
-  const fetchSPCTList = useCallback(async () => {
+  const fetchSPCTList = async () => {
     setLoading(true);
     try {
       // Sử dụng API mới để lấy sản phẩm có thể áp dụng khuyến mãi
@@ -53,19 +58,13 @@ const ApDungKhuyenMaiPage = () => {
       }
 
       setListSPCT(response.data);
-      console.log("📥 Danh sách SPCT từ Backend:");
-      response.data.forEach(item => {
-        if (item.idKhuyenMai) {
-          console.log(`- SP ID ${item.id}: ${item.tenSanPham} | KM ID: ${item.idKhuyenMai} | Tên KM: ${item.tenKhuyenMai}`);
-        }
-      });
 
       // Tự động tích các sản phẩm đã áp dụng khuyến mãi này
       if (Array.isArray(response.data)) {
         const selectedIds = response.data
           .filter(spct => {
             const promoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-            return promoId && promoId == khuyenMaiId;
+            return promoId && parseInt(promoId) === parseInt(khuyenMaiId);
           })
           .map(spct => spct.id);
         setSelectedSPCTIds(selectedIds);
@@ -87,12 +86,7 @@ const ApDungKhuyenMaiPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [khuyenMaiId]);
-
-  useEffect(() => {
-    fetchPromotionDetails();
-    fetchSPCTList();
-  }, [fetchPromotionDetails, fetchSPCTList]);
+  };
 
   const handleApplyKhuyenMai = async () => {
     if (!khuyenMaiId || selectedSPCTIds.length === 0) {
@@ -106,61 +100,6 @@ const ApDungKhuyenMaiPage = () => {
         width: 250
       });
       return;
-    }
-
-    // ✅ KIỂM TRA: Sản phẩm đã có khuyến mãi khác đang hoạt động
-    const conflictProducts = listSPCT.filter(spct => {
-      // Sử dụng == để so sánh ID (tránh lỗi kiểu chuỗi vs số)
-      const isSelected = selectedSPCTIds.some(id => id == spct.id);
-      if (!isSelected) return false;
-      
-      const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-      // Khuyến mãi khác đang áp dụng (không phải khuyenMaiId hiện tại)
-      if (spPromoId && spPromoId != khuyenMaiId) {
-        return true; // Có xung đột
-      }
-      return false;
-    });
-
-    if (conflictProducts.length > 0) {
-      const productListHtml = conflictProducts.map(p => {
-        const tenKm = p.tenKhuyenMai || p.khuyenMai?.tenKhuyenMai || 'Khuyến mãi khác';
-        return `<div style="text-align: left; margin-bottom: 5px; font-size: 13px;">• <b>${getProductName(p)}</b> (<span style="color: #f5222d;">${tenKm}</span>)</div>`;
-      }).join('');
-
-      const overrideConfirm = await Swal.fire({
-        title: 'Xung đột khuyến mãi!',
-        html: `
-          <div style="margin-bottom: 15px; text-align: left;">Có <b>${conflictProducts.length}</b> sản phẩm đang áp dụng khuyến mãi khác vẫn còn hiệu lực:</div>
-          <div style="max-height: 200px; overflow-y: auto; background: #fff2f0; padding: 12px; border-radius: 8px; border: 1px solid #ffccc7;">
-            ${productListHtml}
-          </div>
-          <div style="margin-top: 15px; font-weight: 500; color: #333;">Bạn có chắc chắn muốn thay thế bằng khuyến mãi mới này không?</div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ff4d4f',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Xác nhận thay thế',
-        cancelButtonText: 'Hủy',
-        width: 500
-      });
-
-      if (!overrideConfirm.isConfirmed) return;
-    } else {
-      // Xác nhận áp dụng bình thường nếu không có xung đột
-      const confirmResult = await Swal.fire({
-        title: 'Xác nhận áp dụng khuyến mãi?',
-        text: `Bạn có chắc chắn muốn áp dụng khuyến mãi này cho ${selectedSPCTIds.length} sản phẩm đã chọn?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#1677ff',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Xác nhận áp dụng',
-        cancelButtonText: 'Hủy'
-      });
-
-      if (!confirmResult.isConfirmed) return;
     }
 
     try {
@@ -206,10 +145,9 @@ const ApDungKhuyenMaiPage = () => {
 
   const handleRemovePromotion = async () => {
     // Lấy danh sách sản phẩm đã được áp dụng khuyến mãi này
-    const appliedProducts = listSPCT.filter(spct => {
-      const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-      return spPromoId == khuyenMaiId;
-    });
+    const appliedProducts = listSPCT.filter(spct =>
+      (spct.khuyenMai && spct.khuyenMai.id === parseInt(khuyenMaiId)) || spct.idKhuyenMai === parseInt(khuyenMaiId)
+    );
 
     if (appliedProducts.length === 0) {
       Swal.fire({
@@ -223,20 +161,6 @@ const ApDungKhuyenMaiPage = () => {
       });
       return;
     }
-
-    // Bổ sung xác nhận bỏ áp dụng
-    const confirmResult = await Swal.fire({
-      title: 'Xác nhận gỡ khuyến mãi?',
-      text: `Bạn có chắc chắn muốn gỡ khuyến mãi này khỏi ${appliedProducts.length} sản phẩm đang áp dụng?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ff4d4f',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận gỡ',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!confirmResult.isConfirmed) return;
 
     try {
       setLoading(true);
@@ -318,7 +242,7 @@ const ApDungKhuyenMaiPage = () => {
       if (!img) return '/logo192.png';
       if (img.startsWith('http')) return img;
       if (img.startsWith('/')) return 'http://localhost:8080' + img;
-      return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+      return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
     }
 
     // Nếu là chuỗi nhiều ảnh, lấy ảnh đầu
@@ -327,7 +251,7 @@ const ApDungKhuyenMaiPage = () => {
       if (!img) return '/logo192.png';
       if (img.startsWith('http')) return img;
       if (img.startsWith('/')) return 'http://localhost:8080' + img;
-      return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+      return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
     }
 
     // Nếu là chuỗi đơn
@@ -336,7 +260,7 @@ const ApDungKhuyenMaiPage = () => {
       if (!img) return '/logo192.png';
       if (img.startsWith('http')) return img;
       if (img.startsWith('/')) return 'http://localhost:8080' + img;
-      return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+      return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
     }
 
     return '/logo192.png';
@@ -600,44 +524,19 @@ const ApDungKhuyenMaiPage = () => {
                               </Text>
                             )}
 
-                            {/* Badge khuyến mãi hiện tại đang xét */}
+                            {/* Badge khuyến mãi */}
                             {isSelected && promotion && (
-                              <Tag 
-                                color="red" 
-                                style={{ 
-                                  fontSize: 11, 
+                              <Tag
+                                color="red"
+                                style={{
+                                  fontSize: 11,
                                   padding: '2px 6px',
                                   margin: 0
                                 }}
                               >
-                                Mới: -{promotion.giaTri}%
+                                -{promotion.giaTri}%
                               </Tag>
                             )}
-
-                            {/* Badge thông báo nếu sản phẩm đã có khuyến mãi KHÁC */}
-                            {(() => {
-                              const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-                              if (spPromoId && spPromoId != khuyenMaiId) {
-                                // Lấy tên khuyến mãi từ các trường khả thi (ưu tiên trường mới nhất tenKhuyenMai)
-                                const tenKm = spct.tenKhuyenMai || spct.khuyenMai?.tenKhuyenMai;
-                                return (
-                                  <Tooltip title={`Sản phẩm này đang được áp dụng chương trình: ${tenKm || 'Khuyến mãi khác'}`}>
-                                    <Tag 
-                                      color="orange" 
-                                      style={{ fontSize: 11, margin: 0, cursor: 'pointer', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        message.info(`Chương trình: ${tenKm || 'Khuyến mãi khác'}`);
-                                      }}
-                                    >
-                                      {tenKm ? `KM: ${tenKm}` : 'Đang có KM khác'}
-                                    </Tag>
-                                  </Tooltip>
-                                );
-                              }
-                              return null;
-                            })()}
                           </div>
                         </div>
                       </div>

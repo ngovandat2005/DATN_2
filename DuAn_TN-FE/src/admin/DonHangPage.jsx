@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
-import { Table, Modal, Button, Typography, Input, Tabs, Tag, message } from 'antd';
 import mockOrdersOnline from './mockOrdersOnline';
 
 const TRANG_THAI = [
@@ -68,7 +66,7 @@ const DonHangPage = () => {
 
   // Hàm log và tìm kiếm hóa đơn online
   const filteredOrdersOnline = ordersOnline.filter(order => {
-    // Log theo trạng thái nếu filterStatus khác ALL
+    // Lọc theo trạng thái nếu filterStatus khác ALL
     if (filterStatus !== -1 && Number(order.trangThai) !== Number(filterStatus)) return false;
     // Tìm kiếm theo mã đơn hoặc tên khách hàng
     const search = searchText.trim().toLowerCase();
@@ -388,16 +386,7 @@ const DonHangPage = () => {
   // Hàm xử lý hủy đơn hàng online
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Cần nhập lý do',
-        text: 'Vui lòng nhập lý do hủy đơn hàng!',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1800,
-        width: 300
-      });
+      alert('Vui lòng nhập lý do hủy đơn hàng!');
       return;
     }
 
@@ -423,27 +412,9 @@ const DonHangPage = () => {
       // Refresh lại danh sách đơn hàng
       fetchOrdersOnline(Number(filterStatus));
       
-      Swal.fire({
-        icon: 'success',
-        title: 'Thành công!',
-        text: 'Đã hủy đơn hàng thành công!',
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-        width: 300
-      });
+      alert('Đã hủy đơn hàng thành công!');
     } catch (error) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Lỗi!',
-        text: error.message,
-        timer: 3000,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end',
-        width: 350
-      });
+      alert('Lỗi: ' + error.message);
     } finally {
       setIsCancelling(false);
     }
@@ -607,7 +578,7 @@ const DonHangPage = () => {
           }}
         />
         
-        {/* Log từ ngày */}
+        {/* Lọc từ ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Từ ngày:</label>
           <input
@@ -623,7 +594,7 @@ const DonHangPage = () => {
           />
         </div>
         
-        {/* Log đến ngày */}
+        {/* Lọc đến ngày */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <label style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>Đến ngày:</label>
           <input
@@ -892,8 +863,8 @@ const DonHangPage = () => {
               <td style={{ padding: 12 }}>{order.tenNhanVien || '-'}</td>
               <td style={{ padding: 12 }}>{getTenKhachHang(order.idkhachHang)}</td>
               <td style={{ padding: 12 }}>{getSdtKhachHang(order.idkhachHang)}</td>
-              <td style={{ padding: 12 }}>{order.ngayTao || order.ngayMua || '-'}</td>
-              <td style={{ padding: 12 }}>{order.ngayMua || order.ngayTao || '-'}</td>
+              <td style={{ padding: 12 }}>{order.ngayTao || '-'}</td>
+              <td style={{ padding: 12 }}>{order.ngayMua || '-'}</td>
               <td style={{ padding: 12, color: '#1976d2', fontWeight: 700 }}>{order.tongTien?.toLocaleString()} đ</td>
               <td style={{ padding: 12 }}>
                 <span style={{
@@ -1100,7 +1071,7 @@ const DonHangPage = () => {
                   <td style={{ padding: 12, textAlign: 'center' }}>{idx + 1}</td>
                   <td style={{ padding: 12, fontWeight: 700, color: '#1976d2' }}>{order.maDon}</td>
                   <td style={{ padding: 12 }}>{order.tenNguoiNhan || 'Chưa có thông tin'}</td>
-                  <td style={{ padding: 12 }}>{order.ngayTao || order.ngayMua || '-'}</td>
+                  <td style={{ padding: 12 }}>{order.ngayTao}</td>
                   <td style={{ padding: 12 }}>{order.soDienThoaiGiaoHang|| '---'}</td>
                   <td style={{ padding: 12, fontWeight: 700 }}>{order.thanhTien?.toLocaleString()}đ</td>
                   <td style={{ padding: 12 }}>

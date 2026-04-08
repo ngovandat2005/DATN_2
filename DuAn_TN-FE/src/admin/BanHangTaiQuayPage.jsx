@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/AdminPanel.css';
-import config from '../config/config';
 
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -143,9 +142,9 @@ const BanHangTaiQuayPage = () => {
     if (!img) return '/logo192.png';
     if (img.startsWith('http')) return img;
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
-
+    
     // Sử dụng API endpoint thay vì static resource
-    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
+    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
   };
 
   // Thêm state cho tổng tiền và tổng tiền giảm giá từ BE
@@ -374,7 +373,7 @@ const BanHangTaiQuayPage = () => {
           soLuongChange: quantityChange
         }),
       });
-
+      
       if (!updateStockRes.ok) {
         console.warn(`Không thể cập nhật tồn kho cho sản phẩm ${productId}`);
         return false;
@@ -421,14 +420,14 @@ const BanHangTaiQuayPage = () => {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('Lỗi khi thêm sản phẩm vào hóa đơn');
-
+      
       // Cập nhật số lượng tồn kho sản phẩm
       try {
         await updateProductStock(selectedProduct.id, -qty); // Giảm số lượng tồn kho
       } catch (stockError) {
         console.warn('Lỗi khi cập nhật tồn kho:', stockError);
       }
-
+      
       setShowQtyModal(false);
       await fetchCartFromBE(orderId);
       await fetchProductsFromBE(); // Cập nhật lại danh sách sản phẩm với số lượng tồn kho mới
@@ -464,7 +463,7 @@ const BanHangTaiQuayPage = () => {
       setEditQty(Number(cart[idx]?.quantity || 1));
       setEditError('');
       setShowEditModal(true);
-
+      
     }
   };
 
@@ -481,7 +480,7 @@ const BanHangTaiQuayPage = () => {
       // Tính số lượng thay đổi
       const oldQuantity = item.quantity;
       const quantityChange = editQty - oldQuantity;
-
+      
       // Cập nhật chi tiết đơn hàng
       const res = await fetch(`http://localhost:8080/api/donhangchitiet/update/${item.id}`, {
         method: 'PUT',
@@ -542,31 +541,31 @@ const BanHangTaiQuayPage = () => {
       try {
         const itemToRemove = cart[idx];
         const quantityToRestore = itemToRemove.quantity; // Số lượng cần hoàn lại
-
+        
         // Xóa chi tiết đơn hàng
         const res = await fetch(`http://localhost:8080/api/donhangchitiet/delete/${itemToRemove.id}`, {
           method: 'DELETE',
         });
         if (!res.ok) throw new Error('Lỗi khi xóa sản phẩm khỏi hóa đơn');
-
+        
         // Hoàn lại số lượng tồn kho sản phẩm
         try {
           await updateProductStock(itemToRemove.idSanPhamChiTiet, quantityToRestore); // Tăng lại số lượng đã bị giảm
         } catch (stockError) {
           console.warn('Lỗi khi cập nhật tồn kho:', stockError);
         }
-
+        
         await fetchCartFromBE(orderId);
         await fetchProductsFromBE(); // Cập nhật lại danh sách sản phẩm với số lượng tồn kho mới
         Swal.fire({
-          icon: 'success',
-          title: 'Xóa Sản Phẩm Thành Công',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 1500,
-          width: 250
-        });
+        icon: 'success',
+        title: 'Xóa Sản Phẩm Thành Công',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        width: 250
+      });
       } catch (err) {
         // Có thể hiện alert lỗi nếu muốn
         console.error('Lỗi khi xóa sản phẩm:', err);
@@ -642,7 +641,7 @@ const BanHangTaiQuayPage = () => {
     try {
       // Debug: Kiểm tra thông tin admin
       debugAdminInfo();
-
+      
       // Validate thông tin nhân viên
       const adminValidation = validateAdminForOrder();
       if (!adminValidation.success) {
@@ -651,18 +650,18 @@ const BanHangTaiQuayPage = () => {
       const idNhanVien = adminValidation.adminId;
 
       const now = new Date();
-      const orderData = {
+      const orderData = { 
         idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
-        loaiDonHang: 'Bán hàng tại quầy',
-        trangThai: 0,
+        loaiDonHang: 'Bán hàng tại quầy', 
+        trangThai: 0, 
         ngayTao: now.toISOString().slice(0, 10), // Format: YYYY-MM-DD cho LocalDate
         ngayMua: null // Để null, sẽ set khi thanh toán
       };
-
+      
       // Debug: Log order data
       console.log('Creating order with data:', orderData);
       console.log('Admin ID:', idNhanVien);
-
+      
       const res = await fetch('http://localhost:8080/api/donhang/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -757,32 +756,32 @@ const BanHangTaiQuayPage = () => {
       // Tạo hóa đơn với idKhachHang
       setOrderLoading(true);
       setOrderError('');
-
+      
       // Debug: Kiểm tra thông tin admin
       debugAdminInfo();
-
+      
       // Validate thông tin nhân viên
       const adminValidation = validateAdminForOrder();
       if (!adminValidation.success) {
         throw new Error(adminValidation.message);
       }
       const idNhanVien = adminValidation.adminId;
-
+      
       const now = new Date();
-      const orderData = {
-        idKhachHang: customerId,
+      const orderData = { 
+        idKhachHang: customerId, 
         idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
-        loaiDonHang: 'Bán hàng tại quầy',
+        loaiDonHang: 'Bán hàng tại quầy', 
         trangThai: 0,
         ngayTao: now.toISOString().slice(0, 10), // Format: YYYY-MM-DD cho LocalDate
         ngayMua: null // Để null, sẽ set khi thanh toán
       };
-
+      
       // Debug: Log order data
       console.log('Creating order with customer data:', orderData);
       console.log('Admin ID:', idNhanVien);
       console.log('Customer ID:', customerId);
-
+      
       const resOrder = await fetch('http://localhost:8080/api/donhang/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -827,22 +826,6 @@ const BanHangTaiQuayPage = () => {
   // Hàm xác nhận thanh toán (gọi API cập nhật tổng tiền và trạng thái)
   const handleConfirmPayment = async () => {
     if (!orderId) return;
-
-    // Bổ sung xác nhận thanh toán
-    const confirmResult = await Swal.fire({
-      title: 'Xác nhận thanh toán?',
-      text: `Tổng tiền thanh toán là ${orderTotal.toLocaleString()} đ. Bạn đã nhận đủ tiền từ khách hàng?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1976d2',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận thanh toán',
-      cancelButtonText: 'Quay lại'
-    });
-
-    if (!confirmResult.isConfirmed) return;
-
-    setOrderLoading(true); // Đảm bảo hiện loading
     try {
       const payload = {
         tongTien: orderTotal, // Sử dụng orderTotal thay vì total để bao gồm giảm giá voucher
@@ -880,14 +863,14 @@ const BanHangTaiQuayPage = () => {
       const orderData = await orderRes.json();
       const chiTietData = await chiTietRes.json();
       const spctData = await spctRes.json();
-
+      
       // Thêm thông tin khách hàng vào orderData
       const khachHang = customers.find(c => c.id === Number(orderData.idkhachHang));
       const orderDataWithCustomer = {
         ...orderData,
         customerName: khachHang ? khachHang.tenKhachHang : null
       };
-
+      
       setOrderInfo(orderDataWithCustomer);
       setChiTietList(chiTietData);
       setSpctList(spctData);
@@ -896,12 +879,6 @@ const BanHangTaiQuayPage = () => {
       resetAllStates();
     } catch (err) {
       setOrderError(err.message || 'Lỗi không xác định');
-      Swal.fire({
-        icon: 'error',
-        title: 'Thanh toán thất bại',
-        text: err.message,
-        confirmButtonColor: '#1976d2'
-      });
     } finally {
       setOrderLoading(false);
     }
@@ -920,22 +897,6 @@ const BanHangTaiQuayPage = () => {
   // Hàm xử lý khi xác nhận thanh toán chuyển khoản
   const handleQRPaymentConfirmed = async () => {
     if (!orderId) return;
-
-    // Bổ sung xác nhận thanh toán chuyển khoản
-    const confirmResult = await Swal.fire({
-      title: 'Đã nhận được tiền chuyển khoản?',
-      text: `Vui lòng xác nhận rằng bạn đã nhận được số tiền ${orderTotal.toLocaleString()} đ vào tài khoản hệ thống.`,
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonColor: '#1976d2',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Đã nhận, hoàn tất đơn',
-      cancelButtonText: 'Chưa nhận'
-    });
-
-    if (!confirmResult.isConfirmed) return;
-
-    setOrderLoading(true);
     try {
       const payload = {
         tongTien: orderTotal,
@@ -973,14 +934,14 @@ const BanHangTaiQuayPage = () => {
       const orderData = await orderRes.json();
       const chiTietData = await chiTietRes.json();
       const spctData = await spctRes.json();
-
+      
       // Thêm thông tin khách hàng vào orderData
       const khachHang = customers.find(c => c.id === Number(orderData.idkhachHang));
       const orderDataWithCustomer = {
         ...orderData,
         customerName: khachHang ? khachHang.tenKhachHang : null
       };
-
+      
       setOrderInfo(orderDataWithCustomer);
       setChiTietList(chiTietData);
       setSpctList(spctData);
@@ -989,12 +950,6 @@ const BanHangTaiQuayPage = () => {
       resetAllStates();
     } catch (err) {
       setOrderError(err.message || 'Lỗi không xác định');
-      Swal.fire({
-        icon: 'error',
-        title: 'Thanh toán QR thất bại',
-        text: err.message,
-        confirmButtonColor: '#1976d2'
-      });
     } finally {
       setOrderLoading(false);
     }
@@ -1066,35 +1021,35 @@ const BanHangTaiQuayPage = () => {
   // Hàm validation form
   const validateForm = () => {
     const errors = {};
-
+    
     // Kiểm tra tên khách hàng
     if (!newCustomerForm.tenKhachHang.trim()) {
       errors.tenKhachHang = 'Vui lòng nhập họ và tên';
     } else if (newCustomerForm.tenKhachHang.trim().length < 2) {
       errors.tenKhachHang = 'Họ và tên phải có ít nhất 2 ký tự';
     }
-
+    
     // Kiểm tra số điện thoại
     if (!newCustomerForm.soDienThoai.trim()) {
       errors.soDienThoai = 'Vui lòng nhập số điện thoại';
     } else if (!/^[0-9]{10,11}$/.test(newCustomerForm.soDienThoai.trim())) {
       errors.soDienThoai = 'Số điện thoại phải có 10-11 chữ số';
     }
-
+    
     // Kiểm tra email
     if (!newCustomerForm.email.trim()) {
       errors.email = 'Vui lòng nhập email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCustomerForm.email.trim())) {
       errors.email = 'Email không đúng định dạng';
     }
-
+    
     // Kiểm tra địa chỉ
     if (!newCustomerForm.diaChi.trim()) {
       errors.diaChi = 'Vui lòng nhập địa chỉ';
     } else if (newCustomerForm.diaChi.trim().length < 5) {
       errors.diaChi = 'Địa chỉ phải có ít nhất 5 ký tự';
     }
-
+    
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1147,7 +1102,7 @@ const BanHangTaiQuayPage = () => {
       }
 
       const newCustomer = await res.json();
-
+      
       // Hiển thị thông báo thành công
       Swal.fire({
         icon: 'success',
@@ -1232,27 +1187,27 @@ const BanHangTaiQuayPage = () => {
     // Chỉ validate khi có đủ dữ liệu để kiểm tra
     if (newCustomerForm.tenKhachHang.trim() || newCustomerForm.soDienThoai.trim() || newCustomerForm.email.trim() || newCustomerForm.diaChi.trim()) {
       const errors = {};
-
+      
       // Kiểm tra tên khách hàng
       if (newCustomerForm.tenKhachHang.trim() && newCustomerForm.tenKhachHang.trim().length < 2) {
         errors.tenKhachHang = 'Họ và tên phải có ít nhất 2 ký tự';
       }
-
+      
       // Kiểm tra số điện thoại
       if (newCustomerForm.soDienThoai.trim() && !/^[0-9]{10,11}$/.test(newCustomerForm.soDienThoai.trim())) {
         errors.soDienThoai = 'Số điện thoại phải có 10-11 chữ số';
       }
-
+      
       // Kiểm tra email
       if (newCustomerForm.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCustomerForm.email.trim())) {
         errors.email = 'Email không đúng định dạng';
       }
-
+      
       // Kiểm tra địa chỉ
       if (newCustomerForm.diaChi.trim() && newCustomerForm.diaChi.trim().length < 5) {
         errors.diaChi = 'Địa chỉ phải có ít nhất 5 ký tự';
       }
-
+      
       setFormErrors(errors);
     }
   }, [newCustomerForm.tenKhachHang, newCustomerForm.soDienThoai, newCustomerForm.email, newCustomerForm.diaChi]);
@@ -1279,7 +1234,7 @@ const BanHangTaiQuayPage = () => {
         setCustomerEmail('');
         setCustomerPhone('');
       }
-
+      
       // Cập nhật orderInfo với thông tin khách hàng
       const orderDataWithCustomer = {
         ...data,
@@ -1339,7 +1294,7 @@ const BanHangTaiQuayPage = () => {
     setOrderTotal(0);
     setOrderDiscount(0);
     setPaymentAmount("");
-
+    
     // Reset các modal
     setShowProductModal(false);
     setShowCustomerModal(false);
@@ -1348,33 +1303,33 @@ const BanHangTaiQuayPage = () => {
     setShowQRPaymentModal(false);
     setShowQtyModal(false);
     setShowEditModal(false);
-
+    
     // Reset các thông báo
     setVoucherMessage('');
     setCustomerMessage('');
-
+    
     // Reset các form input
     setSearch('');
     setFilterColor('');
     setFilterSize('');
-
+    
     // Reset các state loading
     setOrderLoading(false);
     setAddLoading(false);
     setEditLoading(false);
-
+    
     // Reset các state form
     setQty(1);
     setEditQty(1);
     setEditIdx(null);
     setSelectedProduct(null);
-
+    
     // Reset các state error
     setError('');
     setAddError('');
     setEditError('');
     setOrderError('');
-
+    
     // Reset các state UI
     setCollapsed(false);
     setCollapsedCart(false);
@@ -1393,7 +1348,7 @@ const BanHangTaiQuayPage = () => {
     <div style={{ width: '100%', maxWidth: 1100, margin: '0 auto', padding: '24px 0' }}>
       {/* Nút chọn sản phẩm và dãy tab hóa đơn trên cùng */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 18 }}>
-
+        
         <div className="bhtq-order-tabs" style={{ flex: 1 }}>
           {ordersLoading ? (
             <span style={{ color: '#1976d2', fontWeight: 500 }}>Đang tải...</span>
@@ -1451,7 +1406,7 @@ const BanHangTaiQuayPage = () => {
                     console.warn('⚠️ Lỗi khi hoàn lại voucher:', voucherError);
                   }
                 }
-
+                
                 // Hoàn lại tất cả số lượng tồn kho trước khi hủy hóa đơn
                 if (cart.length > 0) {
                   for (const item of cart) {
@@ -1462,7 +1417,7 @@ const BanHangTaiQuayPage = () => {
                     }
                   }
                 }
-
+                
                 // Hủy hóa đơn
                 const res = await fetch(`http://localhost:8080/api/donhang/delete/${orderId}`, { method: 'DELETE' });
                 if (!res.ok) throw new Error('Lỗi khi hủy hóa đơn!');
@@ -1475,10 +1430,10 @@ const BanHangTaiQuayPage = () => {
                   timer: 1500,
                   width: 250
                 });
-
+                
                 // Reset đầy đủ trạng thái hóa đơn
                 resetAllStates();
-
+                
                 await fetchOrders();
                 await fetchProductsFromBE(); // Cập nhật lại tồn kho sản phẩm sau khi hủy hóa đơn
               } catch (err) {
@@ -1498,9 +1453,9 @@ const BanHangTaiQuayPage = () => {
             Hủy hóa đơn
           </Button>
         )}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
           alignItems: 'flex-end',
           padding: '0 12px',
           borderRight: '2px solid #e0e0e0',
@@ -1524,27 +1479,27 @@ const BanHangTaiQuayPage = () => {
       </div>
       {/* GIỎ HÀNG */}
       <Card sx={{ borderRadius: 3, boxShadow: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
-          <Typography variant="h6" className="bhtq-cart-header">
-            GIỎ HÀNG
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{
-              fontWeight: 600,
-              borderRadius: 2,
-              padding: '6px 18px',
-              fontSize: 15,
-              minWidth: 160,
-            }}
-            onClick={() => setShowProductModal(true)}
-          >
-            Chọn sản phẩm
-          </Button>
-        </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
+  <Typography variant="h6" className="bhtq-cart-header">
+    GIỎ HÀNG
+  </Typography>
+  <Button
+    variant="contained"
+    color="primary"
+    sx={{
+      fontWeight: 600,
+      borderRadius: 2,
+      padding: '6px 18px',
+      fontSize: 15,
+      minWidth: 160,
+    }}
+    onClick={() => setShowProductModal(true)}
+  >
+    Chọn sản phẩm
+  </Button>
+</Box>
 
-
+        
 
         <CardContent
           sx={{
@@ -1668,130 +1623,130 @@ const BanHangTaiQuayPage = () => {
               Chọn khách hàng
             </Button>
             <TextField
-              label="Tên khách hàng"
-              value={customerName}
-              onChange={e => setCustomerName(e.target.value)}
-              size="small"
-              variant="outlined"
-              sx={{
-                minWidth: 140,
-                background: '#fff',
-                borderRadius: 1.5,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: 14,
-                  borderRadius: 1.5,
-                  background: '#fff',
-                  paddingY: '4px',
-                  '& fieldset': {
-                    borderWidth: '1px',
-                    borderColor: '#90caf9',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderWidth: '1px',
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: 13,
-                },
-              }}
-              disabled={!orderId}
-            />
+  label="Tên khách hàng"
+  value={customerName}
+  onChange={e => setCustomerName(e.target.value)}
+  size="small"
+  variant="outlined"
+  sx={{
+    minWidth: 140,
+    background: '#fff',
+    borderRadius: 1.5,
+    '& .MuiOutlinedInput-root': {
+      fontSize: 14,
+      borderRadius: 1.5,
+      background: '#fff',
+      paddingY: '4px',
+      '& fieldset': {
+        borderWidth: '1px',
+        borderColor: '#90caf9',
+      },
+      '&:hover fieldset': {
+        borderColor: '#1976d2',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#1976d2',
+      },
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderWidth: '1px',
+    },
+    '& .MuiInputLabel-root': {
+      fontSize: 13,
+    },
+  }}
+  disabled={!orderId}
+/>
 
-            <TextField
-              label="Email"
-              value={customerEmail}
-              onChange={e => setCustomerEmail(e.target.value)}
-              size="small"
-              variant="outlined"
-              sx={{
-                minWidth: 140,
-                background: '#fff',
-                borderRadius: 1.5,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: 14,
-                  borderRadius: 1.5,
-                  background: '#fff',
-                  paddingY: '4px',
-                  '& fieldset': {
-                    borderWidth: '1px',
-                    borderColor: '#90caf9',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderWidth: '1px',
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: 13,
-                },
-              }}
-              disabled={!orderId}
-            />
+<TextField
+  label="Email"
+  value={customerEmail}
+  onChange={e => setCustomerEmail(e.target.value)}
+  size="small"
+  variant="outlined"
+  sx={{
+    minWidth: 140,
+    background: '#fff',
+    borderRadius: 1.5,
+    '& .MuiOutlinedInput-root': {
+      fontSize: 14,
+      borderRadius: 1.5,
+      background: '#fff',
+      paddingY: '4px',
+      '& fieldset': {
+        borderWidth: '1px',
+        borderColor: '#90caf9',
+      },
+      '&:hover fieldset': {
+        borderColor: '#1976d2',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#1976d2',
+      },
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderWidth: '1px',
+    },
+    '& .MuiInputLabel-root': {
+      fontSize: 13,
+    },
+  }}
+  disabled={!orderId}
+/>
 
-            <TextField
-              label="Số điện thoại"
-              value={customerPhone}
-              onChange={e => setCustomerPhone(e.target.value)}
-              size="small"
-              variant="outlined"
-              sx={{
-                minWidth: 120,
-                background: '#fff',
-                borderRadius: 1.5,
-                '& .MuiOutlinedInput-root': {
-                  fontSize: 14,
-                  borderRadius: 1.5,
-                  background: '#fff',
-                  paddingY: '4px',
-                  '& fieldset': {
-                    borderWidth: '1px',
-                    borderColor: '#90caf9',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1976d2',
-                  },
-                },
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderWidth: '1px',
-                },
-                '& .MuiInputLabel-root': {
-                  fontSize: 13,
-                },
-              }}
-              disabled={!orderId}
-            />
+<TextField
+  label="Số điện thoại"
+  value={customerPhone}
+  onChange={e => setCustomerPhone(e.target.value)}
+  size="small"
+  variant="outlined"
+  sx={{
+    minWidth: 120,
+    background: '#fff',
+    borderRadius: 1.5,
+    '& .MuiOutlinedInput-root': {
+      fontSize: 14,
+      borderRadius: 1.5,
+      background: '#fff',
+      paddingY: '4px',
+      '& fieldset': {
+        borderWidth: '1px',
+        borderColor: '#90caf9',
+      },
+      '&:hover fieldset': {
+        borderColor: '#1976d2',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#1976d2',
+      },
+    },
+    '& .MuiOutlinedInput-notchedOutline': {
+      borderWidth: '1px',
+    },
+    '& .MuiInputLabel-root': {
+      fontSize: 13,
+    },
+  }}
+  disabled={!orderId}
+/>
 
             {customerMessage && (
               <span className={`bhtq-customer-message ${customerMessage.includes('thành công') ? 'success' : 'error'}`}>{customerMessage}</span>
             )}
           </Box>
-
+          
           {/* GIAO HÀNG */}
           <Box mt={2}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div className="bhtq-cart-header" style={{ fontSize: 16 }}>Giao hàng</div>
-              <input
-                type="checkbox"
-                checked={isShipping}
+              <input 
+                type="checkbox" 
+                checked={isShipping} 
                 onChange={(e) => setIsShipping(e.target.checked)}
                 style={{ width: 20, height: 20, cursor: 'pointer' }}
               />
             </div>
-
+            
             {isShipping && (
               <Box mt={2} display="flex" flexDirection="column" gap={2}>
                 <Box display="flex" gap={2}>
@@ -1991,53 +1946,53 @@ const BanHangTaiQuayPage = () => {
       </Dialog>
       {/* TỔNG TIỀN & THANH TOÁN */}
       <div
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-          marginTop: 24,
-          padding: '20px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          border: '1px solid #eee',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: 16 }}>
-          <div style={{ fontWeight: 500, fontSize: 16, marginBottom: 2 }}>
-            Tổng tiền chưa giảm: <span style={{ color: '#222' }}>{totalHang.toLocaleString()} đ</span>
-          </div>
-          {orderDiscount > 0 && (
-            <div style={{ color: '#388e3c', fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
-              Giảm giá: -{orderDiscount.toLocaleString()} đ
-            </div>
-          )}
-          <div
-            className="bhtq-cart-total"
-            style={{ fontSize: 22, fontWeight: 'bold', color: '#2c3e50' }}
-          >
-            Tổng tiền: <span style={{ color: '#e74c3c' }}>{orderTotal.toLocaleString()} đ</span>
-          </div>
-        </div>
+  style={{
+    background: '#fff',
+    borderRadius: 12,
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+    marginTop: 24,
+    padding: '20px 24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    border: '1px solid #eee',
+  }}
+>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: 16 }}>
+  <div style={{ fontWeight: 500, fontSize: 16, marginBottom: 2 }}>
+    Tổng tiền chưa giảm: <span style={{ color: '#222' }}>{totalHang.toLocaleString()} đ</span>
+  </div>
+  {orderDiscount > 0 && (
+    <div style={{ color: '#388e3c', fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
+      Giảm giá: -{orderDiscount.toLocaleString()} đ
+    </div>
+  )}
+  <div
+    className="bhtq-cart-total"
+    style={{ fontSize: 22, fontWeight: 'bold', color: '#2c3e50' }}
+  >
+    Tổng tiền: <span style={{ color: '#e74c3c' }}>{orderTotal.toLocaleString()} đ</span>
+  </div>
+</div>
 
-        <button
-          className="bhtq-cart-pay-btn"
-          onClick={handleOpenPaymentModal}
-          disabled={!orderId}
-          style={{
-            fontSize: 18,
-            padding: '12px 32px',
-            backgroundColor: orderId ? '#1976d2' : '#ccc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: orderId ? 'pointer' : 'not-allowed',
-            transition: 'background 0.3s ease',
-          }}
-        >
-          Thanh toán
-        </button>
-      </div>
+  <button
+    className="bhtq-cart-pay-btn"
+    onClick={handleOpenPaymentModal}
+    disabled={!orderId}
+    style={{
+      fontSize: 18,
+      padding: '12px 32px',
+      backgroundColor: orderId ? '#1976d2' : '#ccc',
+      color: '#fff',
+      border: 'none',
+      borderRadius: 8,
+      cursor: orderId ? 'pointer' : 'not-allowed',
+      transition: 'background 0.3s ease',
+    }}
+  >
+    Thanh toán
+  </button>
+</div>
 
       {/* Modal chọn sản phẩm */}
       <Dialog
@@ -2145,40 +2100,40 @@ const BanHangTaiQuayPage = () => {
       </Dialog>
       {/* Modal chọn số lượng khi thêm sản phẩm */}
       <Dialog open={showQtyModal} onClose={() => setShowQtyModal(false)}>
+        
+            <DialogTitle>
+              Chọn số lượng cho <span style={{ color: '#1976d2' }}>{selectedProduct?.tenSanPham}</span>
+            </DialogTitle>
+            <DialogContent>
+              <TextField
+  type="number"
+  label="Số lượng"
+  variant="outlined"
+  fullWidth
+  value={Number(qty)}
+  onChange={e => setQty(Number(e.target.value))}
+  inputProps={{ min: 1, max: selectedProduct?.soLuong }}
+  sx={{
+    mt: 2,
+    '& .MuiInputBase-input': {
+      margin: '10px',      
+    },
+  }}
+  disabled={!orderId}
+/>
 
-        <DialogTitle>
-          Chọn số lượng cho <span style={{ color: '#1976d2' }}>{selectedProduct?.tenSanPham}</span>
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            type="number"
-            label="Số lượng"
-            variant="outlined"
-            fullWidth
-            value={Number(qty)}
-            onChange={e => setQty(Number(e.target.value))}
-            inputProps={{ min: 1, max: selectedProduct?.soLuong }}
-            sx={{
-              mt: 2,
-              '& .MuiInputBase-input': {
-                margin: '10px',
-              },
-            }}
-            disabled={!orderId}
-          />
 
-
-          {addError && <Alert severity="error" sx={{ mt: 2 }}>{addError}</Alert>}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleAddToOrder} variant="contained" color="primary" disabled={qty < 1 || qty > selectedProduct?.soLuong}>
-            Xác nhận
-          </Button>
-          <Button onClick={() => setShowQtyModal(false)} variant="outlined" color="primary">
-            Hủy
-          </Button>
-        </DialogActions>
-      </Dialog>
+              {addError && <Alert severity="error" sx={{ mt: 2 }}>{addError}</Alert>}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleAddToOrder} variant="contained" color="primary" disabled={qty < 1 || qty > selectedProduct?.soLuong}>
+                Xác nhận
+              </Button>
+              <Button onClick={() => setShowQtyModal(false)} variant="outlined" color="primary">
+                Hủy
+              </Button>
+            </DialogActions>
+         </Dialog> 
       {/* Modal sửa số lượng sản phẩm trong hóa đơn tạm */}
       <Dialog open={showEditModal && editIdx !== null && cart[editIdx]} onClose={() => setShowEditModal(false)}>
         <DialogTitle>
@@ -2298,12 +2253,12 @@ const BanHangTaiQuayPage = () => {
           background: 'rgba(0,0,0,0.2)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
           <div style={{ background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 2px 16px #0002' }}>
-            <InvoicePrint
-              order={orderInfo}
-              chiTietList={chiTietList}
-              spctList={spctList}
+            <InvoicePrint 
+              order={orderInfo} 
+              chiTietList={chiTietList} 
+              spctList={spctList} 
               employeeName={getCurrentAdminName()}
-              onClose={() => setShowInvoice(false)}
+              onClose={() => setShowInvoice(false)} 
             />
           </div>
         </div>
@@ -2404,7 +2359,7 @@ const BanHangTaiQuayPage = () => {
             color="error"
             variant="outlined"
             disabled={!orderId}
-            sx={{
+            sx={{ 
               minWidth: 100,
               fontWeight: 500,
               textTransform: 'none',
@@ -2418,11 +2373,11 @@ const BanHangTaiQuayPage = () => {
           >
             Bỏ chọn
           </Button>
-          <Button
+          <Button 
             onClick={() => setShowCustomerModal(false)}
             variant="contained"
             color="primary"
-            sx={{
+            sx={{ 
               minWidth: 80,
               fontWeight: 500,
               textTransform: 'none'
@@ -2573,7 +2528,7 @@ const BanHangTaiQuayPage = () => {
             }}
             variant="outlined"
             color="primary"
-            sx={{
+            sx={{ 
               minWidth: 80,
               fontWeight: 500,
               textTransform: 'none'
@@ -2586,7 +2541,7 @@ const BanHangTaiQuayPage = () => {
             variant="contained"
             color="primary"
             disabled={createCustomerLoading || !isFormValid()}
-            sx={{
+            sx={{ 
               minWidth: 100,
               fontWeight: 500,
               textTransform: 'none'

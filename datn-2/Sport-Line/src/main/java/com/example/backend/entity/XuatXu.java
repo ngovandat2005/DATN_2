@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,8 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "XuatXu")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class XuatXu {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Id")
@@ -21,5 +22,4 @@ public class XuatXu {
 
     @Column(name = "TrangThai")
     private Integer trangThai;
-
 }

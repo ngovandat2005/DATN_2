@@ -3,8 +3,6 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,7 +18,6 @@ public class DonHangChiTiet {
 
     @ManyToOne
     @JoinColumn(name = "idDonHang")
-    @JsonIgnore
     private DonHang donHang;
 
     @ManyToOne

@@ -66,12 +66,9 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             throw new RuntimeException("Số lượng tồn kho không đủ!");
         }
 
-        // 3. Trừ tồn kho (✅ CHỈ trừ nếu đơn hàng đã được xác nhận, trạng thái != 0)
-        DonHang donHang = donHangRepository.findById(dto.getIdDonHang()).orElse(null);
-        if (donHang != null && donHang.getTrangThai() != null && donHang.getTrangThai() != 0) {
-            spct.setSoLuong(spct.getSoLuong() - dto.getSoLuong());
-            sanPhamChiTietRepository.save(spct);
-        }
+        // 3. Trừ tồn kho
+        spct.setSoLuong(spct.getSoLuong() - dto.getSoLuong());
+        sanPhamChiTietRepository.save(spct);
 
         // 4. Xử lý cộng dồn hoặc tạo mới chi tiết hóa đơn
         Optional<DonHangChiTiet> optional = chiTietRepository
@@ -104,17 +101,14 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             int diff = newQty - oldQty;
 
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
-            // ✅ Cập nhật tồn kho nếu đơn hàng đã được xác nhận
-            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null && chiTiet.getDonHang().getTrangThai() != 0) {
-                if (diff > 0) {
-                    if (spct.getSoLuong() < diff)
-                        throw new RuntimeException("Không đủ tồn kho!");
-                    spct.setSoLuong(spct.getSoLuong() - diff);
-                } else if (diff < 0) {
-                    spct.setSoLuong(spct.getSoLuong() + (-diff));
-                }
-                sanPhamChiTietRepository.save(spct);
+            if (diff > 0) {
+                if (spct.getSoLuong() < diff)
+                    throw new RuntimeException("Không đủ tồn kho!");
+                spct.setSoLuong(spct.getSoLuong() - diff);
+            } else if (diff < 0) {
+                spct.setSoLuong(spct.getSoLuong() + (-diff));
             }
+            sanPhamChiTietRepository.save(spct);
 
             chiTiet.setSoLuong(newQty);
             chiTiet.setThanhTien(dto.getThanhTien());
@@ -133,11 +127,9 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
         if (optional.isPresent()) {
             DonHangChiTiet chiTiet = optional.get();
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
-            // Hoàn lại tồn kho (✅ CHỈ hoàn nếu đơn hàng đã được xác nhận trước đó)
-            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null && chiTiet.getDonHang().getTrangThai() != 0) {
-                spct.setSoLuong(spct.getSoLuong() + chiTiet.getSoLuong());
-                sanPhamChiTietRepository.save(spct);
-            }
+            // Hoàn lại tồn kho
+            spct.setSoLuong(spct.getSoLuong() + chiTiet.getSoLuong());
+            sanPhamChiTietRepository.save(spct);
 
             DonHang donHang = chiTiet.getDonHang();
             if (donHang != null && donHang.getDonHangChiTiets() != null) {

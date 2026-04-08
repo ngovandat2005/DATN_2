@@ -1,6 +1,7 @@
 
 package com.example.backend.service;
 
+
 import com.example.backend.dto.VoucherDTO;
 import com.example.backend.entity.DonHang;
 import com.example.backend.entity.Voucher;
@@ -136,7 +137,7 @@ public class VoucherService {
                 .orElse(null);
     }
 
-    @Scheduled(fixedRate = 600000) // Cập nhật mỗi 10 phút
+    @Scheduled(fixedRate = 600000) // Cập nhật mỗi 60 giây
     public void updateActiveVoucher() {
         updateVoucherActive();
     }
@@ -168,11 +169,7 @@ public class VoucherService {
             if (isInvalid) {
                 for (DonHang dh : donHangsWithVoucher) {
                     dh.setGiamGia(null);
-                    dh.setTongTienGiamGia(0.0);
-                    // Cần cộng lại số tiền đã giảm vào tổng tiền
-                    // Ở đây tốt nhất nên gọi hàm tính lại tổng tiền, nhưng nếu không có thì set lại bằng tổng tiền cũ (nếu lưu)
-                    // Tuy nhiên, đơn giản nhất là set lại giá trị gốc nếu có lưu.
-                    // Giả sử capNhatTongTienDonHang trong DonHangService sẽ được gọi lại sau.
+                    dh.setTongTienGiamGia(dh.getTongTien() != null ? dh.getTongTien() : 0d);
                     donHangsToUpdate.add(dh);
                 }
 
@@ -228,14 +225,12 @@ public class VoucherService {
             throw new RuntimeException("Đơn hàng không đủ điều kiện áp dụng voucher");
         }
 
-        // Gán voucher và tính lại các giá trị tiền
-        double giam = tinhTienGiam(tongTien, voucher);
+        // Gán voucher và tính lại tổng tiền giảm giá
         dh.setGiamGia(voucher);
-        dh.setTongTienGiamGia(giam);
-        dh.setTongTien(tongTien - giam + dh.getPhiVanChuyen()); // Bao gồm cả phí ship
+        dh.setTongTienGiamGia(tinhTongTienSauGiam(tongTien, voucher));
 
-        // Trừ số lượng nếu đơn hàng đã hoàn tất (trạng thái 1 hoặc 4)
-        if (java.util.Objects.equals(dh.getTrangThai(), 1) || java.util.Objects.equals(dh.getTrangThai(), 4)) {
+        // Trừ số lượng nếu đơn hàng đã hoàn tất
+        if (java.util.Objects.equals(dh.getTrangThai(), 1)) {
             voucher.setSoLuong(voucher.getSoLuong() - 1);
             voucherRepository.save(voucher);
         }
@@ -260,18 +255,17 @@ public class VoucherService {
         }
     }
 
-    private double tinhTienGiam(double tongTien, Voucher voucher) {
+    private double tinhTongTienSauGiam(double tongTien, Voucher voucher) {
         double giam = 0.0;
-        String loai = voucher.getLoaiVoucher();
-        double giaTri = voucher.getGiaTri();
 
-        if ("PHAN_TRAM".equalsIgnoreCase(loai) || "Giảm giá %".equalsIgnoreCase(loai)) {
-            giam = tongTien * (giaTri / 100.0);
-        } else if ("TIEN_MAT".equalsIgnoreCase(loai) || "Giảm giá số tiền".equalsIgnoreCase(loai)) {
-            giam = giaTri;
+        if ("PHAN_TRAM".equalsIgnoreCase(voucher.getLoaiVoucher())) {
+            giam = tongTien * (voucher.getGiaTri() / 100);
+        } else if ("TIEN_MAT".equalsIgnoreCase(voucher.getLoaiVoucher())) {
+            giam = voucher.getGiaTri();
         }
 
-        return Math.min(giam, tongTien);
+        double result = tongTien - giam;
+        return result < 0 ? 0 : result;
     }
     //Kiểm tra xem voucher nào đủ điều kiện áp dụng cho đơn hàng
     public List<VoucherDTO> getAvailableVouchers(Integer orderId) {
@@ -295,4 +289,5 @@ public class VoucherService {
         result.sort((a, b) -> Boolean.compare(Boolean.TRUE.equals(b.getIsAvailable()), Boolean.TRUE.equals(a.getIsAvailable())));
         return result;
     }
+
 }

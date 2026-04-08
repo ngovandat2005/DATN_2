@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { App as AntdApp } from 'antd'; // Import App từ antd
 import Home from './pages/Home';
 import ProductList from './pages/ProductList';
 import ProductDetail from './pages/ProductDetail';
@@ -19,43 +20,55 @@ import Wishlist from './pages/Wishlist';
 import Profile from './pages/Profile';
 import Payment from './pages/Payment';
 import OrderDetail from './pages/OrderDetail';
+import VnpayTestInfo from './pages/VnpayTestInfo';
 import CheckPayment from './pages/CheckPayment';
-import SalePage from './pages/SalePage';
+import DebugInfo from './components/DebugInfo';
+import GHNTestComponent from './components/GHNTestComponent';
 import './styles/App.css';
+import { testConfig } from './utils/testConfig';
+
+// Test config khi app khởi động
+testConfig();
 
 function App() {
   return (
-    
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route element={<MainLayout />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<OrderHistory />} />
-          <Route path="/orders/:id" element={<OrderDetail />} />
-          <Route path="/sale" element={<SalePage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/wishlist" element={<Wishlist />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/check-payment" element={<CheckPayment />} />
-        </Route>
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/admin-panel/*" element={
-          <ProtectedRoute>
-            <AdminPanel />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </Router>
+    <AntdApp> {/* Cực kỳ quan trọng để sửa lỗi Warning: [antd: message] */}
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/debug" element={<DebugInfo />} />
+          <Route path="/ghn-test" element={<GHNTestComponent />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
+          <Route element={<MainLayout />}>
+            <Route path="/home" element={<Home />} />
+            <Route path="/products" element={<ProductList />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/orders" element={<OrderHistory />} />
+            <Route path="/orders/:id" element={<OrderDetail />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/vnpay-test" element={<VnpayTestInfo />} />
+            <Route path="/check-payment" element={<CheckPayment />} />
+          </Route>
+
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin-panel/*" element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Router>
+    </AntdApp>
   );
 }
+
 export default App;

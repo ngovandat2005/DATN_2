@@ -116,6 +116,12 @@ export default function NhanVienPage() {
       key: 'ngaySinh',
       render: (date) => date ? moment(date).format('DD/MM/YYYY') : ''
     },
+    {
+      title: 'Giới Tính',
+      dataIndex: 'gioiTinh',
+      key: 'gioiTinh',
+      render: value => value ? 'Nam' : 'Nữ'
+    },
     { title: 'Địa Chỉ', dataIndex: 'diaChi', key: 'diaChi' },
     {
       title: 'Vai Trò',
@@ -200,6 +206,7 @@ export default function NhanVienPage() {
     form.setFieldsValue({
       ...employee,
       ngaySinh: employee.ngaySinh ? moment(employee.ngaySinh) : null,
+      gioiTinh: employee.gioiTinh === true || employee.gioiTinh === 1 ? 'Nam' : 'Nữ',
       vaiTro: employee.vaiTro ? 'Quản lý' : 'Nhân viên',
       trangThai: !!employee.trangThai,
       cccd: employee.cccd || '',
@@ -208,27 +215,14 @@ export default function NhanVienPage() {
     showModal();
   };
 
-  const onFinish = async (values) => {
-    const actionText = editingEmployee ? "Cập nhật" : "Thêm mới";
-    const result = await Swal.fire({
-      title: `Xác nhận ${actionText.toLowerCase()} nhân viên?`,
-      text: "Vui lòng kiểm tra kỹ thông tin nhân viên trước khi xác nhận.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
+  const onFinish = (values) => {
     const dataSend = {
       ...values,
       tenNhanVien: values.tenNhanVien,
       email: values.email,
       soDienThoai: values.soDienThoai,
       ngaySinh: values.ngaySinh ? values.ngaySinh.format('YYYY-MM-DD') : null,
+      gioiTinh: values.gioiTinh === 'Nam',
       diaChi: values.diaChi,
       vaiTro: values.vaiTro === 'Quản lý',
       cccd: values.cccd,
@@ -395,7 +389,7 @@ export default function NhanVienPage() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ vaiTro: 'Nhân viên', trangThai: true }}
+          initialValues={{ gioiTinh: 'Nam', vaiTro: 'Nhân viên', trangThai: true }}
         >
           {editingEmployee && (
             <Form.Item name="id" label="ID">
@@ -440,6 +434,16 @@ export default function NhanVienPage() {
               style={{ width: '100%' }} 
               format="YYYY-MM-DD"
             />
+          </Form.Item>
+          <Form.Item
+            name="gioiTinh"
+            label="Giới Tính"
+            rules={[{ required: true, message: 'Vui lòng chọn Giới Tính!' }]}
+          >
+            <Select placeholder="Chọn Giới Tính">
+              <Option value="Nam">Nam</Option>
+              <Option value="Nữ">Nữ</Option>
+            </Select>
           </Form.Item>
           <Form.Item
             name="diaChi"

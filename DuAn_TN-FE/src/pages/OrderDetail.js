@@ -4,24 +4,25 @@ import Swal from 'sweetalert2';
 import { Box, TextField, MenuItem } from '@mui/material';
 import config from '../config/config';
 import { getUserRole } from '../utils/authUtils';
-
+import axios from 'axios';
 // Thêm mảng trạng thái giống DonHangPage
 const TRANG_THAI = [
-  { value: 0, label: 'Chờ thanh toán', color: '#ff9800' },
-  { value: 1, label: 'Chờ vận chuyển', color: '#43b244' },
-  { value: 2, label: 'Chờ nhận', color: '#1976d2' },
-  { value: 3, label: 'Chờ nhận', color: '#1976d2' },
-  { value: 4, label: 'Chờ nhận', color: '#1976d2' },
-  { value: 5, label: 'Đã hủy', color: '#e53935' }
+  { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
+  { value: 1, label: 'Đã xác nhận', color: '#43b244' },
+  { value: 2, label: 'Đang chuẩn bị', color: '#1976d2' },
+  { value: 3, label: 'Đang giao', color: '#1976d2' },
+  { value: 4, label: 'Hoàn thành', color: '#009688' },
+  { value: 5, label: 'Đã hủy', color: '#e53935' },
+  { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' }
 ];
 
 const formatImage = (raw) => {
-  if (!raw) return `${config.baseUrl}images/logo.png`;
+  if (!raw) return '';
   if (typeof raw === 'string' && (raw.startsWith('http://') || raw.startsWith('https://'))) return raw;
   let firstImg = typeof raw === 'string' ? raw.split(',')[0].trim() : String(raw).trim();
   if (firstImg.startsWith('/')) firstImg = firstImg.substring(1);
   if (firstImg.startsWith('images/')) firstImg = firstImg.substring(7);
-  return `${config.baseUrl}images/${firstImg}`;
+  return `images/${firstImg}`;
 };
 
 const OrderDetailPage = () => {
@@ -45,7 +46,24 @@ const OrderDetailPage = () => {
   const [deleteProductLoading, setDeleteProductLoading] = useState({});
   const [productsLoading, setProductsLoading] = useState(false);
 
-  // State cho tìm kiếm và log sản phẩm
+  // 1. Giải quyết lỗi 'customerId': 
+  // Lấy ID người dùng từ localStorage (nơi bạn lưu sau khi login)
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const customerId = user.id || user.idKhachHang;
+
+  // 2. Giải quyết lỗi 'setReviews':
+  // Khai báo state này để chứa danh sách đánh giá (nếu cần cập nhật UI tại chỗ)
+  const [reviews, setReviews] = useState([]);
+
+  //state feedback:
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedProductForFeedback, setSelectedProductForFeedback] = useState(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackImages, setFeedbackImages] = useState([]); // Lưu File hoặc Base64
+  const [previewImages, setPreviewImages] = useState([]);   // Lưu URL để hiển thị preview
+  // State cho tìm kiếm và lọc sản phẩm
   const [search, setSearch] = useState('');
   const [filterColor, setFilterColor] = useState('');
   const [filterSize, setFilterSize] = useState('');
@@ -98,7 +116,27 @@ const OrderDetailPage = () => {
     if (!selectedProduct) return 0;
     return ((selectedProduct.giaBanGiamGia || selectedProduct.giaBan) * addProductQty);
   }, [selectedProduct, addProductQty]);
+  //hàm xử lý ảnh:
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + feedbackImages.length > 5) {
+      Swal.fire('Thông báo', 'Bạn chỉ được chọn tối đa 5 ảnh', 'warning');
+      return;
+    }
 
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setPreviewImages([...previewImages, ...newPreviews]);
+    setFeedbackImages([...feedbackImages, ...files]);
+  };
+
+  const removeImage = (index) => {
+    const newImages = [...feedbackImages];
+    const newPreviews = [...previewImages];
+    newImages.splice(index, 1);
+    newPreviews.splice(index, 1);
+    setFeedbackImages(newImages);
+    setPreviewImages(newPreviews);
+  };
   // Memoize bảng sản phẩm để tránh re-render không cần thiết
   const productsTable = useMemo(() => {
     if (productsLoading) {
@@ -146,9 +184,9 @@ const OrderDetailPage = () => {
                 }}>
                   <img
                     src={product.images && product.images.includes(',')
-                      ? `${config.baseUrl}images/${encodeURIComponent(product.images.split(',')[0].trim())}`
+                      ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.split(',')[0].trim())}`
                       : product.images
-                        ? `${config.baseUrl}images/${encodeURIComponent(product.images.trim())}`
+                        ? `http://localhost:8080/api/images/${encodeURIComponent(product.images.trim())}`
                         : '/placeholder-image.jpg'}
                     alt={product.tenSanPham}
                     style={{
@@ -242,7 +280,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể thêm sản phẩm!',
-        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
+        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -347,10 +385,64 @@ const OrderDetailPage = () => {
     };
     fetchDetails();
   }, [id]);
+  //hàm xử lý đánh giá:
+  const handleSubmitFeedback = async () => {
+    if (!comment.trim()) {
+      Swal.fire('Thông báo', 'Vui lòng nhập nội dung đánh giá!', 'warning');
+      return;
+    }
 
-  // ✅ Các hàm xử lý đơn hàng online
+    // Lấy customerId từ user trong localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const customerId = user.id || user.idKhachHang;
+
+    if (!customerId) {
+      Swal.fire('Lỗi', 'Vui lòng đăng nhập để đánh giá!', 'error');
+      return;
+    }
+
+    setFeedbackLoading(true);
+    try {
+      const formData = new FormData();
+
+      // LƯU Ý: selectedProductForFeedback.idSanPham mới là ID của Sản phẩm
+      // Nếu trong object của bạn trường đó tên là idSanPhamChiTiet thì dùng nó
+      const productId = selectedProductForFeedback?.idSanPham;
+
+      formData.append('idSanPham', productId);
+      formData.append('idKhachHang', customerId);
+      formData.append('soSao', rating);
+      formData.append('binhLuan', comment);
+
+      // Tên phải là 'images' đúng như @RequestParam trong Java
+      feedbackImages.forEach((file) => {
+        formData.append('images', file);
+      });
+
+      const response = await axios.post(config.getApiUrl('api/danh-gia/them'), formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        Swal.fire('Thành công', 'Cảm ơn bạn đã đánh giá sản phẩm!', 'success');
+        setShowFeedbackModal(false);
+        setComment('');
+        setRating(5);
+        setFeedbackImages([]);
+        setPreviewImages([]);
+      }
+    } catch (error) {
+      console.error("Lỗi gửi feedback:", error);
+      // Đọc thông báo lỗi từ Backend trả về để biết thiếu trường gì
+      const errorMsg = error.response?.data || 'Không thể gửi đánh giá!';
+      Swal.fire('Lỗi', typeof errorMsg === 'string' ? errorMsg : 'Lỗi hệ thống', 'error');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+  //  Các hàm xử lý đơn hàng online
   const handleXacNhan = async () => {
-    // ✅ THÊM: Confirm trước khi xác nhận đơn hàng
+    //  THÊM: Confirm trước khi xác nhận đơn hàng
     const result = await Swal.fire({
       title: 'Xác nhận đơn hàng',
       text: `Bạn có chắc chắn muốn xác nhận đơn hàng #${id} không?`,
@@ -367,7 +459,7 @@ const OrderDetailPage = () => {
     }
 
     try {
-      // ✅ THÊM: Hiển thị loading khi đang xác nhận
+      //  THÊM: Hiển thị loading khi đang xác nhận
       Swal.fire({
         title: 'Đang xác nhận đơn hàng...',
         text: 'Vui lòng chờ trong giây lát',
@@ -382,7 +474,7 @@ const OrderDetailPage = () => {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      // ✅ DEBUG: Log response status và headers
+      //  DEBUG: Log response status và headers
       console.log('🔍 Response status:', res.status);
       console.log('🔍 Response statusText:', res.statusText);
       console.log('🔍 Response headers:', Object.fromEntries(res.headers.entries()));
@@ -494,7 +586,7 @@ const OrderDetailPage = () => {
             <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 16px; margin-top: 16px;">
               <h4 style="margin: 0 0 12px 0; color: #155724;">📋 Thông tin cập nhật:</h4>
               <ul style="margin: 0; padding-left: 20px; color: #155724;">
-                <li>Trạng thái: <strong>Chờ vận chuyển</strong></li>
+                <li>Trạng thái: <strong>Đã xác nhận</strong></li>
                 <li>Ngày xác nhận: <strong>${new Date().toLocaleDateString('vi-VN')}</strong></li>
                 <li>Tồn kho đã được trừ tự động</li>
                 <li>Đơn hàng đã chuyển sang trạng thái chuẩn bị</li>
@@ -833,7 +925,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể sửa địa chỉ!',
-        text: 'Chỉ có thể sửa địa chỉ khi đơn hàng ở trạng thái "Chờ thanh toán"!',
+        text: 'Chỉ có thể sửa địa chỉ khi đơn hàng ở trạng thái "Chờ xác nhận"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1545,14 +1637,19 @@ const OrderDetailPage = () => {
       actualSteps.push(TRANG_THAI[1]);
     }
 
-    // Nếu đơn hàng đang ở bất kỳ giai đoạn nào trong nhóm "Chờ nhận" (2, 3, 4)
-    if (currentStatus >= 2 && currentStatus <= 4) {
-      actualSteps.push(TRANG_THAI[2]); // Chỉ hiển thị 1 bước "Chờ nhận"
-    } else if (currentStatus > 4) {
-        // Nếu đã qua bước hoàn thành nhưng đang ở trạng thái khác (ví dụ: Đã hủy)
-        // Vẫn có thể muốn hiện bước "Chờ nhận" đã qua? 
-        // Theo yêu cầu gộp, ta cứ hiện bước Chờ nhận nếu đã từng qua hoặc đang ở đó
-        actualSteps.push(TRANG_THAI[2]);
+    // Nếu đơn hàng đang chuẩn bị (trạng thái >= 2)
+    if (currentStatus >= 2) {
+      actualSteps.push(TRANG_THAI[2]);
+    }
+
+    // Nếu đơn hàng đang giao (trạng thái >= 3)
+    if (currentStatus >= 3) {
+      actualSteps.push(TRANG_THAI[3]);
+    }
+
+    // Nếu đơn hàng hoàn thành (trạng thái >= 4)
+    if (currentStatus >= 4) {
+      actualSteps.push(TRANG_THAI[4]);
     }
 
     // Xử lý trường hợp đặc biệt: Nếu đơn hàng bị hủy (trạng thái = 5)
@@ -1568,10 +1665,13 @@ const OrderDetailPage = () => {
 
         // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
         if (orderInfo.trangThaiTruocKhiHuy >= 1) {
-          stepsBeforeCancel.push(TRANG_THAI[1]); // Chờ vận chuyển
+          stepsBeforeCancel.push(TRANG_THAI[1]); // Đã xác nhận
         }
         if (orderInfo.trangThaiTruocKhiHuy >= 2) {
-          stepsBeforeCancel.push(TRANG_THAI[2]); // Chờ nhận
+          stepsBeforeCancel.push(TRANG_THAI[2]); // Đang chuẩn bị
+        }
+        if (orderInfo.trangThaiTruocKhiHuy >= 3) {
+          stepsBeforeCancel.push(TRANG_THAI[3]); // Đang giao
         }
 
         // Thêm bước hủy vào cuối
@@ -1587,10 +1687,46 @@ const OrderDetailPage = () => {
       }
     }
 
+    // ✅ THÊM: Xử lý trường hợp giao hàng không thành công (trạng thái = 7)
     if (currentStatus === 7) {
-        // Theo yêu cầu "bên khách hàng bỏ đi", ta có thể chuyển nó về trạng thái 5 hoặc ẩn đi
-        // Ở đây ta cứ trả về stepper tối giản hoặc null nếu không muốn hiện
-        return null; 
+      // Sử dụng dữ liệu trangThaiTruocKhiHuy từ backend để hiển thị chính xác
+      if (orderInfo && orderInfo.trangThaiTruocKhiHuy !== null && orderInfo.trangThaiTruocKhiHuy !== undefined) {
+        // Có dữ liệu chính xác từ backend
+        let stepsBeforeFailed = [];
+
+        // Luôn có bước đầu ti├¬n (chờ xác nhận)
+        stepsBeforeFailed.push(TRANG_THAI[0]);
+
+        // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
+        if (orderInfo.trangThaiTruocKhiHuy >= 1) {
+          stepsBeforeFailed.push(TRANG_THAI[1]); // Đã xác nhận
+        }
+        if (orderInfo.trangThaiTruocKhiHuy >= 2) {
+          stepsBeforeFailed.push(TRANG_THAI[2]); // Đang chuẩn bị
+        }
+        if (orderInfo.trangThaiTruocKhiHuy >= 3) {
+          stepsBeforeFailed.push(TRANG_THAI[3]); // Đang giao
+        }
+
+        // Thêm bước giao hàng không thành công vào cuối
+        actualSteps = [...stepsBeforeFailed, TRANG_THAI.find(t => t.value === 7)];
+
+        console.log('🎯 Đơn hàng giao hàng không thành công - Sử dụng dữ liệu từ backend:');
+        console.log('📍 Trạng thái trước khi giao hàng không thành công:', orderInfo.trangThaiTruocKhiHuy);
+        console.log('📍 Các bước hiển thị:', actualSteps.map(s => s.label));
+      } else {
+        // Fallback: sử dụng logic cũ nếu không có dữ liệu từ backend
+        // ✅ SỬA: Hiển thị đầy đủ quy trình đã đi qua
+        actualSteps = [
+          TRANG_THAI[0],
+          TRANG_THAI[1],
+          TRANG_THAI[2],
+          TRANG_THAI[3],
+          TRANG_THAI.find(t => t.value === 7)
+        ];
+        // Chờ xác nhận -> Đã xác nhận -> Đang chuẩn bị -> Đang giao -> Giao hàng không thành công
+        console.log('⚠️ Không có dữ liệu trangThaiTruocKhiHuy, sử dụng logic cũ');
+      }
     }
 
     return (
@@ -1650,27 +1786,40 @@ const OrderDetailPage = () => {
     return sum + (finalPrice * sp.soLuong);
   }, 0);
 
+  const tongGiamGia = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
   const tienShip = orderInfo && orderInfo.phiVanChuyen ? orderInfo.phiVanChuyen : 0;
-  let tongGiamGiaVal = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
 
-  // ✅ BẢO VỆ: Nếu dữ liệu DB sai (giảm giá > tiền hàng), hoặc không khớp với tổng thanh toán thực tế
-  // Ta sẽ tính lại Giảm giá dựa trên thanh toán thực tế của đơn hàng đó
-  if (orderInfo && orderInfo.tongTien) {
-    const checkValue = tongTienHang + tienShip - tongGiamGiaVal;
-    if (Math.abs(checkValue - orderInfo.tongTien) > 1000 || tongGiamGiaVal > tongTienHang) {
-      tongGiamGiaVal = Math.max(0, (tongTienHang + tienShip) - orderInfo.tongTien);
-    }
+  // ✅ DEBUG: Log giá trị tienShip
+  console.log('🔍 === DEBUG TIENSHIP ===');
+  console.log('📊 orderInfo:', orderInfo);
+  console.log('📊 orderInfo.phiVanChuyen:', orderInfo?.phiVanChuyen);
+  console.log('📊 tienShip:', tienShip);
+  console.log('🔍 === END DEBUG ===');
+
+  // ✅ THÊM: Tính tống tiền bao gồm phí ship (giống OrderDetail)
+  const tongTienHangTinh = orderProducts.reduce((sum, sp) => sum + (sp.thanhTien || 0), 0);
+  let tongTien = tongTienHang + tienShip - tongGiamGia;
+
+  // ✅ NẾU backend đã có tongTien và khác với tính toán, sử dụng backend
+  if (orderInfo && orderInfo.tongTien && Math.abs(orderInfo.tongTien - tongTien) > 1000) {
+    console.log('⚠️ Phát hiện chênh lệch giữa frontend và backend:', {
+      frontend: tongTien,
+      backend: orderInfo.tongTien,
+      difference: orderInfo.tongTien - tongTien
+    });
+    tongTien = orderInfo.tongTien;
   }
 
-  // ✅ KẾT QUẢ CUỐI CÙNG: Tổng cộng = Tiền hàng + Ship - Giảm giá
-  const tongTienHienThi = tongTienHang + tienShip - tongGiamGiaVal;
-
   // ✅ DEBUG: Log để kiểm tra tính toán
-  console.log('🔍 === HỆ THỐNG TÍNH TOÁN (USER SIDE) ===');
-  console.log('📊 1. Tiền hàng:', tongTienHang);
-  console.log('📊 2. Phí ship:', tienShip);
-  console.log('📊 3. Giảm giá:', tongGiamGiaVal);
-  console.log('📊 4. TỔNG CỘNG (1+2-3):', tongTienHienThi);
+  console.log('🔍 === DEBUG TÍNH TOÁN TỔNG TIỀN ===');
+  console.log('📊 orderInfo.tongTien:', orderInfo?.tongTien);
+  console.log('📊 orderInfo.phiVanChuyen:', orderInfo?.phiVanChuyen);
+  console.log('📊 orderInfo.tongTienGiamGia:', orderInfo?.tongTienGiamGia);
+  console.log('📊 tongTienHang:', tongTienHang);
+  console.log('📊 tongTienHangTinh:', tongTienHangTinh);
+  console.log('📊 tienShip:', tienShip);
+  console.log('📊 tongGiamGia:', tongGiamGia);
+  console.log('📊 tongTien cuối cùng:', tongTien);
   console.log('🔍 === END DEBUG ===');
 
   // 🔄 Refresh lại dữ liệu đơn hàng
@@ -1717,7 +1866,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể thêm sản phẩm!',
-        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
+        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1785,7 +1934,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể sửa số lượng!',
-        text: 'Chỉ có thể sửa số lượng khi đơn hàng ở trạng thái "Chờ thanh toán"!',
+        text: 'Chỉ có thể sửa số lượng khi đơn hàng ở trạng thái "Chờ xác nhận"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1905,7 +2054,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể xóa sản phẩm!',
-        text: 'Chỉ có thể xóa sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
+        text: 'Chỉ có thể xóa sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1978,8 +2127,8 @@ const OrderDetailPage = () => {
 
           {/* Nút chức năng: Phân quyền theo vai trò */}
           <div style={{ marginTop: 16 }}>
-            {/* 1. Nút Hủy đơn (Chỉ khách hàng thấy khi đơn mới - Trạng thái 0) */}
-            {orderInfo.trangThai === 0 && (
+            {/* 1. Nút Hủy đơn (Cả khách hàng và Admin đều thấy khi đơn mới) */}
+            {orderInfo.trangThai <= 2 && (
               <button
                 style={{ padding: '8px 20px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
                 onClick={handleHuy}
@@ -2059,7 +2208,7 @@ const OrderDetailPage = () => {
               <strong>📧 Email:</strong> {orderInfo.emailGiaoHang || 'Chưa có thông tin'}
             </div>
             <div>
-              <strong>📅 Ngày tạo:</strong> {orderInfo.ngayTao || orderInfo.ngayMua || '---'}
+              <strong>📅 Ngày tạo:</strong> {orderInfo.ngayTao || 'Chưa có thông tin'}
             </div>
             {orderInfo.ngayMua && (
               <div>
@@ -2081,7 +2230,7 @@ const OrderDetailPage = () => {
               <div style={{ width: 100, height: 90, marginRight: 24 }}>
                 {sp.anh && sp.anh.trim() !== '' ? (
                   <img
-                    src={formatImage(sp.anh)}
+                    src={config.getApiUrl(formatImage(sp.anh))}
                     alt={sp.tenSanPham}
                     style={{ width: 100, height: 90, objectFit: 'cover', borderRadius: 8 }}
                     onError={(e) => {
@@ -2108,18 +2257,27 @@ const OrderDetailPage = () => {
               </div>
               <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
                 <div>{sp.tenSanPham}</div>
+                {sp.ma && (
+                  <div style={{ color: '#1976d2', fontWeight: 'bold', fontSize: '13px', marginTop: '4px' }}>
+                    Mã: {sp.ma}
+                  </div>
+                )}
               </div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Màu: {sp.mauSac}</div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Size: {sp.kichThuoc}</div>
               <div style={{ flex: 1, color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
-                {/* 🎯 DIỆT SÂU 11đ: Chỉ hiện giá thực tế nếu nó > 1000đ, nếu không hiện giá gốc */}
-                {sp.gia && sp.gia > 1000 ? (
-                  <div style={{ color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
-                    {sp.gia.toLocaleString('vi-VN')} ₫
-                  </div>
+                {sp.gia && sp.giaBanGiamGia && sp.giaBanGiamGia > 0 && sp.giaBanGiamGia < sp.giaBan ? (
+                  <>
+                    <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '14px' }}>
+                      {sp.giaBan?.toLocaleString('vi-VN')} ₫
+                    </span>
+                    <div style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: '16px' }}>
+                      {sp.gia?.toLocaleString('vi-VN')} ₫
+                    </div>
+                  </>
                 ) : (
                   <div style={{ color: '#1976d2', fontWeight: 700, fontSize: 16 }}>
-                    {sp.giaBan?.toLocaleString('vi-VN')} ₫
+                    {(sp.gia || sp.giaBan)?.toLocaleString('vi-VN')} ₫
                   </div>
                 )}
               </div>
@@ -2145,6 +2303,29 @@ const OrderDetailPage = () => {
                 )}
               </div>
               <div style={{ flex: 1, fontWeight: 700, color: '#009688', fontSize: 16 }}>{sp.thanhTien?.toLocaleString('vi-VN')} ₫</div>
+
+              {/* NÚT ĐÁNH GIÁ - CHỈ HIỆN CHO KHÁCH HÀNG KHI ĐƠN HOÀN THÀNH (STATUS 4) */}
+              {!isAdmin && orderInfo?.trangThai === 4 && (
+                <div style={{ flex: '0 0 auto', marginLeft: 16 }}>
+                  <button
+                    onClick={() => {
+                      setSelectedProductForFeedback(sp);
+                      setShowFeedbackModal(true);
+                    }}
+                    style={{
+                      background: '#ff9800',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '8px 18px',
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Đánh giá
+                  </button>
+                </div>
+              )}
 
               {/* Nút xóa sản phẩm - CHỈ ADMIN MỚI THẤY */}
               {isAdmin && (
@@ -2203,13 +2384,13 @@ const OrderDetailPage = () => {
           <span>{tienShip.toLocaleString()}đ</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#e53935' }}>
-          <span>Giảm giá {voucherInfo ? `(${voucherInfo.tenVoucher || voucherInfo.ten || 'Voucher'})` : ''}:</span>
-          <span>-{tongGiamGiaVal.toLocaleString()}đ</span>
+          <span>Giảm giá:</span>
+          <span>-{tongGiamGia.toLocaleString()}đ</span>
         </div>
         <hr style={{ border: 'none', borderTop: '1px solid #e3e8ee', margin: '12px 0' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1976d2', fontSize: 18, marginTop: 8 }}>
           <span>Tổng cộng:</span>
-          <span>{tongTienHienThi.toLocaleString()}đ</span>
+          <span>{tongTien.toLocaleString()}đ</span>
         </div>
 
 
@@ -2297,7 +2478,7 @@ const OrderDetailPage = () => {
               </button>
             </div>
 
-            {/* Bộ log màu sắc và size */}
+            {/* Bộ lọc màu sắc và size */}
             <Box display="flex" gap={2} mb={2}>
               <TextField
                 select
@@ -2459,6 +2640,124 @@ const OrderDetailPage = () => {
                 }}
               >
                 {addProductLoading ? 'Đang thêm...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL ĐÁNH GIÁ SẢN PHẨM */}
+      {showFeedbackModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center',
+          alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{ background: 'white', padding: '30px', borderRadius: '16px', width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ marginTop: 0, textAlign: 'center' }}>Đánh giá sản phẩm</h3>
+            <p style={{ textAlign: 'center', color: '#666' }}>{selectedProductForFeedback?.tenSanPham}</p>
+
+            {/* Rating Stars */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <span key={star} onClick={() => setRating(star)} style={{ cursor: 'pointer', fontSize: '35px', color: star <= rating ? '#ffb400' : '#e0e0e0' }}>★</span>
+              ))}
+            </div>
+
+            <textarea
+              style={{ width: '100%', height: '100px', marginBottom: '15px', padding: '12px', borderRadius: '8px', border: '1px solid #ddd' }}
+              placeholder="Chia sẻ cảm nhận của bạn..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+
+            {/* PHẦN UPLOAD ẢNH */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Hình ảnh sản phẩm (Tối đa 5):</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {previewImages.map((src, index) => (
+                  <div key={index} style={{ position: 'relative', width: '80px', height: '80px' }}>
+                    <img src={src} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} alt="preview" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '20px', height: '20px', fontSize: '12px' }}
+                    >X</button>
+                  </div>
+                ))}
+                {previewImages.length < 5 && (
+                  <label style={{
+                    width: '80px', height: '80px', border: '2px dashed #ccc', borderRadius: '4px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '24px', color: '#ccc'
+                  }}>
+                    +
+                    <input type="file" multiple accept="image/*" hidden onChange={handleImageChange} />
+                  </label>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setShowFeedbackModal(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#f5f5f5', color: '#333', border: 'none', cursor: 'pointer' }}
+              >
+                Hủy
+              </button>
+              <button
+                disabled={feedbackLoading}
+                onClick={async () => {
+                  if (!comment.trim()) {
+                    Swal.fire('Thông báo', 'Vui lòng nhập nội dung đánh giá!', 'warning');
+                    return;
+                  }
+
+                  // 1. Lấy đúng productId từ sản phẩm được chọn
+                  // Lưu ý: Phải dùng .idSanPhamChiTiet hoặc .idSanPham tùy theo object bạn nhận được từ API
+                  const productId = selectedProductForFeedback?.idSanPhamChiTiet || selectedProductForFeedback?.idSanPham;
+
+                  setFeedbackLoading(true);
+                  try {
+                    const formData = new FormData();
+                    formData.append('idSanPham', productId);
+                    formData.append('idKhachHang', customerId);
+                    formData.append('soSao', rating);
+                    formData.append('binhLuan', comment);
+
+                    // 2. SỬA LỖI: Backend nhận key là 'images' (MultipartFile)
+                    feedbackImages.forEach((file) => {
+                      formData.append('images', file);
+                    });
+
+                    // 3. SỬA LỖI: URL đúng là /them theo @PostMapping("/them")
+                    const response = await axios.post(config.getApiUrl('api/danh-gia/them'), formData, {
+                      headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+
+                    if (response.status === 200 || response.status === 201) {
+                      Swal.fire('Thành công', 'Đánh giá của bạn đã được gửi!', 'success');
+                      setShowFeedbackModal(false);
+                      setComment('');
+                      setFeedbackImages([]);
+                      setPreviewImages([]);
+                      setRating(5);
+                    }
+                  } catch (error) {
+                    console.error("Lỗi:", error);
+                    // Đọc lỗi chi tiết từ Backend
+                    const errorMsg = error.response?.data || 'Không thể gửi đánh giá, thử lại sau!';
+                    Swal.fire('Lỗi', typeof errorMsg === 'string' ? errorMsg : 'Lỗi hệ thống', 'error');
+                  } finally {
+                    setFeedbackLoading(false);
+                  }
+                }}
+                style={{
+                  flex: 2, padding: '12px', borderRadius: '8px',
+                  background: feedbackLoading ? '#ccc' : '#1976d2',
+                  color: 'white', border: 'none', fontWeight: 600, cursor: feedbackLoading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {feedbackLoading ? 'Đang gửi...' : 'Gửi đánh giá'}
               </button>
             </div>
           </div>

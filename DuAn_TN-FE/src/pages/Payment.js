@@ -3,9 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './Payment.css';
-import { getCustomerId, getUserInfo, isLoggedIn } from '../utils/authUtils';
+import { getCustomerId, getCustomerName, getUserInfo, isLoggedIn } from '../utils/authUtils';
 import config from '../config/config';
-
+import AddressSelector from '../components/AddressSelector';
 import AddressManager from '../components/AddressManager';
 import { parseGHNResponse } from '../utils/ghnUtils';  // ✅ THÊM: Import parseGHNResponse
 
@@ -83,11 +83,6 @@ const Payment = () => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
-
-  // ✅ THÊM: States cho dịch vụ GHN
-  const [ghnServices, setGhnServices] = useState([]);
-  const [selectedServiceId, setSelectedServiceId] = useState(null);
-  const [estimatedDate, setEstimatedDate] = useState(null);
 
   // ✅ THÊM: State cho voucher (giống BanHangTaiQuay)
   const [vouchers, setVouchers] = useState([]);
@@ -228,7 +223,8 @@ const Payment = () => {
     }
   }, [addressStorageKey]);
 
-
+  // ✅ THÊM: Fetch giá khuyến mãi từ API sản phẩm nếu cần
+  const [productPrices, setProductPrices] = useState({});
 
   const formatVnd = (value) => {
     const n = Number(value || 0);
@@ -444,15 +440,15 @@ const Payment = () => {
     const subTotal = total - itemDiscountTotal - orderDiscount;
     const effectiveShippingFee = subTotal >= 2000000 ? 0 : shippingFee;
     const newFinalTotal = subTotal + effectiveShippingFee;
-    
+
     setFinalTotal(newFinalTotal);
-    console.log('💰 Recalculated final total:', { 
-      originalTotal: total, 
-      savings: itemDiscountTotal, 
-      voucher: orderDiscount, 
+    console.log('💰 Recalculated final total:', {
+      originalTotal: total,
+      savings: itemDiscountTotal,
+      voucher: orderDiscount,
       ship: shippingFee,
       effectiveShip: effectiveShippingFee,
-      final: newFinalTotal 
+      final: newFinalTotal
     });
   }, [total, itemDiscountTotal, orderDiscount, shippingFee]);
 
@@ -516,9 +512,6 @@ const Payment = () => {
     setSelectedDistrict(null);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi tỉnh
-    setGhnServices([]);
-    setSelectedServiceId(null);
-    setEstimatedDate(null);
 
     // Load districts cho province này
     if (provinceId) {
@@ -530,9 +523,6 @@ const Payment = () => {
     setSelectedDistrict(districtId);
     setSelectedWard(null);
     setShippingFee(0); // Reset phí ship khi thay đổi quận
-    setGhnServices([]);
-    setSelectedServiceId(null);
-    setEstimatedDate(null);
 
     // Load wards cho district này
     if (districtId) {
@@ -542,58 +532,6 @@ const Payment = () => {
 
   const handleWardChange = (wardId) => {
     setSelectedWard(wardId);
-  };
-
-  // ✅ THÊM: Fetch dịch vụ GHN
-  const fetchGhnServices = async (districtId) => {
-    if (!districtId) return;
-    try {
-      const response = await fetch(config.getApiUrl(`api/ghn/services?toDistrictId=${districtId}`));
-      if (response.ok) {
-        const services = await response.json();
-        // ✅ SỬA: Chỉ lấy 1 dịch vụ duy nhất để đơn giản hóa giao diện (theo yêu cầu người dùng)
-        // Ưu tiên lấy dịch vụ Chuẩn (service_type_id = 2) nếu có
-        let filteredServices = services || [];
-        if (filteredServices.length > 1) {
-          const standardService = filteredServices.find(s => s.service_type_id === 2 || s.short_name?.includes('Chuẩn'));
-          filteredServices = standardService ? [standardService] : [filteredServices[0]];
-        }
-        
-        // Đổi tên hiển thị cho đồng nhất
-        if (filteredServices.length > 0) {
-          filteredServices[0].short_name = "Giao hàng tiêu chuẩn";
-        }
-
-        setGhnServices(filteredServices);
-
-        // Tự động chọn dịch vụ duy nhất này
-        if (filteredServices.length > 0) {
-          const defaultService = filteredServices[0].service_id;
-          setSelectedServiceId(defaultService);
-          return defaultService;
-        }
-      }
-    } catch (error) {
-      console.error('Lỗi lấy dịch vụ GHN:', error);
-    }
-    return null;
-  };
-
-  // ✅ THÊM: Fetch ngày giao hàng dự kiến
-  const fetchLeadTime = async (serviceId, districtId, wardCode) => {
-    if (!serviceId || !districtId || !wardCode) return;
-    try {
-      const response = await fetch(config.getApiUrl(`api/ghn/leadtime?serviceId=${serviceId}&toDistrictId=${districtId}&toWardCode=${wardCode}`));
-      if (response.ok) {
-        const leadtimeTimestamp = await response.json();
-        if (leadtimeTimestamp) {
-          const date = new Date(leadtimeTimestamp * 1000);
-          setEstimatedDate(date.toLocaleDateString('vi-VN'));
-        }
-      }
-    } catch (error) {
-      console.error('Lỗi lấy ngày giao hàng:', error);
-    }
   };
 
   // ✅ THÊM: Tự động điền thông tin khách hàng và select địa chỉ
@@ -744,26 +682,11 @@ const Payment = () => {
       // Đợi một chút để đảm bảo state đã được cập nhật hoàn toàn
       const timer = setTimeout(() => {
         handleAddressChange();
-        if (selectedServiceId) {
-            fetchLeadTime(selectedServiceId, selectedDistrict, selectedWard);
-        }
       }, 200);
 
       return () => clearTimeout(timer);
     }
-  }, [selectedProvince, selectedDistrict, selectedWard, selectedServiceId]);
-
-  // ✅ THÊM: Tự động fetch dịch vụ GHN khi Quận/Huyện thay đổi
-  useEffect(() => {
-    if (selectedDistrict) {
-      console.log('🚚 Quận/Huyện thay đổi -> Fetching GHN services cho:', selectedDistrict);
-      fetchGhnServices(selectedDistrict);
-    } else {
-      setGhnServices([]);
-      setSelectedServiceId(null);
-      setEstimatedDate(null);
-    }
-  }, [selectedDistrict]);
+  }, [selectedProvince, selectedDistrict, selectedWard]);
 
   // ✅ THÊM: Function xử lý voucher (TÍNH TOÁN GIẢM GIÁ NGAY KHI CHỌN)
   const handleVoucherChange = async (voucherId) => {
@@ -850,8 +773,7 @@ const Payment = () => {
         toWardCode: toWardCode,
         weight: weight,
         insuranceValue: insuranceValue,
-        serviceId: selectedServiceId, // ✅ THÊM: Gửi serviceId đã chọn
-        actualDistance: distance 
+        actualDistance: distance // ✅ THÊM: Gửi khoảng cách thực tế
       };
 
       const response = await fetch(config.getApiUrl('api/ghn/calculate-fee'), {
@@ -891,20 +813,20 @@ const Payment = () => {
 
         if (shippingFeeValue > 0) {
           setShippingFee(shippingFeeValue);
-          
+
           // ✅ KIỂM TRA: Nếu đơn trên 2tr thì thông báo miễn phí luôn
           const subTotal = total - itemDiscountTotal - orderDiscount;
           if (subTotal >= 2000000) {
             toast.success("🚚 Đơn hàng trên 2tr - MIỄN PHÍ VẬN CHUYỂN!", {
-               position: "top-right",
-               autoClose: 3000
+              position: "top-right",
+              autoClose: 3000
             });
           } else {
             // Thông báo theo mức phí của khách hàng
             const kmFee = 5000;
             const possibleDistances = [5, 15, 50];
             const currentDistance = possibleDistances.find(d => d * kmFee === shippingFeeValue);
-  
+
             if (currentDistance) {
               toast.info(`Phí ship theo khoảng cách: ${formatVnd(shippingFeeValue)} (~${currentDistance}km)`);
             } else {
@@ -1268,10 +1190,10 @@ const Payment = () => {
   // ✅ THÊM: Function tính khoảng cách qua Bản đồ (Nominatim + OSRM)
   const calculateDistanceByAddress = async (fullAddress) => {
     if (!fullAddress || fullAddress.length < 5) return null;
-    
+
     setDistanceLoading(true);
     console.log('🗺️ Đang tính khoảng cách cho:', fullAddress);
-    
+
     try {
       // 1. Geocoding (Address -> Cords) using Nominatim
       // Lần 1: Thử tìm địa chỉ đầy đủ
@@ -1299,7 +1221,7 @@ const Payment = () => {
       if (geoData && geoData.length > 0) {
         const lat = parseFloat(geoData[0].lat);
         const lon = parseFloat(geoData[0].lon);
-        
+
         // 2. Routing (Distance calculation) using OSRM
         const routeUrl = `https://router.project-osrm.org/route/v1/driving/${SHOP_COORDS[1]},${SHOP_COORDS[0]};${lon},${lat}?overview=false`;
         const routeRes = await fetch(routeUrl);
@@ -1651,37 +1573,11 @@ const Payment = () => {
       return;
     }
 
-    // ✅ THÊM: Xác nhận đặt hàng cho COD
-    if (paymentMethod === 'cod') {
-      const isConfirmed = await new Promise((resolve) => {
-        if (window.Swal) {
-          window.Swal.fire({
-            title: 'Xác nhận đặt hàng',
-            text: 'Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Xác nhận đặt hàng',
-            cancelButtonText: 'Hủy'
-          }).then((result) => {
-            resolve(result.isConfirmed);
-          });
-        } else {
-          resolve(window.confirm('Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?'));
-        }
-      });
-
-      if (!isConfirmed) {
-        return;
-      }
-    }
-
     setLoading(true);
 
     try {
       const customerId = getCustomerId();
-      
+
       // BƯỚC 1: TẠO ĐƠN HÀNG (Dùng cho cả COD và VNPAY để validate Voucher/Stock ngay lập tức)
       const orderData = {
         idkhachHang: customerId,
@@ -1690,15 +1586,14 @@ const Payment = () => {
         ngayTao: null,
         // Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
         tongTien: total - itemDiscountTotal,
-        tongTienGiamGia: orderDiscount, 
-        phiVanChuyen: shippingFee, 
+        tongTienGiamGia: orderDiscount,
+        phiVanChuyen: shippingFee,
         tenNguoiNhan: customerName,
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
         diaChiGiaoHang: customerAddress,
-        idService: selectedServiceId, // ✅ THÊM: Gửi idService
-        loaiDonHang: 'online', 
-        trangThai: 0 // Chờ thanh toán
+        loaiDonHang: 'online',
+        trangThai: 0 // Chờ xác nhận / Chờ thanh toán
       };
 
       console.log('📦 Đang gửi yêu cầu tạo đơn hàng Atomic:', orderData);
@@ -1886,7 +1781,7 @@ const Payment = () => {
 
       if (paymentMethod === 'cod') {
         // ✅ COD: Hiển thị thông báo thành công và chuyển trang sau delay
-        toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ thanh toán.', {
+        toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ xác nhận.', {
           position: "top-center",
           autoClose: 5000,
         });
@@ -1898,17 +1793,17 @@ const Payment = () => {
       } else if (paymentMethod === 'bank') {
         // ✅ VNPAY: Gọi API lấy URL thanh toán VNPAY
         console.log('💰 Đang tạo yêu cầu thanh toán VNPAY cho đơn hàng:', newOrderId);
-        
+
         try {
           // Làm tròn tổng tiền cho VNPAY
           const vnpAmount = Math.round(finalTotal);
           const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}`));
-          
+
           if (!paymentRes.ok) throw new Error('Không thể khởi tạo thanh toán VNPAY');
-          
+
           const vnpUrl = await paymentRes.text();
           console.log('🚀 Chuyển hướng đến VNPAY:', vnpUrl);
-          
+
           // Chuyển hướng ngay lập tức đến VNPAY
           window.location.href = vnpUrl;
         } catch (paymentErr) {
@@ -1965,57 +1860,6 @@ const Payment = () => {
                 {prettyAddress(customerAddress) || 'Chưa có địa chỉ. Vui lòng nhập thông tin bên dưới.'}
               </div>
             </div>
-          </div>
-
-          {/* ✅ THÊM: Khối chọn phương thức vận chuyển (Shopee Style) */}
-          <div className="gx-payment-shipping-card gx-payment-card">
-            <div className="gx-payment-card-header">
-              <span className="gx-payment-card-title">🚚 Phương thức vận chuyển</span>
-            </div>
-            
-            {ghnServices && ghnServices.length > 0 ? (
-              <div className="gx-payment-shipping-list">
-                {ghnServices.map((service) => (
-                  <label 
-                    key={service.service_id} 
-                    className={`gx-payment-shipping-item ${selectedServiceId === service.service_id ? 'active' : ''}`}
-                  >
-                    <input
-                      type="radio"
-                      name="shippingService"
-                      value={service.service_id}
-                      checked={selectedServiceId === service.service_id}
-                      onChange={() => setSelectedServiceId(service.service_id)}
-                      style={{ display: 'none' }}
-                    />
-                    <div className="gx-payment-shipping-info">
-                      <div className="gx-payment-shipping-name">
-                        {service.short_name || 'Giao hàng tiêu chuẩn'}
-                      </div>
-                      {estimatedDate && selectedServiceId === service.service_id && (
-                        <div className="gx-payment-shipping-date">
-                          Giao hàng dự kiến: <strong>{estimatedDate}</strong>
-                        </div>
-                      )}
-                    </div>
-                    <div className="gx-payment-shipping-fee">
-                      {selectedServiceId === service.service_id && shippingFee > 0 ? shippingFee.toLocaleString() + '₫' : '---'}
-                    </div>
-                    {selectedServiceId === service.service_id && (
-                      <div className="gx-payment-shipping-check">✓</div>
-                    )}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <div className="gx-payment-no-shipping">
-                {selectedDistrict ? 'Đang lấy thông tin vận chuyển...' : 'Vui lòng chọn địa chỉ để xem phương thức vận chuyển'}
-              </div>
-            )}
-            
-            {shippingFeeLoading && (
-              <div className="gx-payment-shipping-loading">Đang tính phí vận chuyển từ GHN...</div>
-            )}
           </div>
 
           {/* <div className="gx-payment-form-group">
@@ -2268,19 +2112,66 @@ const Payment = () => {
             </div>
           </div>
 
-          <button
-            className="gx-payment-btn"
-            onClick={handlePayment}
-            disabled={loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)}
-            style={{
-              opacity: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 0.6 : 1,
-              cursor: (loading || !selectedProvince || !selectedDistrict || !selectedWard || (shippingFee <= 0 && shippingFeeLoading)) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {loading ? 'Đang xử lý...' :
-              !selectedProvince || !selectedDistrict || !selectedWard ? 'Chọn địa chỉ giao hàng' :
-                shippingFee <= 0 ? 'Đang tính phí vận chuyển...' : 'ĐẶT HÀNG'}
-          </button>
+          {/* ==================== NÚT CHỌN ĐỊA CHỈ GIAO HÀNG (ĐÃ SỬA) ==================== */}
+          <div style={{ marginTop: 24 }}>
+            <Button
+              type="primary"
+              danger
+              size="large"
+              block
+              onClick={() => setAddressModalOpen(true)}   // ← Sửa thành setAddressModalOpen
+              disabled={!cart || cart.length === 0}
+              style={{
+                height: 56,
+                fontSize: 18,
+                fontWeight: 'bold'
+              }}
+            >
+              📍 Chọn địa chỉ giao hàng
+            </Button>
+
+            {/* Hiển thị địa chỉ đã chọn */}
+            {customerAddress && (
+              <div style={{
+                marginTop: 12,
+                padding: 16,
+                backgroundColor: '#f6ffed',
+                border: '1px solid #b7eb8f',
+                borderRadius: 8,
+                fontSize: 15
+              }}>
+                <div style={{ fontWeight: 'bold', marginBottom: 6 }}>Địa chỉ nhận hàng:</div>
+                <div>
+                  <strong>{customerName || 'Chưa có tên'}</strong> — {customerPhone || 'Chưa có SĐT'}
+                </div>
+                <div style={{ marginTop: 6, color: '#555' }}>
+                  {customerAddress}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* NÚT ĐẶT HÀNG / THANH TOÁN */}
+          <div style={{ marginTop: 30 }}>
+            <Button
+              type="primary"
+              size="large"
+              block
+              onClick={handlePayment}
+              loading={loading}
+              disabled={loading || !customerAddress || !selectedProvince || !selectedDistrict || !selectedWard}
+              style={{
+                height: 56,
+                fontSize: 18,
+                fontWeight: 'bold'
+              }}
+            >
+              {loading ? "Đang xử lý..." : "XÁC NHẬN ĐẶT HÀNG"}
+            </Button>
+            <div style={{ textAlign: 'center', marginTop: 10, color: '#666', fontSize: 14 }}>
+              Thanh toán khi nhận hàng (COD)
+            </div>
+          </div>
 
 
 

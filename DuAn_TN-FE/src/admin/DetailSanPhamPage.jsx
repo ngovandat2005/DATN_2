@@ -6,6 +6,18 @@ import { Switch } from "antd";
 import "../styles/AdminPanel.css";
 import "../styles/SalePage.css";
 
+const validateSKU = (sku) => {
+  if (!sku || sku.trim() === "") {
+    return { valid: false, msg: "Mã SKU không được để trống!" };
+  }
+  // Định dạng: 3-20 ký tự, chữ hoa, số, dấu gạch ngang, không khoảng trắng
+  const regex = /^[A-Z0-9-_]{3,20}$/;
+  if (!regex.test(sku.trim().toUpperCase())) {
+    return { valid: false, msg: "SKU (3-20 ký tự) không chứa khoảng trắng hoặc ký tự đặc biệt!" };
+  }
+  return { valid: true };
+};
+
 // Thêm CSS animation cho modal
 const modalStyles = `
   @keyframes slideIn {
@@ -115,87 +127,77 @@ const DetailSanPhamPage = () => {
   const handleAddSpct = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra định dạng SKU (nếu có nhập)
-    if (spctForm.ma && !/^[a-zA-Z0-9-_]+$/.test(spctForm.ma)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Mã SKU không hợp lệ!',
-        text: 'Mã SKU chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
-        confirmButtonColor: '#1976d2'
-      });
+    // --- BẮT ĐẦU VALIDATE ---
+    // 1. Kiểm tra định dạng SKU
+    const checkSKU = validateSKU(spctForm.ma);
+    if (!checkSKU.valid) {
+      Swal.fire({ icon: 'error', title: 'Lỗi định dạng', text: checkSKU.msg });
       return;
     }
 
     // 2. Kiểm tra trùng SKU trong danh sách hiện tại
-    if (spctForm.ma) {
-      const isSkuDuplicate = chiTietList.some(ct => ct.ma?.trim().toLowerCase() === spctForm.ma.trim().toLowerCase());
-      if (isSkuDuplicate) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Mã SKU đã tồn tại!',
-          text: `Mã SKU "${spctForm.ma}" đã được sử dụng cho một biến thể khác của sản phẩm này.`,
-          confirmButtonColor: '#d32f2f'
-        });
-        return;
-      }
-    }
-
-    // 3. Kiểm tra giá bán hợp lệ
-    if (Number(spctForm.giaBan) <= 0) {
-      Swal.fire({ icon: 'error', title: 'Giá bán không hợp lệ!', text: 'Giá bán phải lớn hơn 0.' });
+    const isSkuExists = chiTietList.some(
+      (ct) => ct.ma?.toUpperCase() === spctForm.ma.trim().toUpperCase()
+    );
+    if (isSkuExists) {
+      Swal.fire({ icon: 'warning', title: 'Mã SKU đã tồn tại!', text: 'Vui lòng nhập mã khác.' });
       return;
     }
 
-    // 4. Kiểm tra mã SKU đã tồn tại ở các sản phẩm khác (Thực tế nên gọi API, ở đây check local trước)
-    // Để triệt để, ta sẽ thêm một lớp bảo vệ khi nhận lỗi từ Backend ở khối catch
-
-    // Kiểm tra trùng bộ (Màu sắc + Kích thước) ở FE
-    const isDuplicate = chiTietList.some(
+    // 3. Kiểm tra trùng cặp Màu sắc - Kích thước
+    const isVariantExists = chiTietList.some(
       (ct) =>
         String(ct.mauSac?.id || ct.idMauSac) === String(spctForm.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(spctForm.idKichThuoc)
     );
-
-    if (isDuplicate) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Biến thể đã tồn tại!',
-        text: 'Màu sắc và Kích thước này đã có trong danh sách chi tiết của sản phẩm.',
-        confirmButtonColor: '#d32f2f'
-      });
+    if (isVariantExists) {
+      Swal.fire({ icon: 'warning', title: 'Biến thể đã tồn tại!', text: 'Cặp Màu - Size này đã có trong danh sách.' });
       return;
     }
 
-    const result = await Swal.fire({
-      title: 'Xác nhận thêm biến thể?',
-      text: "Vui lòng kiểm tra kỹ các thông tin trước khi xác nhận.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1976d2',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
+    // 4. Kiểm tra các trường bắt buộc khác
+    if (!spctForm.idMauSac || !spctForm.idKichThuoc || !spctForm.giaBan || !spctForm.soLuong) {
+      Swal.fire({ icon: 'error', title: 'Thiếu thông tin', text: 'Vui lòng điền đầy đủ các trường bắt buộc!' });
+      return;
+    }
+    // --- KẾT THÚC VALIDATE ---
 
     try {
       await axios.post(`http://localhost:8080/api/san-pham-chi-tiet/them/${product.id}`, {
-        ma: spctForm.ma, 
+        ma: spctForm.ma.trim().toUpperCase(),
         idKichThuoc: spctForm.idKichThuoc,
         idMauSac: spctForm.idMauSac,
         soLuong: Number(spctForm.soLuong),
         giaBan: Number(spctForm.giaBan),
       });
 
+      // Reset form và load lại dữ liệu
       setSpctForm({ ma: '', idMauSac: '', idKichThuoc: '', giaBan: '', soLuong: '' });
       fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
 
-      Swal.fire({ icon: 'success', title: 'Thêm biến thể thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+      Swal.fire({
+        icon: 'success',
+        title: 'Thêm biến thể thành công',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        width: 280
+      });
+
       setShowAddSpctModal(false);
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || 'Mã SKU này có thể đã tồn tại ở một sản phẩm khác!';
-      Swal.fire({ icon: 'error', title: 'Thêm thất bại!', text: msg });
+      const msg = err.response?.data || err.message || 'Có lỗi xảy ra!';
+      Swal.fire({
+        icon: 'error',
+        title: 'Thêm thất bại!',
+        text: msg,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        width: 280
+      });
     }
   };
 
@@ -203,64 +205,97 @@ const DetailSanPhamPage = () => {
   const handleEditSpct = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra định dạng SKU
-    if (editSpct.ma && !/^[a-zA-Z0-9-_]+$/.test(editSpct.ma)) {
-      Swal.fire({ icon: 'error', title: 'Mã SKU không hợp lệ!', text: 'Mã SKU không được chứa ký tự đặc biệt.' });
+    // --- BẮT ĐẦU VALIDATE ---
+    // 1. Kiểm tra định dạng SKU mới
+    const checkSKU = validateSKU(editSpct.ma);
+    if (!checkSKU.valid) {
+      Swal.fire({ icon: 'error', title: 'Lỗi định dạng', text: checkSKU.msg });
       return;
     }
 
-    // 2. Kiểm tra trùng bộ (Màu sắc + Kích thước)
-    const isDuplicate = chiTietList.some(
+    // 2. Kiểm tra trùng SKU (trừ chính nó)
+    const isSkuDuplicate = chiTietList.some(
+      (ct) => ct.id !== editSpct.id && ct.ma?.toUpperCase() === editSpct.ma.trim().toUpperCase()
+    );
+    if (isSkuDuplicate) {
+      Swal.fire({ icon: 'warning', title: 'Trùng mã SKU!', text: 'Mã SKU này đã được sử dụng.' });
+      return;
+    }
+
+    // 3. Kiểm tra trùng cặp Màu sắc - Kích thước (trừ chính nó)
+    const isVariantDuplicate = chiTietList.some(
       (ct) =>
         ct.id !== editSpct.id &&
         String(ct.mauSac?.id || ct.idMauSac) === String(editSpct.mauSac?.id || editSpct.idMauSac) &&
         String(ct.kichThuoc?.id || ct.idKichThuoc) === String(editSpct.kichThuoc?.id || editSpct.idKichThuoc)
     );
 
-    if (isDuplicate) {
-      Swal.fire({ icon: 'error', title: 'Biến thể đã tồn tại!', text: 'Màu và size này đã được sử dụng.' });
+    if (isVariantDuplicate) {
+      Swal.fire({ icon: 'warning', title: 'Cặp Màu - Size đã tồn tại!', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
       return;
     }
-
-    const result = await Swal.fire({
-      title: 'Xác nhận cập nhật?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
+    // --- KẾT THÚC VALIDATE ---
 
     try {
       const currentVariant = chiTietList.find(ct => ct.id === editSpct.id);
+      const oldPrice = currentVariant?.giaBan || 0;
       const newPrice = Number(editSpct.giaBan);
-      const promo = currentVariant?.khuyenMai;
-      const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
 
-      // THIẾT QUÂN LUẬT: Nếu không có KM đang chạy, giá giảm PHẢI bị xóa bỏ (null)
       let updatedGiaBanGiamGia = null;
 
-      if (isActivePromo) {
-        // Nếu có KM đang chạy, tính toán lại giá giảm dựa trên % khuyến mãi và giá mới
-        updatedGiaBanGiamGia = Math.round(newPrice * (1 - promo.giaTri / 100));
+      // Logic tính lại giá khuyến mãi theo tỷ lệ cũ
+      if (currentVariant?.giaBanGiamGia && oldPrice !== newPrice && oldPrice > 0) {
+        const discountRatio = (oldPrice - currentVariant.giaBanGiamGia) / oldPrice;
+        updatedGiaBanGiamGia = Math.round(newPrice * (1 - discountRatio));
+
+        if (updatedGiaBanGiamGia >= newPrice) {
+          updatedGiaBanGiamGia = newPrice;
+        }
       }
 
-      await axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${editSpct.id}`, {
-        ma: editSpct.ma,
+      const updateData = {
+        ma: editSpct.ma.trim().toUpperCase(),
         giaBan: newPrice,
-        soLuong: editSpct.soLuong,
+        soLuong: Number(editSpct.soLuong),
         idMauSac: editSpct.mauSac?.id || editSpct.idMauSac,
         idKichThuoc: editSpct.kichThuoc?.id || editSpct.idKichThuoc,
-        giaBanGiamGia: updatedGiaBanGiamGia // Sẽ là null nếu không có KM
+      };
+
+      if (updatedGiaBanGiamGia !== null) {
+        updateData.giaBanGiamGia = updatedGiaBanGiamGia;
+      }
+
+      await axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${editSpct.id}`, updateData);
+
+      let successMsg = 'Cập nhật biến thể thành công';
+      if (updatedGiaBanGiamGia !== null) {
+        successMsg += ` (Đã cập nhật lại giá KM: ${updatedGiaBanGiamGia.toLocaleString()}đ)`;
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Thành công',
+        text: successMsg,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 2000,
+        width: 300
       });
 
-      Swal.fire({ icon: 'success', title: 'Cập nhật thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       setShowEditSpctModal(false);
+      setEditSpct(null);
       fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
     } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || 'Lỗi cập nhật dữ liệu!';
-      Swal.fire({ icon: 'error', title: 'Thất bại', text: msg });
+      const msg = err.response?.data || err.message || 'Cập nhật thất bại!';
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi hệ thống',
+        text: msg,
+        toast: true,
+        position: 'top-end',
+        timer: 2000
+      });
     }
   };
 
@@ -330,74 +365,6 @@ const DetailSanPhamPage = () => {
     }
   };
 
-  // 🪄 HÀM DỌN DẸP DỮ LIỆU RÁC (THẦN TỐC)
-  const handleCleanUpPrices = async () => {
-    // 1. Log ra những biến thể "bị lỗi" (không có KM nhưng lại có giá giảm rác trong DB)
-    const variantsToFix = chiTietList.filter(ct => {
-      const promo = ct.khuyenMai;
-      const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
-      // Lỗi là khi không có KM mà giá giảm vẫn khác (null/0/giá gốc)
-      return !isActivePromo && ct.giaBanGiamGia !== null && ct.giaBanGiamGia !== ct.giaBan;
-    });
-
-    if (variantsToFix.length === 0) {
-      Swal.fire({
-        icon: 'info',
-        title: 'Dữ liệu đã sạch!',
-        text: 'Toàn bộ biến thể của sản phẩm này hiện tại đã chuẩn dữ liệu SQL.',
-        timer: 1500,
-        showConfirmButton: false
-      });
-      return;
-    }
-
-    const confirm = await Swal.fire({
-      title: 'Xác nhận dọn dẹp?',
-      text: `Hệ thống đã tìm thấy ${variantsToFix.length} biến thể có dữ liệu giá ảo trong SQL. Bạn có muốn dọn dẹp ngay?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ff9800',
-      confirmButtonText: '🪄 Dọn dẹp ngay!',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    Swal.fire({
-      title: 'Đang thanh tẩy dữ liệu...',
-      allowOutsideClick: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-      // 2. Chạy dọn dẹp hàng loạt bằng Promise.all
-      await Promise.all(variantsToFix.map(ct => 
-        axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${ct.id}`, {
-          ma: ct.ma,
-          giaBan: ct.giaBan,
-          soLuong: ct.soLuong,
-          idMauSac: ct.mauSac?.id || ct.idMauSac,
-          idKichThuoc: ct.kichThuoc?.id || ct.idKichThuoc,
-          giaBanGiamGia: null // Đưa về null để SQL sạch bóng
-        })
-      ));
-
-      Swal.close();
-      Swal.fire({
-        icon: 'success',
-        title: 'Thanh tẩy thành công!',
-        text: `Đã dọn dẹp sạch ${variantsToFix.length} biến thể trong SQL.`,
-        timer: 1500,
-        showConfirmButton: false
-      });
-      
-      // Tải lại danh sách
-      fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
-    } catch (err) {
-      Swal.fire('Lỗi dọn dẹp', 'Không thể cập nhật SQL hàng loạt!', 'error');
-    }
-  };
-
   // Hàm xử lý đường dẫn ảnh
   const getImageUrl = (img) => {
     if (!img) return '/default-image.png';
@@ -409,7 +376,7 @@ const DetailSanPhamPage = () => {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
 
     // Sử dụng endpoint mới /api/images/
-    return `http://localhost:8080/images/${encodeURIComponent(img)}`;
+    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
   };
 
   if (loading) {
@@ -650,29 +617,12 @@ const DetailSanPhamPage = () => {
                         <td>{ct.kichThuoc?.tenKichThuoc || "-"}</td>
                         <td>{ct.giaBan?.toLocaleString() || "-"}</td>
                         <td>
-                          {(() => {
-                            const promo = ct.khuyenMai;
-                            const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
-                            const salePrice = ct.giaBanGiamGia;
-
-                            if (isActivePromo) {
-                              // Nếu có KM đang chạy, tính toán giá giảm
-                              const displaySalePrice = (salePrice > 0 && salePrice < ct.giaBan) 
-                                ? salePrice 
-                                : Math.round(ct.giaBan * (1 - promo.giaTri / 100));
-
-                              return (
-                                <>
-                                  {displaySalePrice.toLocaleString()} ₫
-                                  <span style={{ color: '#ff4d4f', marginLeft: 8, fontWeight: 'bold' }}>
-                                    (-{promo.giaTri}%)
-                                  </span>
-                                </>
-                              );
-                            }
-                            // Nếu không có KM, hiển thị đúng bằng giá gốc (2,000,000đ)
-                            return `${(ct.giaBan || 0).toLocaleString()} ₫`;
-                          })()}
+                          {ct.giaBanGiamGia ? ct.giaBanGiamGia.toLocaleString() : '-'}
+                          {ct.giaBanGiamGia && ct.giaBanGiamGia < ct.giaBan && (
+                            <span style={{ color: '#ff4d4f', marginLeft: 8 }}>
+                              (-{Math.round((1 - ct.giaBanGiamGia / ct.giaBan) * 100)}%)
+                            </span>
+                          )}
                         </td>
                         <td>{ct.soLuong ?? "-"}</td>
                         <td>
@@ -703,7 +653,7 @@ const DetailSanPhamPage = () => {
                           >
                             Sửa
                           </button>
-                          <button
+                          {/* <button
                           onClick={() => handleDeleteSpct(ct.id)}
                           style={{ 
                             background: "#e53935", 
@@ -716,7 +666,7 @@ const DetailSanPhamPage = () => {
                           }}
                         >
                           Xóa
-                        </button>
+                        </button> */}
                         </td>
                       </tr>
                     ))
@@ -799,11 +749,11 @@ const DetailSanPhamPage = () => {
                   <label style={{ fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
                     🆔 Mã SKU
                   </label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập mã SKU (Tùy chọn)..." 
-                    value={spctForm.ma} 
-                    onChange={e => setSpctForm(f => ({ ...f, ma: e.target.value }))} 
+                  <input
+                    type="text"
+                    placeholder="Nhập mã SKU (Tùy chọn)..."
+                    value={spctForm.ma}
+                    onChange={e => setSpctForm(f => ({ ...f, ma: e.target.value }))}
                     style={{
                       padding: '12px 16px',
                       border: '2px solid #e0e0e0',
@@ -1115,11 +1065,11 @@ const DetailSanPhamPage = () => {
                   <label style={{ fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
                     🆔 Mã SKU
                   </label>
-                  <input 
-                    type="text" 
-                    placeholder="Nhập mã SKU..." 
-                    value={editSpct.ma} 
-                    onChange={e => setEditSpct(f => ({ ...f, ma: e.target.value }))} 
+                  <input
+                    type="text"
+                    placeholder="Nhập mã SKU..."
+                    value={editSpct.ma}
+                    onChange={e => setEditSpct(f => ({ ...f, ma: e.target.value }))}
                     style={{
                       padding: '12px 16px',
                       border: '2px solid #e0e0e0',

@@ -1,4 +1,8 @@
+
+
+
 package com.example.backend.dto;
+
 
 import com.example.backend.entity.DonHang;
 import com.example.backend.enums.TrangThaiDonHang;
@@ -10,94 +14,102 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.util.List;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Setter
-@Getter
-public class DonHangDTO {
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Setter
+    @Getter
+    public class DonHangDTO {
 
-    private Integer id;
+        private Integer id;
 
-    private Integer idnhanVien;
+        private Integer  idnhanVien;
 
-    private Integer idkhachHang;
 
-    private String tenNhanVien;
+        private Integer  idkhachHang;
 
-    private Integer idgiamGia;
 
-    private LocalDate ngayMua;
+        private String tenNhanVien;
 
-    private LocalDate ngayTao;
 
-    private String loaiDonHang;
+        private Integer  idgiamGia;
 
-    private Integer trangThai = 0;
 
-    private String trangThaiText;
+        private LocalDate ngayMua;
 
-    private Double tongTien;
 
-    private Double tongTienGiamGia;
+        private LocalDate ngayTao;
 
-    private String diaChiGiaoHang;
 
-    private String soDienThoaiGiaoHang;
+        private String loaiDonHang;
 
-    private String emailGiaoHang;
 
-    @com.fasterxml.jackson.annotation.JsonProperty("phiVanChuyen")
-    private Integer phiVanChuyen;
+        private Integer trangThai = 0;
 
-    private String tenNguoiNhan;
+        private String trangThaiText;
 
-    private List<DonHangChiTietDTO> donHangChiTiets;
 
-    private String maVanDon;
+        private Double tongTien;
 
-    private Integer idService;
 
-    private String tenKhachHang;
+        private Double tongTienGiamGia;
 
-    public DonHangDTO(DonHang dh) {
-        if (dh == null)
-            return;
 
-        this.id = dh.getId();
-        this.idnhanVien = dh.getNhanVien() != null ? dh.getNhanVien().getId() : null;
-        this.idkhachHang = dh.getKhachHang() != null ? dh.getKhachHang().getId() : null;
-        this.tenKhachHang = dh.getKhachHang() != null ? dh.getKhachHang().getTenKhachHang() : null;
-        this.idgiamGia = dh.getGiamGia() != null ? dh.getGiamGia().getId() : null;
+        private String diaChiGiaoHang;
 
-        this.ngayMua = dh.getNgayMua();
-        this.ngayTao = (dh.getNgayTao() != null) ? dh.getNgayTao() : (dh.getNgayMua() != null ? dh.getNgayMua() : LocalDate.now());
-        this.loaiDonHang = dh.getLoaiDonHang();
 
-        this.trangThai = dh.getTrangThai();
-        if (dh.getTrangThai() != null) {
-            try {
-                this.trangThaiText = TrangThaiDonHang.fromValue(dh.getTrangThai()).getDisplayName();
-            } catch (Exception e) {
-                this.trangThaiText = "TRẠNG THÁI " + dh.getTrangThai();
+        private String soDienThoaiGiaoHang;
+
+
+        private String emailGiaoHang;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("phiVanChuyen")
+        private Integer phiVanChuyen;
+
+
+
+        private String tenNguoiNhan;
+
+
+        private List<DonHangChiTietDTO> donHangChiTiets;
+
+
+        public DonHangDTO(DonHang dh) {
+            if (dh == null) return;
+            
+            this.id = dh.getId();
+            this.idnhanVien = dh.getNhanVien() != null ? dh.getNhanVien().getId() : null;
+            this.idkhachHang = dh.getKhachHang() != null ? dh.getKhachHang().getId() : null;
+            this.idgiamGia = dh.getGiamGia() != null ? dh.getGiamGia().getId() : null;
+
+            this.ngayMua = dh.getNgayMua();
+            this.ngayTao = (dh.getNgayTao() != null) ? dh.getNgayTao() : (dh.getNgayMua() != null ? dh.getNgayMua() : LocalDate.now());
+            this.loaiDonHang = dh.getLoaiDonHang();
+
+            this.trangThai = dh.getTrangThai();
+            if (dh.getTrangThai() != null) {
+                try {
+                    this.trangThaiText = TrangThaiDonHang.fromValue(dh.getTrangThai()).name();
+                } catch (Exception e) {
+                    this.trangThaiText = "TRẠNG THÁI " + dh.getTrangThai();
+                }
+            } else {
+                this.trangThaiText = "CHƯA XÁC ĐỊNH";
             }
-        } else {
-            this.trangThaiText = "CHƯA XÁC ĐỊNH";
-        }
 
-        this.tongTien = dh.getTongTien() != null ? dh.getTongTien() : 0.0;
-        this.tongTienGiamGia = dh.getTongTienGiamGia() != null ? dh.getTongTienGiamGia() : 0.0;
-        this.diaChiGiaoHang = dh.getDiaChiGiaoHang();
-        this.soDienThoaiGiaoHang = dh.getSoDienThoaiGiaoHang();
-        this.emailGiaoHang = dh.getEmailGiaoHang();
-        this.tenNguoiNhan = dh.getTenNguoiNhan();
-        this.phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0;
-        this.maVanDon = dh.getMaVanDon();
-        this.idService = dh.getIdService();
+            this.tongTien = dh.getTongTien() != null ? dh.getTongTien() : 0.0;
+            this.tongTienGiamGia = dh.getTongTienGiamGia() != null ? dh.getTongTienGiamGia() : 0.0;
+            this.diaChiGiaoHang = dh.getDiaChiGiaoHang();
+            this.soDienThoaiGiaoHang = dh.getSoDienThoaiGiaoHang();
+            this.emailGiaoHang = dh.getEmailGiaoHang();
+            this.tenNguoiNhan = dh.getTenNguoiNhan();
+            this.phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0;
 
-        if (dh.getDonHangChiTiets() != null) {
-            this.donHangChiTiets = dh.getDonHangChiTiets().stream()
-                    .map(DonHangChiTietDTO::new)
-                    .toList();
+
+            if (dh.getDonHangChiTiets() != null) {
+                this.donHangChiTiets = dh.getDonHangChiTiets().stream()
+                        .map(DonHangChiTietDTO::new)
+                        .toList();
+            }
         }
     }
-}
+

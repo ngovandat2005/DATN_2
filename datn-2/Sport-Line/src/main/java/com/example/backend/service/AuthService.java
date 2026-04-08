@@ -74,6 +74,7 @@ public class AuthService {
         kh.setTenKhachHang(req.getTenKhachHang());
         kh.setEmail(req.getEmail());
         kh.setNgaySinh(req.getNgaySinh());
+        kh.setGioiTinh(req.getGioiTinh());
         kh.setDiaChi(req.getDiaChi());
         kh.setSoDienThoai(req.getSoDienThoai());
         kh.setMatKhau(req.getMatKhau());

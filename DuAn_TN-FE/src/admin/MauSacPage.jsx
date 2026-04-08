@@ -153,21 +153,7 @@ export default function MauSacPage() {
     showModal();
   };
 
-  const onFinish = async (values) => {
-    const actionText = editingItem ? "Cập nhật" : "Thêm mới";
-    const result = await Swal.fire({
-      title: `Xác nhận ${actionText.toLowerCase()} màu sắc?`,
-      text: "Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
+  const onFinish = (values) => {
     if (editingItem) {
       fetch(`http://localhost:8080/api/mau-sac/update/${editingItem.id}`, {
         method: 'PUT',
@@ -196,7 +182,7 @@ export default function MauSacPage() {
             timer: 1500,
             width: 250
           });;
-          fetch('http://localhost:8080/api/mau-sac/getAllFull')
+          fetch('http://localhost:8080/api/mau-sac/getAllFullFull')
             .then(res => res.json())
             .then(data => setMauSacs(data));
         })
@@ -291,19 +277,7 @@ export default function MauSacPage() {
     });
   };
 
-  const handleRestore = async (id) => {
-    const result = await Swal.fire({
-      title: 'Xác nhận khôi phục màu sắc này?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Khôi phục',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
+  const handleRestore = (id) => {
     fetch(`http://localhost:8080/api/mau-sac/khoi-phuc/${id}`, { method: 'PUT' })
       .then(res => {
         Swal.fire({ icon: 'success', title: 'Khôi phục thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });

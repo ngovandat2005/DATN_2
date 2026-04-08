@@ -1,5 +1,6 @@
 package com.example.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,6 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 @Entity
 @Table(name = "ThuongHieu")
+// ✅ Ngăn lỗi Lazy Loading và lỗi Proxy khi chuyển sang JSON
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ThuongHieu {
 
     @Id

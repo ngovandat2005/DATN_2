@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 @Configuration
-public class GHNConfig {
+public class ghnConfig {
     @Value("${ghn.token}")
     private String token;
 

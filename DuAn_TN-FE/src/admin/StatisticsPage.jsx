@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import { Card, Statistic, Row, Col, Typography, Space, Divider, Select, Table, Spin, Alert, Button, Progress, DatePicker, Segmented } from 'antd';
 import { ShoppingCartOutlined, DollarOutlined, UserOutlined, RiseOutlined, FallOutlined, ReloadOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
-import config from '../config/config';
 import SimpleChart from './components/SimpleChart';
 
 const { Title, Text } = Typography;
@@ -209,7 +208,7 @@ function StatisticsPage() {
     if (img.startsWith('/')) return 'http://localhost:8080' + img;
     
     // Sử dụng API endpoint thay vì static resource
-    return `${config.baseUrl}images/${encodeURIComponent(img)}`;
+    return `http://localhost:8080/api/images/${encodeURIComponent(img)}`;
   };
 
   // Cột cho bảng sản phẩm bán chạy
@@ -225,7 +224,7 @@ function StatisticsPage() {
       key: 'image',
       render: (_, record) => (
         <img
-          src={getImageUrl(record.images || record.images)} // Hỗ trợ cả 2 field
+          src={getImageUrl(record.images || record.imanges)} // Hỗ trợ cả 2 field
           alt={record.productName || "Không có ảnh"}
           style={{
             width: 60,
@@ -237,7 +236,7 @@ function StatisticsPage() {
             background: "#f6f8fa"
           }}
           onError={(e) => {
-            console.error(`Product image failed to load: ${record.images || record.images}`);
+            console.error(`Product image failed to load: ${record.images || record.imanges}`);
             e.target.src = "/logo.png";
           }}
         />
@@ -306,7 +305,7 @@ function StatisticsPage() {
         <Space wrap size="large">
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <CalendarOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-            <Text strong style={{ marginRight: 12 }}>LOG NHANH:</Text>
+            <Text strong style={{ marginRight: 12 }}>LỌC NHANH:</Text>
             <Segmented 
               options={[
                 { label: 'Hôm nay', value: 'today' },

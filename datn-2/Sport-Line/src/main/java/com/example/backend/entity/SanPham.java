@@ -1,10 +1,9 @@
 package com.example.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.sql.Date;
 import java.util.List;
 
 @Getter
@@ -13,49 +12,41 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "SanPham")
-
 public class SanPham {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "Id")
     private Integer id;
 
-//    @Column(name = "MaSanPham", unique = true)
-//    private String maSanPham;
-
-    @Column(name = "TenSanPham")
-    private String tenSanPham;
-
-    @Column(name = "Ma") // ✅ THÊM: Mã sản phẩm
     private String ma;
-
-    @Column(name = "NgayTao")
-    private Date ngayTao;
+    private String tenSanPham;
+    private String images;
+    private Integer trangThai;
 
     @ManyToOne
-    @JoinColumn(name = "IdThuongHieu", referencedColumnName = "Id")
+    @JoinColumn(name = "IdDanhMuc")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private DanhMuc danhMuc;
+
+    @ManyToOne
+    @JoinColumn(name = "IdThuongHieu")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ThuongHieu thuongHieu;
 
     @ManyToOne
-    @JoinColumn(name = "IdXuatXu", referencedColumnName = "Id")
+    @JoinColumn(name = "IdXuatXu")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private XuatXu xuatXu;
 
     @ManyToOne
-    @JoinColumn(name = "IdChatLieu", referencedColumnName = "Id")
+    @JoinColumn(name = "IdChatLieu")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private ChatLieu chatLieu;
 
-    @ManyToOne
-    @JoinColumn(name = "IdDanhMuc", referencedColumnName = "Id")
-    private DanhMuc danhMuc;
+    @OneToMany(mappedBy = "sanPham")
+    @JsonIgnore // Chặn để không lặp: SanPham -> ChiTiet -> SanPham
+    private List<SanPhamChiTiet> sanPhamChiTiets;
 
-    @Column(name = "Images")
-    private String images;
-
-    @Column(name = "TrangThai")
-    private Integer trangThai;
-
-    @OneToMany(mappedBy = "sanPham", fetch = FetchType.EAGER)
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("sanPham")
-    private List<SanPhamChiTiet> sanPhamChiTiets; 
+    @OneToMany(mappedBy = "sanPham")
+    @JsonIgnore // Chặn để không lặp: SanPham -> DanhGia -> SanPham
+    private List<DanhGia> danhGias;
 }

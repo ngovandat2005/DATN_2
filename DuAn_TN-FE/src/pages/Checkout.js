@@ -22,13 +22,6 @@ function Checkout() {
 
   const onFinish = async (values) => {
     try {
-      if (values.payment === 'cod') {
-        const confirmOrder = window.confirm('Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD) không?');
-        if (!confirmOrder) {
-          return;
-        }
-      }
-
       if (paymentMethod === 'vnpay') {
         // Tính tổng tiền
         const total = cart.reduce(
