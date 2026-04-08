@@ -1,0 +1,629 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.example:back-end >------------------------
+[INFO] Building back-end 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ back-end ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.10.1:compile (default-compile) @ back-end ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 106 source files to D:\DATN_2-main\DATN_2-main\datn-2\Sport-Line\target\classes
+[INFO] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/GHNClientService.java: D:\DATN_2-main\DATN_2-main\datn-2\Sport-Line\src\main\java\com\example\backend\service\GHNClientService.java uses unchecked or unsafe operations.
+[INFO] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/GHNClientService.java: Recompile with -Xlint:unchecked for details.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/config/ghnConfig.java:[10,8] class GHNConfig is public, should be declared in a file named GHNConfig.java
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/controller/DonHangChiTietController.java:[87,11] cannot find symbol
+  symbol:   method setGiamGia(<nulltype>)
+  location: variable dh of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/controller/DonHangChiTietController.java:[88,33] cannot find symbol
+  symbol:   method getTongTien()
+  location: variable dh of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[61,68] cannot find symbol
+  symbol:   method getIdSanPhamChiTiet()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[65,17] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[65,36] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[70,29] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[70,48] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[75,58] cannot find symbol
+  symbol:   method getIdDonHang()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[75,78] cannot find symbol
+  symbol:   method getIdSanPhamChiTiet()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[80,39] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[80,58] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[81,41] cannot find symbol
+  symbol:   method getThanhTien()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[81,62] cannot find symbol
+  symbol:   method getThanhTien()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[88,50] cannot find symbol
+  symbol:   method getIdDonHang()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[99,33] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[100,29] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[103,42] cannot find symbol
+  symbol:   method getSanPhamChiTiet()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[105,25] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[107,37] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[109,37] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[113,20] cannot find symbol
+  symbol:   method setSoLuong(int)
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[114,37] cannot find symbol
+  symbol:   method getThanhTien()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[117,58] cannot find symbol
+  symbol:   method getDonHang()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[129,42] cannot find symbol
+  symbol:   method getSanPhamChiTiet()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[131,33] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[131,56] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[134,38] cannot find symbol
+  symbol:   method getDonHang()
+  location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[135,43] cannot find symbol
+  symbol:   method getDonHangChiTiets()
+  location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[136,24] cannot find symbol
+  symbol:   method getDonHangChiTiets()
+  location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[141,62] cannot find symbol
+  symbol:   method getId()
+  location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[146,33] constructor DonHangChiTietDTO in class com.example.backend.dto.DonHangChiTietDTO cannot be applied to given types;
+  required: com.example.backend.entity.DonHangChiTiet
+  found:    no arguments
+  reason: actual and formal argument lists differ in length
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[147,21] cannot find symbol
+  symbol:   method getId()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,12] cannot find symbol
+  symbol:   method setIdDonHang(ct.getDonH[...] null)
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,28] cannot find symbol
+  symbol:   method getDonHang()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,54] cannot find symbol
+  symbol:   method getDonHang()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,12] cannot find symbol
+  symbol:   method setIdSanPhamChiTiet(ct.getSanP[...] null)
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,35] cannot find symbol
+  symbol:   method getSanPhamChiTiet()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,68] cannot find symbol
+  symbol:   method getSanPhamChiTiet()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[150,26] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[151,22] cannot find symbol
+  symbol:   method getGia()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[152,28] cannot find symbol
+  symbol:   method getThanhTien()
+  location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[158,26] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[159,22] cannot find symbol
+  symbol:   method getGia()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[160,28] cannot find symbol
+  symbol:   method getThanhTien()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[162,16] cannot find symbol
+  symbol:   method getIdDonHang()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[163,43] cannot find symbol
+  symbol:   method getIdDonHang()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[163,70] invalid method reference
+  cannot find symbol
+    symbol:   method setDonHang()
+    location: class com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[166,16] cannot find symbol
+  symbol:   method getIdSanPhamChiTiet()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[167,50] cannot find symbol
+  symbol:   method getIdSanPhamChiTiet()
+  location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[167,84] invalid method reference
+  cannot find symbol
+    symbol:   method setSanPhamChiTiet()
+    location: class com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[39,24] cannot find symbol
+  symbol:   method getNgayKetThuc()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[38,24] cannot find symbol
+  symbol:   method getNgayBatDau()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[37,24] cannot find symbol
+  symbol:   method getDonToiThieu()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[36,24] cannot find symbol
+  symbol:   method getGiaTri()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[35,24] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[34,24] cannot find symbol
+  symbol:   method getMoTa()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[33,24] cannot find symbol
+  symbol:   method getLoaiVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[32,24] cannot find symbol
+  symbol:   method getTenVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[31,24] cannot find symbol
+  symbol:   method getMaVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[30,24] cannot find symbol
+  symbol:   method getId()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[63,32] cannot find symbol
+  symbol:   method getNgayKetThuc()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[62,32] cannot find symbol
+  symbol:   method getNgayBatDau()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[61,32] cannot find symbol
+  symbol:   method getDonToiThieu()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[60,32] cannot find symbol
+  symbol:   method getGiaTri()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[59,32] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[58,32] cannot find symbol
+  symbol:   method getMoTa()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[57,32] cannot find symbol
+  symbol:   method getLoaiVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[56,32] cannot find symbol
+  symbol:   method getTenVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[55,32] cannot find symbol
+  symbol:   method getMaVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[54,32] cannot find symbol
+  symbol:   method getId()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[65,26] incompatible types: java.util.List<java.lang.Object> cannot be converted to java.util.List<com.example.backend.dto.VoucherDTO>
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[82,32] cannot find symbol
+  symbol:   method getNgayKetThuc()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[81,32] cannot find symbol
+  symbol:   method getNgayBatDau()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[80,32] cannot find symbol
+  symbol:   method getDonToiThieu()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[79,32] cannot find symbol
+  symbol:   method getGiaTri()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[78,32] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[77,32] cannot find symbol
+  symbol:   method getMoTa()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[76,32] cannot find symbol
+  symbol:   method getLoaiVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[75,32] cannot find symbol
+  symbol:   method getTenVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[74,32] cannot find symbol
+  symbol:   method getMaVoucher()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[73,32] cannot find symbol
+  symbol:   method getId()
+  location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[85,24] incompatible types: java.lang.Object cannot be converted to com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[91,27] cannot find symbol
+  symbol:   method getMaVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[92,28] cannot find symbol
+  symbol:   method getTenVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[93,29] cannot find symbol
+  symbol:   method getLoaiVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[94,25] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[95,22] cannot find symbol
+  symbol:   method getMoTa()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[96,24] cannot find symbol
+  symbol:   method getGiaTri()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[97,29] cannot find symbol
+  symbol:   method getDonToiThieu()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[98,28] cannot find symbol
+  symbol:   method getNgayBatDau()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[99,29] cannot find symbol
+  symbol:   method getNgayKetThuc()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[124,39] cannot find symbol
+  symbol:   method getMaVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[125,40] cannot find symbol
+  symbol:   method getTenVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[126,41] cannot find symbol
+  symbol:   method getLoaiVoucher()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[127,37] cannot find symbol
+  symbol:   method getSoLuong()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[128,34] cannot find symbol
+  symbol:   method getMoTa()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[129,36] cannot find symbol
+  symbol:   method getGiaTri()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[130,41] cannot find symbol
+  symbol:   method getDonToiThieu()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[131,40] cannot find symbol
+  symbol:   method getNgayBatDau()
+  location: variable dto of type com.example.backend.dto.VoucherDTO
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  4.612 s
+[INFO] Finished at: 2026-03-27T17:39:24+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.10.1:compile (default-compile) on project back-end: Compilation failure: Compilation failure: 
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/config/ghnConfig.java:[10,8] class GHNConfig is public, should be declared in a file named GHNConfig.java
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/controller/DonHangChiTietController.java:[87,11] cannot find symbol
+[ERROR]   symbol:   method setGiamGia(<nulltype>)
+[ERROR]   location: variable dh of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/controller/DonHangChiTietController.java:[88,33] cannot find symbol
+[ERROR]   symbol:   method getTongTien()
+[ERROR]   location: variable dh of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[61,68] cannot find symbol
+[ERROR]   symbol:   method getIdSanPhamChiTiet()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[65,17] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[65,36] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[70,29] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[70,48] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[75,58] cannot find symbol
+[ERROR]   symbol:   method getIdDonHang()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[75,78] cannot find symbol
+[ERROR]   symbol:   method getIdSanPhamChiTiet()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[80,39] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[80,58] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[81,41] cannot find symbol
+[ERROR]   symbol:   method getThanhTien()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[81,62] cannot find symbol
+[ERROR]   symbol:   method getThanhTien()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[88,50] cannot find symbol
+[ERROR]   symbol:   method getIdDonHang()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[99,33] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[100,29] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[103,42] cannot find symbol
+[ERROR]   symbol:   method getSanPhamChiTiet()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[105,25] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[107,37] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[109,37] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[113,20] cannot find symbol
+[ERROR]   symbol:   method setSoLuong(int)
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[114,37] cannot find symbol
+[ERROR]   symbol:   method getThanhTien()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[117,58] cannot find symbol
+[ERROR]   symbol:   method getDonHang()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[129,42] cannot find symbol
+[ERROR]   symbol:   method getSanPhamChiTiet()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[131,33] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable spct of type com.example.backend.entity.SanPhamChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[131,56] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[134,38] cannot find symbol
+[ERROR]   symbol:   method getDonHang()
+[ERROR]   location: variable chiTiet of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[135,43] cannot find symbol
+[ERROR]   symbol:   method getDonHangChiTiets()
+[ERROR]   location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[136,24] cannot find symbol
+[ERROR]   symbol:   method getDonHangChiTiets()
+[ERROR]   location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[141,62] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable donHang of type com.example.backend.entity.DonHang
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[146,33] constructor DonHangChiTietDTO in class com.example.backend.dto.DonHangChiTietDTO cannot be applied to given types;
+[ERROR]   required: com.example.backend.entity.DonHangChiTiet
+[ERROR]   found:    no arguments
+[ERROR]   reason: actual and formal argument lists differ in length
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[147,21] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,12] cannot find symbol
+[ERROR]   symbol:   method setIdDonHang(ct.getDonH[...] null)
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,28] cannot find symbol
+[ERROR]   symbol:   method getDonHang()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[148,54] cannot find symbol
+[ERROR]   symbol:   method getDonHang()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,12] cannot find symbol
+[ERROR]   symbol:   method setIdSanPhamChiTiet(ct.getSanP[...] null)
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,35] cannot find symbol
+[ERROR]   symbol:   method getSanPhamChiTiet()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[149,68] cannot find symbol
+[ERROR]   symbol:   method getSanPhamChiTiet()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[150,26] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[151,22] cannot find symbol
+[ERROR]   symbol:   method getGia()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[152,28] cannot find symbol
+[ERROR]   symbol:   method getThanhTien()
+[ERROR]   location: variable ct of type com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[158,26] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[159,22] cannot find symbol
+[ERROR]   symbol:   method getGia()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[160,28] cannot find symbol
+[ERROR]   symbol:   method getThanhTien()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[162,16] cannot find symbol
+[ERROR]   symbol:   method getIdDonHang()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[163,43] cannot find symbol
+[ERROR]   symbol:   method getIdDonHang()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[163,70] invalid method reference
+[ERROR]   cannot find symbol
+[ERROR]     symbol:   method setDonHang()
+[ERROR]     location: class com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[166,16] cannot find symbol
+[ERROR]   symbol:   method getIdSanPhamChiTiet()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[167,50] cannot find symbol
+[ERROR]   symbol:   method getIdSanPhamChiTiet()
+[ERROR]   location: variable dto of type com.example.backend.dto.DonHangChiTietDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/DonHangChiTietService.java:[167,84] invalid method reference
+[ERROR]   cannot find symbol
+[ERROR]     symbol:   method setSanPhamChiTiet()
+[ERROR]     location: class com.example.backend.entity.DonHangChiTiet
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[39,24] cannot find symbol
+[ERROR]   symbol:   method getNgayKetThuc()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[38,24] cannot find symbol
+[ERROR]   symbol:   method getNgayBatDau()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[37,24] cannot find symbol
+[ERROR]   symbol:   method getDonToiThieu()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[36,24] cannot find symbol
+[ERROR]   symbol:   method getGiaTri()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[35,24] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[34,24] cannot find symbol
+[ERROR]   symbol:   method getMoTa()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[33,24] cannot find symbol
+[ERROR]   symbol:   method getLoaiVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[32,24] cannot find symbol
+[ERROR]   symbol:   method getTenVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[31,24] cannot find symbol
+[ERROR]   symbol:   method getMaVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[30,24] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[63,32] cannot find symbol
+[ERROR]   symbol:   method getNgayKetThuc()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[62,32] cannot find symbol
+[ERROR]   symbol:   method getNgayBatDau()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[61,32] cannot find symbol
+[ERROR]   symbol:   method getDonToiThieu()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[60,32] cannot find symbol
+[ERROR]   symbol:   method getGiaTri()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[59,32] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[58,32] cannot find symbol
+[ERROR]   symbol:   method getMoTa()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[57,32] cannot find symbol
+[ERROR]   symbol:   method getLoaiVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[56,32] cannot find symbol
+[ERROR]   symbol:   method getTenVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[55,32] cannot find symbol
+[ERROR]   symbol:   method getMaVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[54,32] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[65,26] incompatible types: java.util.List<java.lang.Object> cannot be converted to java.util.List<com.example.backend.dto.VoucherDTO>
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[82,32] cannot find symbol
+[ERROR]   symbol:   method getNgayKetThuc()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[81,32] cannot find symbol
+[ERROR]   symbol:   method getNgayBatDau()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[80,32] cannot find symbol
+[ERROR]   symbol:   method getDonToiThieu()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[79,32] cannot find symbol
+[ERROR]   symbol:   method getGiaTri()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[78,32] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[77,32] cannot find symbol
+[ERROR]   symbol:   method getMoTa()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[76,32] cannot find symbol
+[ERROR]   symbol:   method getLoaiVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[75,32] cannot find symbol
+[ERROR]   symbol:   method getTenVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[74,32] cannot find symbol
+[ERROR]   symbol:   method getMaVoucher()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[73,32] cannot find symbol
+[ERROR]   symbol:   method getId()
+[ERROR]   location: variable voucher of type com.example.backend.entity.Voucher
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[85,24] incompatible types: java.lang.Object cannot be converted to com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[91,27] cannot find symbol
+[ERROR]   symbol:   method getMaVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[92,28] cannot find symbol
+[ERROR]   symbol:   method getTenVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[93,29] cannot find symbol
+[ERROR]   symbol:   method getLoaiVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[94,25] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[95,22] cannot find symbol
+[ERROR]   symbol:   method getMoTa()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[96,24] cannot find symbol
+[ERROR]   symbol:   method getGiaTri()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[97,29] cannot find symbol
+[ERROR]   symbol:   method getDonToiThieu()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[98,28] cannot find symbol
+[ERROR]   symbol:   method getNgayBatDau()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[99,29] cannot find symbol
+[ERROR]   symbol:   method getNgayKetThuc()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[124,39] cannot find symbol
+[ERROR]   symbol:   method getMaVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[125,40] cannot find symbol
+[ERROR]   symbol:   method getTenVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[126,41] cannot find symbol
+[ERROR]   symbol:   method getLoaiVoucher()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[127,37] cannot find symbol
+[ERROR]   symbol:   method getSoLuong()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[128,34] cannot find symbol
+[ERROR]   symbol:   method getMoTa()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[129,36] cannot find symbol
+[ERROR]   symbol:   method getGiaTri()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[130,41] cannot find symbol
+[ERROR]   symbol:   method getDonToiThieu()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] /D:/DATN_2-main/DATN_2-main/datn-2/Sport-Line/src/main/java/com/example/backend/service/VoucherService.java:[131,40] cannot find symbol
+[ERROR]   symbol:   method getNgayBatDau()
+[ERROR]   location: variable dto of type com.example.backend.dto.VoucherDTO
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
