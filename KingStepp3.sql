@@ -15,7 +15,7 @@ USE [KingStepp3]
 GO
 
 -----------------------------------------------------------------------
--- I. CẤU TRÚC BẢNG (CHUẨN)
+-- I. CẤU TRÚC BẢNG (CHUẨN HÓA TỪ DŨNG & DAT)
 -----------------------------------------------------------------------
 
 CREATE TABLE [dbo].[ChatLieu](
@@ -183,6 +183,28 @@ CREATE TABLE [dbo].[GioHangChiTiet](
 )
 GO
 
+CREATE TABLE [dbo].[DanhGia](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[IdKhachHang] [int] REFERENCES [KhachHang](Id),
+	[IdSanPham] [int] REFERENCES [SanPham](Id),
+	[SoSao] [int] NULL,
+	[BinhLuan] [nvarchar](max) NULL,
+	[NgayDanhGia] [datetime] NULL,
+	[TrangThai] [int] NULL
+)
+GO
+
+CREATE TABLE [dbo].[TraHang](
+	[Id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[IdDonHang] [int] REFERENCES [DonHang](id),
+	[IdKhachHang] [int] REFERENCES [KhachHang](id),
+	[NgayYeuCau] [datetime] NULL,
+	[LyDo] [nvarchar](max) NULL,
+	[TrangThai] [int] NULL,
+	[TongTienHoan] [float] NULL
+)
+GO
+
 -----------------------------------------------------------------------
 -- II. CHÈN DỮ LIỆU CƠ BẢN (KHÔNG BỊ THIẾU ID)
 -----------------------------------------------------------------------
@@ -207,7 +229,7 @@ VALUES (N'Quản Lý KingStep', 'admin@kingstep.com', '0912345001', '1990-01-01'
 (N'NV Bán Hàng H', 'nvH@kingstep.com', '0912345009', '2002-09-09', N'Quảng Ninh', 0, '123456', '123456789009', 1),
 (N'NV Bán Hàng I', 'nvI@kingstep.com', '0912345010', '2003-10-10', N'Huế', 0, '123456', '123456789010', 1);
 
--- 10 Khách Hàng (Tạo mã ID từ 1-10 để tránh lỗi không tìm thấy)
+-- 10 Khách Hàng
 INSERT INTO KhachHang (TenKhachHang, Email, SoDienThoai, NgaySinh, DiaChi, matKhau, TrangThai)
 VALUES (N'Khách Lẻ', 'khachle@gmail.com', '0000000000', NULL, NULL, NULL, 1),
 (N'Nguyễn Văn An', 'an@gmail.com', '0988000001', '1992-01-01', N'Hà Nội', '123456', 1),
@@ -246,7 +268,7 @@ VALUES (N'Xả Kho Hè', 30, '2026-04-01', '2026-08-31', 1),
 (N'Flash Sale', 40, '2026-04-01', '2026-12-31', 1);
 
 -----------------------------------------------------------------------
--- III. CHÈN 60 SẢN PHẨM KHÁC NHAU (ẢNH SIÊU ĐẸP)
+-- III. CHÈN SẢN PHẨM KHÁC NHAU
 -----------------------------------------------------------------------
 
 INSERT INTO SanPham (TenSanPham, NgayTao, IdThuongHieu, IdXuatXu, IdChatLieu, IdDanhMuc, Images, TrangThai, Ma)
@@ -262,69 +284,15 @@ VALUES
 (N'Nike Court Vision Low', GETDATE(), 1, 1, 1, 1, 'https://images.unsplash.com/photo-1605405748313-a416a1b84491', 1, 'NI08'),
 (N'Nike Precision 6 Black', GETDATE(), 1, 1, 2, 3, 'https://images.unsplash.com/photo-1514441340265-1544410a285d', 1, 'NI09'),
 (N'Nike Air Max 97 OG', GETDATE(), 1, 3, 2, 1, 'https://images.unsplash.com/photo-1549298916-b41d501d3772', 1, 'NI10'),
-
 -- Adidas (11-20)
 (N'Adidas Ultraboost 22 Black', GETDATE(), 2, 1, 2, 2, 'https://images.unsplash.com/photo-1587563871167-1ee9c731aefb', 1, 'AD11'),
 (N'Adidas Stan Smith White', GETDATE(), 2, 1, 1, 5, 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa', 1, 'AD12'),
 (N'Adidas Superstar Shell Toe', GETDATE(), 2, 1, 1, 5, 'https://images.unsplash.com/photo-1512374382149-4332c6c0326e', 1, 'AD13'),
 (N'Adidas NMD R1 V2 Grey', GETDATE(), 2, 3, 2, 2, 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2', 1, 'AD14'),
-(N'Adidas Forum Low Blue', GETDATE(), 2, 4, 1, 1, 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f', 1, 'AD15'),
-(N'Adidas Samba OG Black White', GETDATE(), 2, 1, 1, 5, 'https://images.unsplash.com/photo-1520639889313-7da7205bb274', 1, 'AD16'),
-(N'Adidas Gazelle Navy White', GETDATE(), 2, 1, 3, 5, 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06', 1, 'AD17'),
-(N'Adidas Yeezy Boost 350', GETDATE(), 2, 3, 5, 5, 'https://images.unsplash.com/photo-1575537302964-98cd47c0f39d', 1, 'AD18'),
-(N'Adidas Ozweego Beige White', GETDATE(), 2, 1, 1, 5, 'https://images.unsplash.com/photo-1582588673385-2638848483ba', 1, 'AD19'),
-(N'Adidas Questar Flow Blue', GETDATE(), 2, 1, 2, 2, 'https://images.unsplash.com/photo-1460353581641-37baddab0fa2', 1, 'AD20'),
-
--- Puma (21-30)
-(N'Puma Cali Dream White Pink', GETDATE(), 3, 4, 1, 5, 'https://images.unsplash.com/photo-1560769629-975ec94e6a86', 1, 'PU21'),
-(N'Puma Suede Classic Red', GETDATE(), 3, 1, 1, 5, 'https://images.unsplash.com/photo-1608231387042-66d1773070a5', 1, 'PU22'),
-(N'Puma RS-X3 Puzzle Gradient', GETDATE(), 3, 3, 4, 1, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 1, 'PU23'),
-(N'Puma MB.02 LaMelo Ball', GETDATE(), 3, 1, 5, 3, 'https://images.unsplash.com/photo-1512111195641-a67554410a28', 1, 'PU24'),
-(N'Puma Future FG Blue', GETDATE(), 3, 1, 5, 7, 'https://images.unsplash.com/photo-1512435422891-b937e95585b6', 1, 'PU25'),
-(N'Puma Cali Star White Shine', GETDATE(), 3, 4, 1, 5, 'https://images.unsplash.com/photo-1560769629-975ec94e6a86', 1, 'PU26'),
-(N'Puma Roma Heritage Black', GETDATE(), 3, 1, 1, 5, 'https://images.unsplash.com/photo-1608231387042-66d1773070a5', 1, 'PU27'),
-(N'Puma RS-Fast Multi Color', GETDATE(), 3, 1, 4, 1, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 1, 'PU28'),
-(N'Puma Muse Metal Satin Pink', GETDATE(), 3, 1, 1, 5, 'https://images.unsplash.com/photo-1560769629-975ec94e6a86', 1, 'PU29'),
-(N'Puma Slipstream Retro', GETDATE(), 3, 1, 1, 1, 'https://images.unsplash.com/photo-1603808033192-082d6919d3e1', 1, 'PU30'),
-
--- Vans (31-40)
-(N'Vans Old Skool Blue Classic', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77', 1, 'VA31'),
-(N'Vans Slip-On Checkerboard', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1605348532760-6753d2c43329', 1, 'VA32'),
-(N'Vans Sk8-Hi High Top Black', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2', 1, 'VA33'),
-(N'Vans Authentic Canvas Navy', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77', 1, 'VA34'),
-(N'Vans Half Cab Tan Suede', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2', 1, 'VA35'),
-(N'Vans Knu Skool Big Tongue', GETDATE(), 4, 1, 1, 5, 'https://images.unsplash.com/photo-1605348532760-6753d2c43329', 1, 'VA36'),
-(N'Vans Era White Red Print', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77', 1, 'VA37'),
-(N'Vans Skate Low Grey White', GETDATE(), 4, 1, 2, 5, 'https://images.unsplash.com/photo-1605348532760-6753d2c43329', 1, 'VA38'),
-(N'Vans Slip-Er Slipper Black', GETDATE(), 4, 1, 3, 5, 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2', 1, 'VA39'),
-(N'Vans Rowley Classic OG', GETDATE(), 4, 1, 3, 1, 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77', 1, 'VA40'),
-
--- Converse (41-50)
-(N'Converse Chuck 70 Hi Top', GETDATE(), 5, 1, 3, 5, 'https://images.unsplash.com/photo-1594467022941-4c6e91129656', 1, 'CO41'),
-(N'Converse Chuck Taylor Mid', GETDATE(), 5, 1, 3, 5, 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06', 1, 'CO42'),
-(N'Converse Run Star Hike', GETDATE(), 5, 2, 3, 5, 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06', 1, 'CO43'),
-(N'Converse One Star Suede Blue', GETDATE(), 5, 1, 1, 5, 'https://images.unsplash.com/photo-1579338559194-a162d19bf842', 1, 'CO44'),
-(N'Converse Jack Purcell White', GETDATE(), 5, 1, 1, 5, 'https://images.unsplash.com/photo-1594467022941-4c6e91129656', 1, 'CO45'),
-(N'Converse Weapon Lo Metallic', GETDATE(), 5, 1, 1, 3, 'https://images.unsplash.com/photo-1579338559194-a162d19bf842', 1, 'CO46'),
-(N'Converse Chuck 70 Low Sage', GETDATE(), 5, 1, 3, 5, 'https://images.unsplash.com/photo-1594467022941-4c6e91129656', 1, 'CO47'),
-(N'Converse ERX 260 Mid Retro', GETDATE(), 5, 1, 3, 3, 'https://images.unsplash.com/photo-1579338559194-a162d19bf842', 1, 'CO48'),
-(N'Converse CPX 70 Multi Color', GETDATE(), 5, 1, 1, 5, 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06', 1, 'CO49'),
-(N'Converse Breakpoint Pro Tan', GETDATE(), 5, 1, 3, 1, 'https://images.unsplash.com/photo-1579338559194-a162d19bf842', 1, 'CO50'),
-
--- New Balance (51-60)
-(N'New Balance 550 White Grey', GETDATE(), 6, 2, 1, 1, 'https://images.unsplash.com/photo-1539185441755-769473a23570', 1, 'NB51'),
-(N'New Balance 2002R Steel Blue', GETDATE(), 6, 1, 1, 2, 'https://images.unsplash.com/photo-1562183241-b937e95585b6', 1, 'NB52'),
-(N'New Balance 990v5 Core Grey', GETDATE(), 6, 2, 1, 2, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 1, 'NB53'),
-(N'New Balance 327 Sea Salt Blue', GETDATE(), 6, 2, 1, 5, 'https://images.unsplash.com/photo-1539185441755-769473a23570', 1, 'NB54'),
-(N'New Balance 530 Silver Metallic', GETDATE(), 6, 1, 2, 2, 'https://images.unsplash.com/photo-1562183241-b937e95585b6', 1, 'NB55'),
-(N'New Balance 574 Legacy Green', GETDATE(), 6, 2, 1, 2, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 1, 'NB56'),
-(N'New Balance 9060 Quartz Grey', GETDATE(), 6, 1, 1, 2, 'https://images.unsplash.com/photo-1539185441755-769473a23570', 1, 'NB57'),
-(N'New Balance 1906R White Gold', GETDATE(), 6, 2, 2, 2, 'https://images.unsplash.com/photo-1562183241-b937e95585b6', 1, 'NB58'),
-(N'New Balance 650 High Top Cream', GETDATE(), 6, 1, 1, 3, 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f', 1, 'NB59'),
-(N'New Balance Fresh Foam X Blue', GETDATE(), 6, 1, 2, 2, 'https://images.unsplash.com/photo-1539185441755-769473a23570', 1, 'NB60');
+(N'Adidas Forum Low Blue', GETDATE(), 2, 4, 1, 1, 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f', 1, 'AD15');
 
 -----------------------------------------------------------------------
--- IV. KHỞI TẠO BIẾN THỂ (60 SP x 5 SIZE = 300 DÒNG)
+-- IV. KHỞI TẠO BIẾN THỂ
 -----------------------------------------------------------------------
 
 INSERT INTO SanPhamChiTiet (SoLuong, NgaySanXuat, IdSanPham, IdKichThuoc, IdMauSac, IdKhuyenMai, NgayTao, TrangThai, GiaBan, GiaBanGiamGia, Ma)
@@ -333,5 +301,5 @@ SELECT
 FROM SanPham s 
 CROSS JOIN (SELECT Id, TenKichThuoc FROM KichThuoc WHERE TenKichThuoc IN ('39','40','41','42','43')) k;
 
-PRINT 'THANH CONG! DA KHOI TAO LAI TOAN BO DU LIEU VA FIX LOI KHACH HANG!';
+PRINT 'THANH CONG! DA HOP NHAT CODE CUA DUNG VA DAT!';
 GO

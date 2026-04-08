@@ -1,0 +1,462 @@
+/* THE WOLF STYLE - PREMIUM MINIMALIST */
+
+:root {
+  --primary-color: #000000;
+  --text-main: #222222;
+  --text-muted: #666666;
+  --bg-light: #ffffff;
+  --border-light: #eeeeee;
+  --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.home-page {
+  background: var(--bg-light);
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+}
+
+/* HERO BANNER - THE WOLF ARTISTIC */
+.hero-section {
+  position: relative;
+  height: 90vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  background-color: #000;
+  /* Dùng ảnh thực tế chất lượng cao */
+  background-image: url('https://images.unsplash.com/photo-1552346154-21d32810aba3?q=80&w=2070&auto=format&fit=crop'); 
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  margin-right: 15%;
+  text-align: right;
+  color: #fff;
+  max-width: 600px;
+}
+
+.hero-content h1 {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 130px !important;
+  font-weight: 800 !important;
+  line-height: 0.9;
+  margin: 0;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.hero-content .hero-subtitle {
+  font-family: 'Outfit', sans-serif !important;
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: 12px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.hero-btn {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 18px 45px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-btn:hover {
+  background: #000;
+  color: #fff;
+  padding: 18px 60px;
+}
+
+/* Layout Wrapper - Clean & Open */
+.home-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 60px 4% 80px;
+  background: transparent;
+}
+
+/* Typography - Modern & Bold */
+.home-page h3.ant-typography {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 50px !important;
+  position: relative;
+}
+
+.home-page h3.ant-typography::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: #000;
+}
+
+/* Product Card - The Wolf Aesthetic */
+.product-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-card-container {
+  height: 100%;
+  display: flex;
+}
+
+.product-card {
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  background: #fff;
+  border-radius: 0; /* Square corners */
+  overflow: hidden;
+  margin-bottom: 30px;
+}
+
+.product-img-container {
+  position: relative;
+  overflow: hidden;
+  background-color: #f6f6f6;
+  aspect-ratio: 1/1;
+}
+
+.product-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-info {
+  padding: 15px 0;
+  text-align: left;
+}
+
+.brand-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #999;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.product-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px !important;
+}
+
+.price-sale {
+  font-weight: 700;
+  color: #000;
+}
+
+/* Tags */
+.tag-discount {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #000;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+.tag-new {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+/* Details */
+.product-brand {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 20px;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.product-name {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  margin: 0 0 10px 0 !important;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #000;
+  line-height: 1.4 !important;
+}
+
+.product-price {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  font-weight: 700;
+}
+/* --- PREMIUM PRODUCT DETAIL --- */
+.premium-detail {
+  padding: 60px 0;
+  background: #fff;
+  min-height: 100vh;
+}
+
+.detail-image-container {
+  background: #f9f9f9;
+  border-radius: 4px;
+  overflow: hidden;
+  position: sticky;
+  top: 100px;
+}
+
+.main-detail-img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.detail-info-content {
+  padding-left: 20px;
+}
+
+.detail-brand {
+  font-family: 'Outfit', sans-serif;
+  color: #888;
+  letter-spacing: 2px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.detail-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  margin: 10px 0 20px !important;
+  color: #111;
+  letter-spacing: -0.5px;
+}
+
+.detail-price-box {
+  margin-bottom: 30px;
+}
+
+.detail-price-new {
+  font-size: 28px !important;
+  font-weight: 700;
+  color: #111;
+  font-family: 'Outfit', sans-serif;
+}
+
+.detail-price-old {
+  font-size: 18px !important;
+  color: #999;
+  margin-right: 15px;
+}
+
+.selection-group {
+  margin-bottom: 25px;
+}
+
+.selection-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #111;
+  margin-bottom: 15px;
+}
+
+.selection-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.option-btn {
+  height: 45px !important;
+  min-width: 60px;
+  border-radius: 0 !important;
+  border: 1px solid #ddd !important;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  transition: all 0.3s ease !important;
+}
+
+.option-btn:hover {
+  border-color: #111 !important;
+  color: #111 !important;
+}
+
+.option-btn.active {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+.stock-info {
+  margin-bottom: 30px;
+  font-size: 13px;
+}
+
+.detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 40px;
+}
+
+.buy-btn {
+  height: 55px !important;
+  background: #111 !important;
+  border: none !important;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: 2px;
+  font-size: 14px !important;
+}
+
+.cart-btn {
+  height: 55px !important;
+  border: 1px solid #111 !important;
+  background: transparent !important;
+  color: #111 !important;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: 2px;
+  font-size: 14px !important;
+}
+
+.cart-btn:hover {
+  background: #f5f5f5 !important;
+}
+
+.detail-description {
+  border-top: 1px solid #eee;
+  padding-top: 30px;
+}
+
+.detail-description h5 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 1.5px;
+  margin-bottom: 15px !important;
+}
+
+.price-sale {
+  color: #000;
+  font-size: 14px;
+}
+
+.price-original {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -10%);
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 12px 25px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0;
+  transition: var(--transition);
+  z-index: 5;
+}
+
+.product-card:hover::after {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+/* Section Spacing */
+.on-sale-section {
+  margin-top: 100px;
+  background: #fafafa;
+  padding: 80px 0;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+.on-sale-section .home-wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Tags - Small & Elegant */
+.tag-discount {
+  background: #000 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  font-size: 10px !important;
+  padding: 2px 8px !important;
+  top: 20px !important;
+  left: 0 !important;
+}
+
+.tag-new {
+  background: #1976d2 !important;
+  border-radius: 0 !important;
+  top: 20px !important;
+  right: 0 !important;
+}
+
+/* Sidebar/Utility Overrides */
+.ant-divider-inner-text {
+  padding: 0 40px !important;
+}
+
+.ant-divider-horizontal {
+  border-top-color: #eeeeee !important;
+  margin: 60px 0 !important;
+}
+
+@media (max-width: 768px) {
+  .product-img-container {
+    height: 250px !important;
+  }
+}

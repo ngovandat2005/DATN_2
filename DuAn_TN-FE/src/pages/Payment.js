@@ -1725,7 +1725,7 @@ const Payment = () => {
         diaChiGiaoHang: customerAddress,
         idService: selectedServiceId, // ✅ THÊM: Gửi idService
         loaiDonHang: 'online', 
-        trangThai: 0 // Chờ xác nhận / Chờ thanh toán
+        trangThai: 0 // Chờ thanh toán
       };
 
       console.log('📦 Đang gửi yêu cầu tạo đơn hàng Atomic:', orderData);
@@ -1913,7 +1913,7 @@ const Payment = () => {
 
       if (paymentMethod === 'cod') {
         // ✅ COD: Hiển thị thông báo thành công và chuyển trang sau delay
-        toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ xác nhận.', {
+        toast.success('🎊 Đặt hàng thành công! Đơn hàng đang chờ thanh toán.', {
           position: "top-center",
           autoClose: 5000,
         });

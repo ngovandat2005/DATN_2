@@ -7,13 +7,12 @@ import { getUserRole } from '../utils/authUtils';
 
 // Thêm mảng trạng thái giống DonHangPage
 const TRANG_THAI = [
-  { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
-  { value: 1, label: 'Đã xác nhận', color: '#43b244' },
-  { value: 2, label: 'Đang chuẩn bị', color: '#1976d2' },
-  { value: 3, label: 'Đang giao', color: '#1976d2' },
-  { value: 4, label: 'Hoàn thành', color: '#009688' },
-  { value: 5, label: 'Đã hủy', color: '#e53935' },
-  { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' }
+  { value: 0, label: 'Chờ thanh toán', color: '#ff9800' },
+  { value: 1, label: 'Chờ vận chuyển', color: '#43b244' },
+  { value: 2, label: 'Chờ nhận', color: '#1976d2' },
+  { value: 3, label: 'Chờ nhận', color: '#1976d2' },
+  { value: 4, label: 'Chờ nhận', color: '#1976d2' },
+  { value: 5, label: 'Đã hủy', color: '#e53935' }
 ];
 
 const formatImage = (raw) => {
@@ -239,7 +238,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể thêm sản phẩm!',
-        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
+        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -491,7 +490,7 @@ const OrderDetailPage = () => {
             <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 16px; margin-top: 16px;">
               <h4 style="margin: 0 0 12px 0; color: #155724;">📋 Thông tin cập nhật:</h4>
               <ul style="margin: 0; padding-left: 20px; color: #155724;">
-                <li>Trạng thái: <strong>Đã xác nhận</strong></li>
+                <li>Trạng thái: <strong>Chờ vận chuyển</strong></li>
                 <li>Ngày xác nhận: <strong>${new Date().toLocaleDateString('vi-VN')}</strong></li>
                 <li>Tồn kho đã được trừ tự động</li>
                 <li>Đơn hàng đã chuyển sang trạng thái chuẩn bị</li>
@@ -830,7 +829,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể sửa địa chỉ!',
-        text: 'Chỉ có thể sửa địa chỉ khi đơn hàng ở trạng thái "Chờ xác nhận"!',
+        text: 'Chỉ có thể sửa địa chỉ khi đơn hàng ở trạng thái "Chờ thanh toán"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1542,19 +1541,14 @@ const OrderDetailPage = () => {
       actualSteps.push(TRANG_THAI[1]);
     }
 
-    // Nếu đơn hàng đang chuẩn bị (trạng thái >= 2)
-    if (currentStatus >= 2) {
-      actualSteps.push(TRANG_THAI[2]);
-    }
-
-    // Nếu đơn hàng đang giao (trạng thái >= 3)
-    if (currentStatus >= 3) {
-      actualSteps.push(TRANG_THAI[3]);
-    }
-
-    // Nếu đơn hàng hoàn thành (trạng thái >= 4)
-    if (currentStatus >= 4) {
-      actualSteps.push(TRANG_THAI[4]);
+    // Nếu đơn hàng đang ở bất kỳ giai đoạn nào trong nhóm "Chờ nhận" (2, 3, 4)
+    if (currentStatus >= 2 && currentStatus <= 4) {
+      actualSteps.push(TRANG_THAI[2]); // Chỉ hiển thị 1 bước "Chờ nhận"
+    } else if (currentStatus > 4) {
+        // Nếu đã qua bước hoàn thành nhưng đang ở trạng thái khác (ví dụ: Đã hủy)
+        // Vẫn có thể muốn hiện bước "Chờ nhận" đã qua? 
+        // Theo yêu cầu gộp, ta cứ hiện bước Chờ nhận nếu đã từng qua hoặc đang ở đó
+        actualSteps.push(TRANG_THAI[2]);
     }
 
     // Xử lý trường hợp đặc biệt: Nếu đơn hàng bị hủy (trạng thái = 5)
@@ -1570,13 +1564,10 @@ const OrderDetailPage = () => {
 
         // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
         if (orderInfo.trangThaiTruocKhiHuy >= 1) {
-          stepsBeforeCancel.push(TRANG_THAI[1]); // Đã xác nhận
+          stepsBeforeCancel.push(TRANG_THAI[1]); // Chờ vận chuyển
         }
         if (orderInfo.trangThaiTruocKhiHuy >= 2) {
-          stepsBeforeCancel.push(TRANG_THAI[2]); // Đang chuẩn bị
-        }
-        if (orderInfo.trangThaiTruocKhiHuy >= 3) {
-          stepsBeforeCancel.push(TRANG_THAI[3]); // Đang giao
+          stepsBeforeCancel.push(TRANG_THAI[2]); // Chờ nhận
         }
 
         // Thêm bước hủy vào cuối
@@ -1592,46 +1583,10 @@ const OrderDetailPage = () => {
       }
     }
 
-    // ✅ THÊM: Xử lý trường hợp giao hàng không thành công (trạng thái = 7)
     if (currentStatus === 7) {
-      // Sử dụng dữ liệu trangThaiTruocKhiHuy từ backend để hiển thị chính xác
-      if (orderInfo && orderInfo.trangThaiTruocKhiHuy !== null && orderInfo.trangThaiTruocKhiHuy !== undefined) {
-        // Có dữ liệu chính xác từ backend
-        let stepsBeforeFailed = [];
-
-        // Luôn có bước đầu ti├¬n (chờ xác nhận)
-        stepsBeforeFailed.push(TRANG_THAI[0]);
-
-        // Thêm các bước đã đi qua dựa trên trạng thái thực tế từ backend
-        if (orderInfo.trangThaiTruocKhiHuy >= 1) {
-          stepsBeforeFailed.push(TRANG_THAI[1]); // Đã xác nhận
-        }
-        if (orderInfo.trangThaiTruocKhiHuy >= 2) {
-          stepsBeforeFailed.push(TRANG_THAI[2]); // Đang chuẩn bị
-        }
-        if (orderInfo.trangThaiTruocKhiHuy >= 3) {
-          stepsBeforeFailed.push(TRANG_THAI[3]); // Đang giao
-        }
-
-        // Thêm bước giao hàng không thành công vào cuối
-        actualSteps = [...stepsBeforeFailed, TRANG_THAI.find(t => t.value === 7)];
-
-        console.log('🎯 Đơn hàng giao hàng không thành công - Sử dụng dữ liệu từ backend:');
-        console.log('📍 Trạng thái trước khi giao hàng không thành công:', orderInfo.trangThaiTruocKhiHuy);
-        console.log('📍 Các bước hiển thị:', actualSteps.map(s => s.label));
-      } else {
-        // Fallback: sử dụng logic cũ nếu không có dữ liệu từ backend
-        // ✅ SỬA: Hiển thị đầy đủ quy trình đã đi qua
-        actualSteps = [
-          TRANG_THAI[0],
-          TRANG_THAI[1],
-          TRANG_THAI[2],
-          TRANG_THAI[3],
-          TRANG_THAI.find(t => t.value === 7)
-        ];
-        // Chờ xác nhận -> Đã xác nhận -> Đang chuẩn bị -> Đang giao -> Giao hàng không thành công
-        console.log('⚠️ Không có dữ liệu trangThaiTruocKhiHuy, sử dụng logic cũ');
-      }
+        // Theo yêu cầu "bên khách hàng bỏ đi", ta có thể chuyển nó về trạng thái 5 hoặc ẩn đi
+        // Ở đây ta cứ trả về stepper tối giản hoặc null nếu không muốn hiện
+        return null; 
     }
 
     return (
@@ -1758,7 +1713,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể thêm sản phẩm!',
-        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
+        text: 'Chỉ có thể thêm sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1826,7 +1781,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể sửa số lượng!',
-        text: 'Chỉ có thể sửa số lượng khi đơn hàng ở trạng thái "Chờ xác nhận"!',
+        text: 'Chỉ có thể sửa số lượng khi đơn hàng ở trạng thái "Chờ thanh toán"!',
         confirmButtonText: 'OK'
       });
       return;
@@ -1946,7 +1901,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'warning',
         title: 'Không thể xóa sản phẩm!',
-        text: 'Chỉ có thể xóa sản phẩm khi đơn hàng ở trạng thái "Chờ xác nhận"!',
+        text: 'Chỉ có thể xóa sản phẩm khi đơn hàng ở trạng thái "Chờ thanh toán"!',
         confirmButtonText: 'OK'
       });
       return;
