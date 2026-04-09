@@ -1,0 +1,23 @@
+﻿6a32e59 thêm trả hàng,trả hàng chi tiết
+060d63c feat: Add and integrate AI Chatbot across frontend and backend with dynamic UI context
+50dc697 Update address standardization, SKU enhancements, and backend order fixes
+74594c5 Update project for DATN_2 upload
+95c7d43 Merge remote-tracking branch 'origin/huy'
+e50a3c0 Fix OrderHistory and OrderDetail initialization bugs, clean logs and standardize paths
+94e1471 Add files via upload
+5fcbc67 Update bankConfig.js
+9e6a8d3 Add endpoint to delete product from cart by ID
+353d328 Update GioHangChiTietService.java
+b886221 Fix VNPAY signature error, GHN shipping fee calculation, and UI typos
+703cb2b Fix shipping fee calculation and backend compilation errors
+bf47ef0 add BE KingStep source code
+0f33c71 add project code
+a6cf6d4 chore: remove all remaining redundant log and test files
+9443d42 chore: cleanup project by removing log files, test files and IDE configs
+9295e2e fix: change Sport-Line from submodule to regular directory
+b67b65a Embed Google Map in ContactPage
+06f3b84 Update BlogPage.js
+c7a83b9 Remove subscription section from Footer component
+5e48667 Update hero section title to 'Bộ Sưu Tập Mới 2025'
+cb80153 Nội dung cập nhật: Thêm tính năng mới hoặc sửa lỗi
+4dc5624 Khởi tạo dự án Qlhs
