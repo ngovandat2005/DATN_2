@@ -44,7 +44,8 @@ public class ChatbotService {
             return Flux.just("Tính năng Chatbot AI chưa được cấu hình.");
         }
 
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:streamGenerateContent?key="
+        // Đổi sang model gemini-1.5-flash ổn định và nhanh hơn
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key="
                 + geminiApiKey.trim();
 
         Map<String, Object> requestBody = createRequestBody(history, contextInfo);
@@ -57,9 +58,13 @@ public class ChatbotService {
                 .bodyToFlux(JsonNode.class)
                 .map(node -> {
                     try {
-                        JsonNode textNode = node.path("candidates").get(0).path("content").path("parts").get(0)
-                                .path("text");
-                        return textNode.isMissingNode() ? "" : textNode.asText();
+                        // Gemini 1.5 format check
+                        JsonNode candidates = node.path("candidates");
+                        if (candidates.isArray() && candidates.size() > 0) {
+                            JsonNode textNode = candidates.get(0).path("content").path("parts").get(0).path("text");
+                            return textNode.isMissingNode() ? "" : textNode.asText();
+                        }
+                        return "";
                     } catch (Exception e) {
                         return "";
                     }
@@ -88,13 +93,53 @@ public class ChatbotService {
         List<Map<String, Object>> contents = new ArrayList<>();
 
         for (Map<String, String> msg : history) {
-            Map<String, Object> entry = new HashMap<>();
             String role = msg.getOrDefault("role", "user");
-            entry.put("role", role.equals("bot") ? "model" : "user");
+            String text = msg.get("text");
+            
+            if (text == null || text.trim().isEmpty()) continue;
 
+            // Chuyển bot thành model
+            String mappedRole = role.equals("bot") ? "model" : "user";
+            
+            // QUAN TRỌNG: Gemini contents MUST khởi đầu bằng 'user'. 
+            // Nếu tin nhắn đầu tiên là của bot (welcome), chúng ta sẽ bỏ qua nó trong history gửi đi.
+            if (contents.isEmpty() && mappedRole.equals("model")) {
+                continue;
+            }
+
+            // Tránh gửi 2 role liên tiếp giống nhau (Gemini sẽ lỗi 400)
+            if (!contents.isEmpty()) {
+                String lastRole = (String) contents.get(contents.size() - 1).get("role");
+                if (lastRole.equals(mappedRole)) {
+                    // Nếu trùng role, gộp text vào thay vì tạo entry mới
+                    List<Map<String, String>> parts = (List<Map<String, String>>) contents.get(contents.size() - 1).get("parts");
+                    Map<String, String> newPart = new HashMap<>();
+                    newPart.put("text", text);
+                    parts.add(newPart);
+                    continue;
+                }
+            }
+
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("role", mappedRole);
+
+            List<Map<String, String>> parts = new ArrayList<>();
             Map<String, String> part = new HashMap<>();
-            part.put("text", msg.get("text"));
-            entry.put("parts", new Object[] { part });
+            part.put("text", text);
+            parts.add(part);
+            entry.put("parts", parts);
+            contents.add(entry);
+        }
+
+        // Nếu sau khi lọc mà contents trống, thêm một tin nhắn ảo để tránh lỗi
+        if (contents.isEmpty()) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("role", "user");
+            List<Map<String, String>> parts = new ArrayList<>();
+            Map<String, String> part = new HashMap<>();
+            part.put("text", "Xin chào");
+            parts.add(part);
+            entry.put("parts", parts);
             contents.add(entry);
         }
 
@@ -104,7 +149,9 @@ public class ChatbotService {
         Map<String, Object> siPart = new HashMap<>();
         siPart.put("text", getSystemInstructions(contextInfo));
         Map<String, Object> systemInstruction = new HashMap<>();
-        systemInstruction.put("parts", new Object[] { siPart });
+        List<Map<String, Object>> siParts = new ArrayList<>();
+        siParts.add(siPart);
+        systemInstruction.put("parts", siParts);
         body.put("system_instruction", systemInstruction);
 
         return body;

@@ -40,7 +40,10 @@ function Header() {
         .catch(err => console.error("Lỗi lấy thương hiệu:", err));
 
       axios.get(config.getApiUrl('api/danh-muc/getAll'))
-        .then(res => setCategories(res.data))
+        .then(res => {
+          const filteredCategories = res.data.filter(cat => cat.tenDanhMuc !== 'Phụ kiện');
+          setCategories(filteredCategories);
+        })
         .catch(err => console.error("Lỗi lấy danh mục:", err));
 
       axios.get(config.getApiUrl('api/san-pham/active'))
@@ -220,11 +223,11 @@ function Header() {
             <Menu.Item key="sale">
               <Link to="/sale" style={{ color: '#e53935', fontWeight: 'bold' }}>SALE OFF</Link>
             </Menu.Item>
-            <Menu.Item key="phukien">
-               <Dropdown dropdownRender={() => accessoryMenu} placement="bottomCenter" arrow>
+{/* <Menu.Item key="phukien">
+              <Dropdown dropdownRender={() => accessoryMenu} placement="bottomCenter" arrow>
                 <Link to="/products?search=Phụ kiện">PHỤ KIỆN</Link>
-               </Dropdown>
-            </Menu.Item>
+              </Dropdown>
+            </Menu.Item> */}
             <Menu.Item key="contact">
               <Link to="/contact">HỖ TRỢ</Link>
             </Menu.Item>

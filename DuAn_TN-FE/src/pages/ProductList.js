@@ -140,8 +140,11 @@ function ProductList() {
       .then((res) => res.json())
       .then((data) => {
         console.log("Danh mục:", data);
-        if (Array.isArray(data)) setCategoryList(data);
-        else if (Array.isArray(data.data)) setCategoryList(data.data);
+        if (Array.isArray(data)) {
+          setCategoryList(data.filter(cat => cat.tenDanhMuc !== 'Phụ kiện'));
+        } else if (Array.isArray(data.data)) {
+          setCategoryList(data.data.filter(cat => cat.tenDanhMuc !== 'Phụ kiện'));
+        }
       });
   }, []);
 
