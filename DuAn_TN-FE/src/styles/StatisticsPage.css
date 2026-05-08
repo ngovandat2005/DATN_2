@@ -1,0 +1,216 @@
+/* src/styles/StatisticsPage.css */
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --success-gradient: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+  --info-gradient: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+  --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --danger-gradient: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
+  --purple-gradient: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.stats-container {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  height: 100%;
+}
+
+.glass-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px 0 rgba(31, 38, 135, 0.12);
+}
+
+.stat-card-premium {
+  position: relative;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: white;
+  min-height: 160px;
+  border: none;
+}
+
+.stat-card-content {
+  position: relative;
+  z-index: 2;
+}
+
+.stat-icon-wrapper {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+}
+
+.stat-label {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.stat-trend {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.trend-up { color: #4ade80; }
+.trend-down { color: #f87171; }
+
+/* Gradient backgrounds with higher specificity */
+.glass-card.card-revenue { background: var(--primary-gradient); }
+.glass-card.card-today { background: var(--info-gradient); }
+.glass-card.card-products { background: var(--warning-gradient); }
+.glass-card.card-orders { background: var(--purple-gradient); }
+
+.glass-card.card-online { background: var(--success-gradient); }
+.glass-card.card-offline { background: var(--danger-gradient); }
+
+/* Header & Filters */
+.stats-header {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-title-section h2 {
+  font-size: 36px;
+  font-weight: 900;
+  background: linear-gradient(to right, #1e293b, #334155, #475569);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+
+.header-subtitle {
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.filter-section {
+  display: flex;
+  gap: 16px;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  align-items: center;
+  border: 1px solid #f1f5f9;
+}
+
+.quick-filters .ant-segmented {
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.quick-filters .ant-segmented-item-selected {
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Charts & Tables */
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-card {
+  padding: 28px;
+}
+
+.best-seller-table .ant-table {
+  background: transparent;
+}
+
+.best-seller-table .ant-table-thead > tr > th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.best-seller-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 16px 8px !important;
+}
+
+.product-img-wrapper {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 2px solid white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stats-container > * {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Pulse animation for 'Live' feeling */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.card-today .stat-icon-wrapper {
+  animation: pulse 3s infinite ease-in-out;
+}
