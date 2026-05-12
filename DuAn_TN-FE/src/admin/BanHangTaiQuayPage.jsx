@@ -363,27 +363,6 @@ const BanHangTaiQuayPage = () => {
     }
   };
 
-  // Hàm helper cập nhật tồn kho sản phẩm
-  const updateProductStock = async (productId, quantityChange) => {
-    try {
-      const updateStockRes = await fetch(`http://localhost:8080/api/san-pham-chi-tiet/update-stock/${productId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          soLuongChange: quantityChange
-        }),
-      });
-
-      if (!updateStockRes.ok) {
-        console.warn(`Không thể cập nhật tồn kho cho sản phẩm ${productId}`);
-        return false;
-      }
-      return true;
-    } catch (stockError) {
-      console.warn(`Lỗi khi cập nhật tồn kho cho sản phẩm ${productId}:`, stockError);
-      return false;
-    }
-  };
 
   // Hàm thêm sản phẩm vào hóa đơn
   const handleAddToOrder = async () => {
@@ -421,12 +400,7 @@ const BanHangTaiQuayPage = () => {
       });
       if (!res.ok) throw new Error('Lỗi khi thêm sản phẩm vào hóa đơn');
 
-      // Cập nhật số lượng tồn kho sản phẩm
-      try {
-        await updateProductStock(selectedProduct.id, -qty); // Giảm số lượng tồn kho
-      } catch (stockError) {
-        console.warn('Lỗi khi cập nhật tồn kho:', stockError);
-      }
+      // Backend đã tự động cập nhật tồn kho trong DonHangChiTietService
 
       setShowQtyModal(false);
       await fetchCartFromBE(orderId);
@@ -477,11 +451,7 @@ const BanHangTaiQuayPage = () => {
     setEditLoading(true);
     setEditError('');
     try {
-      // Tính số lượng thay đổi
-      const oldQuantity = item.quantity;
-      const quantityChange = editQty - oldQuantity;
-
-      // Cập nhật chi tiết đơn hàng
+      // Backend đã tự động cập nhật tồn kho trong DonHangChiTietService
       const res = await fetch(`http://localhost:8080/api/donhangchitiet/update/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -497,14 +467,7 @@ const BanHangTaiQuayPage = () => {
         return;
       }
 
-      // Cập nhật số lượng tồn kho sản phẩm
-      if (quantityChange !== 0) {
-        try {
-          await updateProductStock(item.idSanPhamChiTiet, -quantityChange); // Giảm số lượng đã thêm, tăng số lượng đã bớt
-        } catch (stockError) {
-          console.warn('Lỗi khi cập nhật tồn kho:', stockError);
-        }
-      }
+      // Backend đã tự động cập nhật tồn kho trong DonHangChiTietService
 
       setShowEditModal(false);
       await fetchCartFromBE(orderId);
@@ -548,12 +511,7 @@ const BanHangTaiQuayPage = () => {
         });
         if (!res.ok) throw new Error('Lỗi khi xóa sản phẩm khỏi hóa đơn');
 
-        // Hoàn lại số lượng tồn kho sản phẩm
-        try {
-          await updateProductStock(itemToRemove.idSanPhamChiTiet, quantityToRestore); // Tăng lại số lượng đã bị giảm
-        } catch (stockError) {
-          console.warn('Lỗi khi cập nhật tồn kho:', stockError);
-        }
+        // Backend đã tự động hoàn lại tồn kho trong DonHangChiTietService
 
         await fetchCartFromBE(orderId);
         await fetchProductsFromBE(); // Cập nhật lại danh sách sản phẩm với số lượng tồn kho mới
@@ -1448,16 +1406,7 @@ const BanHangTaiQuayPage = () => {
                   }
                 }
 
-                // Hoàn lại tất cả số lượng tồn kho trước khi hủy hóa đơn
-                if (cart.length > 0) {
-                  for (const item of cart) {
-                    try {
-                      await updateProductStock(item.idSanPhamChiTiet, item.quantity); // Tăng lại số lượng đã bị giảm
-                    } catch (stockError) {
-                      console.warn(`Lỗi khi hoàn lại tồn kho cho sản phẩm ${item.idSanPhamChiTiet}:`, stockError);
-                    }
-                  }
-                }
+                // Backend đã tự động hoàn lại tất cả tồn kho trong DonHangService.delete
 
                 // Hủy hóa đơn
                 const res = await fetch(`http://localhost:8080/api/donhang/delete/${orderId}`, { method: 'DELETE' });

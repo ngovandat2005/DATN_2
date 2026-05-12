@@ -32,14 +32,14 @@ public class VNpayConfig {
     }
 
     // Tạo các tham số thanh toán VNPay
-    public Map<String, String> createVNPayParams(int amount, String ipAddress) {
+    public Map<String, String> createVNPayParams(int amount, String ipAddress, String orderId) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("vnp_Version", "2.1.0");
         params.put("vnp_Command", "pay");
         params.put("vnp_TmnCode", vnpTmnCode);
         params.put("vnp_Amount", String.valueOf(amount * 100)); // đơn vị VND * 100
         params.put("vnp_CurrCode", "VND");
-        params.put("vnp_TxnRef", String.valueOf(System.currentTimeMillis()));
+        params.put("vnp_TxnRef", orderId != null && !orderId.isEmpty() ? orderId : String.valueOf(System.currentTimeMillis()));
         params.put("vnp_OrderInfo", "ThanhToanDonHang");
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");

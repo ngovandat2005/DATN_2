@@ -21,13 +21,16 @@ public class PaymentService {
     @Autowired
     private JavaMailSender mailSender;
 
-    public String createPaymentUrl(int amount, String ipAddress) throws Exception {
+    @Autowired
+    private DonHangService donHangService;
+
+    public String createPaymentUrl(int amount, String ipAddress, String orderId) throws Exception {
         if (ipAddress == null || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("localhost")) {
             ipAddress = "127.0.0.1";
         }
         System.out.println("DEBUG VNPAY - Client IP: " + ipAddress);
 
-        Map<String, String> vnpParams = vnpayConfig.createVNPayParams(amount, ipAddress);
+        Map<String, String> vnpParams = vnpayConfig.createVNPayParams(amount, ipAddress, orderId);
 
         vnpParams.remove("vnp_SecureHashType");
         vnpParams.remove("vnp_SecureHash");
@@ -83,11 +86,23 @@ public class PaymentService {
         String vnp_TxnRef = request.getParameter("vnp_TxnRef");
         String amount = request.getParameter("vnp_Amount");
 
-        if ("00".equals(vnp_ResponseCode)) {
-            sendSuccessEmail(vnp_TxnRef, amount);
-            return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
+        try {
+            if ("00".equals(vnp_ResponseCode)) {
+                sendSuccessEmail(vnp_TxnRef, amount);
+                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
+                    donHangService.capNhatTrangThai(Integer.parseInt(vnp_TxnRef), com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
+                }
+                return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
+            } else {
+                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
+                    donHangService.huyDon(Integer.parseInt(vnp_TxnRef));
+                }
+                return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi cập nhật trạng thái đơn hàng VNPay: " + e.getMessage());
+            return "Lỗi hệ thống hoặc định dạng mã giao dịch không hợp lệ.";
         }
-        return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
     }
 
     private void sendSuccessEmail(String txnRef, String amount) {

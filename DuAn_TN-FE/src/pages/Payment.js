@@ -1823,17 +1823,8 @@ const Payment = () => {
 
         console.log(`Tạo chi tiết sản phẩm ${i + 1}:`, chiTietData);
 
-        // ✅ SỬA: Sử dụng API khác nhau cho COD và VNPAY
-        let apiUrl;
-        if (paymentMethod === 'cod') {
-          // COD: Sử dụng API không trừ tồn kho -> SỬA: Dùng API mặc định /create vì create_k_tru_ton_kho không tồn tại
-          apiUrl = config.getApiUrl('api/donhangchitiet/create');
-          console.log(`🎯 COD - Sử dụng API không trừ tồn kho: ${apiUrl}`);
-        } else {
-          // VNPAY: Sử dụng API trừ tồn kho (giữ nguyên)
-          apiUrl = config.getApiUrl('api/donhangchitiet/create');
-          console.log(`💳 VNPAY - Sử dụng API trừ tồn kho: ${apiUrl}`);
-        }
+        // Cả COD và VNPAY đều dùng chung API tạo chi tiết (việc trừ kho được Backend lo)
+        const apiUrl = config.getApiUrl('api/donhangchitiet/create');
 
         const chiTietRes = await fetch(apiUrl, {
           method: 'POST',
@@ -1855,10 +1846,6 @@ const Payment = () => {
 
       // ✅ BƯỚC 5: Xóa giỏ hàng CHỈ KHI thanh toán từ giỏ hàng, KHÔNG xóa khi mua ngay
       console.log('Bước 5: Xử lý xóa giỏ hàng...');
-
-      // ✅ BƯỚC 5: Xóa giỏ hàng CHỈ KHI thanh toán từ giỏ hàng, KHÔNG xóa khi mua ngay
-      console.log('Bước 5: Xử lý xóa giỏ hàng...');
-
       // Kiểm tra xem có phải mua ngay không
       const isBuyNow = location.state?.buyNow === true;
 
@@ -1929,7 +1916,7 @@ const Payment = () => {
         try {
           // Làm tròn tổng tiền cho VNPAY
           const vnpAmount = Math.round(finalTotal);
-          const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}`));
+          const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}&orderId=${newOrderId}`));
           
           if (!paymentRes.ok) throw new Error('Không thể khởi tạo thanh toán VNPAY');
           

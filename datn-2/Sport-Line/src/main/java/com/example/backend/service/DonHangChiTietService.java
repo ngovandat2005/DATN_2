@@ -66,9 +66,9 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             throw new RuntimeException("Số lượng tồn kho không đủ!");
         }
 
-        // 3. Trừ tồn kho (✅ CHỈ trừ nếu đơn hàng đã được xác nhận, trạng thái != 0)
+        // 3. Trừ tồn kho (✅ Luôn trừ khi thêm vào đơn hàng)
         DonHang donHang = donHangRepository.findById(dto.getIdDonHang()).orElse(null);
-        if (donHang != null && donHang.getTrangThai() != null && donHang.getTrangThai() != 0) {
+        if (donHang != null && donHang.getTrangThai() != null) {
             spct.setSoLuong(spct.getSoLuong() - dto.getSoLuong());
             sanPhamChiTietRepository.save(spct);
         }
@@ -104,8 +104,8 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             int diff = newQty - oldQty;
 
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
-            // ✅ Cập nhật tồn kho nếu đơn hàng đã được xác nhận
-            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null && chiTiet.getDonHang().getTrangThai() != 0) {
+            // ✅ Cập nhật tồn kho
+            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null) {
                 if (diff > 0) {
                     if (spct.getSoLuong() < diff)
                         throw new RuntimeException("Không đủ tồn kho!");
@@ -133,8 +133,8 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
         if (optional.isPresent()) {
             DonHangChiTiet chiTiet = optional.get();
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
-            // Hoàn lại tồn kho (✅ CHỈ hoàn nếu đơn hàng đã được xác nhận trước đó)
-            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null && chiTiet.getDonHang().getTrangThai() != 0) {
+            // Hoàn lại tồn kho
+            if (chiTiet.getDonHang() != null && chiTiet.getDonHang().getTrangThai() != null) {
                 spct.setSoLuong(spct.getSoLuong() + chiTiet.getSoLuong());
                 sanPhamChiTietRepository.save(spct);
             }
