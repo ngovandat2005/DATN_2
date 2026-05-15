@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class DonHangService {
     public DonHangDTO create(DonHangDTO dto) {
         DonHang donHang = convertToEntity(dto);
         if (donHang.getNgayTao() == null) {
-            donHang.setNgayTao(LocalDate.now());
+            donHang.setNgayTao(LocalDateTime.now());
         }
         if (donHang.getTrangThai() == null) {
             donHang.setTrangThai(0);
@@ -230,7 +231,7 @@ public class DonHangService {
     @Transactional
     public DonHangDTO taoHoaDonOnline(HoaDonOnlineRequest req) {
         DonHang don = new DonHang();
-        don.setNgayTao(LocalDate.now());
+        don.setNgayTao(LocalDateTime.now());
         don.setLoaiDonHang("ONLINE");
         don.setTrangThai(TrangThaiDonHang.CHO_XAC_NHAN.getValue());
         don.setDiaChiGiaoHang(req.getDiaChiGiaoHang());
@@ -297,7 +298,7 @@ public class DonHangService {
     @Transactional
     public void huyDon(Integer idDon) {
         DonHang don = donHangRepository.findById(idDon).orElseThrow();
-        if (don.getTrangThai() > 3) throw new RuntimeException("Không thể hủy");
+        if (don.getTrangThai() > 3 && don.getTrangThai() != 8) throw new RuntimeException("Không thể hủy");
         int oldST = don.getTrangThai();
         don.setTrangThai(TrangThaiDonHang.DA_HUY.getValue());
         if (oldST >= 0) {
@@ -385,6 +386,7 @@ public class DonHangService {
 
     private boolean isTrangThaiHopLe(TrangThaiDonHang hienTai, TrangThaiDonHang moi) {
         return switch (hienTai) {
+            case CHO_THANH_TOAN -> moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DA_HUY;
             case CHO_XAC_NHAN -> moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DA_HUY;
             case XAC_NHAN -> moi == TrangThaiDonHang.DANG_CHUAN_BI || moi == TrangThaiDonHang.DA_HUY;
             case DANG_CHUAN_BI -> moi == TrangThaiDonHang.DANG_GIAO || moi == TrangThaiDonHang.DA_HUY;

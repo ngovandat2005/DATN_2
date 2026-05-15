@@ -10,7 +10,9 @@ const TRANG_THAI = [
   { value: 3, label: 'Đang giao', color: '#1976d2' },
   { value: 4, label: 'Hoàn thành', color: '#009688' },
   { value: 5, label: 'Đã hủy', color: '#e53935' },
-  { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' }
+  { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' },
+  { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' },
+  { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
 ];
 
 const OrderDetail = () => {
@@ -264,11 +266,35 @@ const OrderDetail = () => {
 
   // Stepper trạng thái (chỉ hiện các bước thực tế mà đơn hàng đã trải qua)
   const renderOrderStatusStepper = (currentStatus) => {
+    // Xử lý các trạng thái đặc biệt bên ngoài luồng chuẩn
+    if (currentStatus === 8) {
+      const stop = TRANG_THAI.find(t => t.value === 8) || { value: 8, label: 'Chờ thanh toán', color: '#d97706' };
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: stop.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, marginBottom: 4, border: `2px solid ${stop.color}` }}>1</div>
+            <span style={{ color: stop.color, fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{stop.label}</span>
+          </div>
+        </div>
+      );
+    }
+    if (currentStatus === 6) {
+      const stop = TRANG_THAI.find(t => t.value === 6) || { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' };
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: stop.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, marginBottom: 4, border: `2px solid ${stop.color}` }}>1</div>
+            <span style={{ color: stop.color, fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{stop.label}</span>
+          </div>
+        </div>
+      );
+    }
+
     // Tạo mảng các bước thực tế mà đơn hàng đã trải qua
     let actualSteps = [];
     
     // Luôn có bước đầu tiên (chờ xác nhận)
-    actualSteps.push(TRANG_THAI[0]);
+    actualSteps.push(TRANG_THAI.find(t => t.value === 0));
     
     // Nếu đơn hàng đã được xác nhận (trạng thái >= 1)
     if (currentStatus >= 1) {
@@ -536,8 +562,28 @@ const OrderDetail = () => {
             </button>
           )}
 
-          {/* Nút Hủy đơn (0, 1, 2, 3 -> 5) */}
-          {(order.trangThai >= 0 && order.trangThai <= 3) && (
+          {/* Nút Xác nhận thanh toán thủ công (8 -> 1) */}
+          {order.trangThai === 8 && (
+            <button
+              style={{
+                padding: '10px 24px',
+                background: '#43b244',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 15,
+                boxShadow: '0 2px 6px rgba(67,178,68,0.2)'
+              }}
+              onClick={() => handleUpdateStatus(1)}
+            >
+              ✅ Xác nhận đã thanh toán
+            </button>
+          )}
+
+          {/* Nút Hủy đơn (0, 1, 2, 3, 8 -> 5) */}
+          {((order.trangThai >= 0 && order.trangThai <= 3) || order.trangThai === 8) && (
             <button
               style={{
                 padding: '10px 24px',

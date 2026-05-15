@@ -1725,7 +1725,7 @@ const Payment = () => {
         diaChiGiaoHang: customerAddress,
         idService: selectedServiceId, // ✅ THÊM: Gửi idService
         loaiDonHang: 'online', 
-        trangThai: 0 // Chờ thanh toán
+        trangThai: paymentMethod === 'bank' ? 8 : 0 // 8: Chờ thanh toán VNPay, 0: Chờ xác nhận COD
       };
 
       console.log('📦 Đang gửi yêu cầu tạo đơn hàng Atomic:', orderData);

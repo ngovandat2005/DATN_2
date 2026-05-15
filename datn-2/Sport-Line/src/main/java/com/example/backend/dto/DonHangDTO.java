@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
@@ -28,7 +29,7 @@ public class DonHangDTO {
 
     private LocalDate ngayMua;
 
-    private LocalDate ngayTao;
+    private LocalDateTime ngayTao;
 
     private String loaiDonHang;
 
@@ -70,7 +71,7 @@ public class DonHangDTO {
         this.idgiamGia = dh.getGiamGia() != null ? dh.getGiamGia().getId() : null;
 
         this.ngayMua = dh.getNgayMua();
-        this.ngayTao = (dh.getNgayTao() != null) ? dh.getNgayTao() : (dh.getNgayMua() != null ? dh.getNgayMua() : LocalDate.now());
+        this.ngayTao = (dh.getNgayTao() != null) ? dh.getNgayTao() : (dh.getNgayMua() != null ? dh.getNgayMua().atStartOfDay() : LocalDateTime.now());
         this.loaiDonHang = dh.getLoaiDonHang();
 
         this.trangThai = dh.getTrangThai();

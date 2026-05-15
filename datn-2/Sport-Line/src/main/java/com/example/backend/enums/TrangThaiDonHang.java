@@ -8,7 +8,8 @@ public enum TrangThaiDonHang {
     DA_GIAO(4, "Đã giao"),
     DA_HUY(5, "Đã hủy"),
     TRA_HANG_HOAN_TIEN(6, "Trả hàng / Hoàn tiền"),
-    GIAO_HANG_THAT_BAI(7, "Giao hàng thất bại");
+    GIAO_HANG_THAT_BAI(7, "Giao hàng thất bại"),
+    CHO_THANH_TOAN(8, "Chờ thanh toán");
 
     private final int value;
     private final String displayName;

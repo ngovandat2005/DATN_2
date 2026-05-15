@@ -31,6 +31,7 @@ import {
 
 const TRANG_THAI_MAP = [
   { value: -1, label: "Tất cả" },
+  { value: 8, label: "Chờ thanh toán" },
   { value: 0, label: "Chờ xác nhận" },
   { value: 1, label: "Chờ vận chuyển" },
   { value: "cho-nhan", label: "Chờ nhận" },
@@ -46,6 +47,9 @@ const GET_STATUS_STYLE = (value) => {
     case 3: return { label: "Chờ nhận", color: "#2563eb" };
     case 4: return { label: "Đã giao", color: "#10b981" };
     case 5: return { label: "Đã hủy", color: "#ef4444" };
+    case 6: return { label: "Trả hàng/Hoàn tiền", color: "#ec4899" };
+    case 7: return { label: "Thất bại", color: "#6366f1" };
+    case 8: return { label: "Chờ thanh toán", color: "#d97706" };
     default: return { label: "Không rõ", color: "#6b7280" };
   }
 };
@@ -152,7 +156,8 @@ const OrderHistory = () => {
             value={filterStatus} 
             onChange={(e, val) => setFilterStatus(val)} 
             variant="scrollable"
-            scrollButtons="auto"
+            scrollButtons={false}
+            allowScrollButtonsMobile
             sx={{
               '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minWidth: 'fit-content', px: 2 },
               '& .Mui-selected': { color: '#111827 !important' },

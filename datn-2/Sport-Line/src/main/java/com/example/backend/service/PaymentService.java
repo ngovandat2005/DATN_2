@@ -88,10 +88,18 @@ public class PaymentService {
 
         try {
             if ("00".equals(vnp_ResponseCode)) {
-                sendSuccessEmail(vnp_TxnRef, amount);
+                // 1. Cập nhật trạng thái đơn hàng sang ĐÃ XÁC NHẬN (Trạng thái 1) trước để hoàn tất nghiệp vụ chính
                 if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
                     donHangService.capNhatTrangThai(Integer.parseInt(vnp_TxnRef), com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
                 }
+
+                // 2. Gửi email trong một khối try-catch độc lập để nếu lỗi SMTP cũng không ảnh hưởng giao dịch
+                try {
+                    sendSuccessEmail(vnp_TxnRef, amount);
+                } catch (Exception emailEx) {
+                    System.err.println("⚠️ Lỗi gửi email thành công VNPay: " + emailEx.getMessage());
+                }
+
                 return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
             } else {
                 if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {

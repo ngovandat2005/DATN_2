@@ -3,6 +3,7 @@ package com.example.backend.entity;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -28,7 +29,7 @@ public class DonHang {
     private LocalDate ngayMua;
 
     @Column(name="NgayTao")
-    private LocalDate ngayTao;
+    private LocalDateTime ngayTao;
 
     @Column(name="LoaiDonHang")
     private String loaiDonHang;
@@ -69,7 +70,7 @@ public class DonHang {
     public DonHang() {
     }
 
-    public DonHang(Integer id, NhanVien nhanVien, KhachHang khachHang, Voucher giamGia, LocalDate ngayMua, LocalDate ngayTao, String loaiDonHang, Integer trangThai, Double tongTien, Double tongTienGiamGia, String diaChiGiaoHang, String soDienThoaiGiaoHang, String emailGiaoHang, String tenNguoiNhan, Integer phiVanChuyen, String maVanDon, Integer idService, List<DonHangChiTiet> donHangChiTiets) {
+    public DonHang(Integer id, NhanVien nhanVien, KhachHang khachHang, Voucher giamGia, LocalDate ngayMua, LocalDateTime ngayTao, String loaiDonHang, Integer trangThai, Double tongTien, Double tongTienGiamGia, String diaChiGiaoHang, String soDienThoaiGiaoHang, String emailGiaoHang, String tenNguoiNhan, Integer phiVanChuyen, String maVanDon, Integer idService, List<DonHangChiTiet> donHangChiTiets) {
         this.id = id;
         this.nhanVien = nhanVien;
         this.khachHang = khachHang;
@@ -137,11 +138,11 @@ public class DonHang {
         this.ngayMua = ngayMua;
     }
 
-    public LocalDate getNgayTao() {
+    public LocalDateTime getNgayTao() {
         return ngayTao;
     }
 
-    public void setNgayTao(LocalDate ngayTao) {
+    public void setNgayTao(LocalDateTime ngayTao) {
         this.ngayTao = ngayTao;
     }
 

@@ -16,12 +16,12 @@ public class SanPhamService {
 
     // 1. Lấy tất cả Sản phẩm đang kinh doanh
     public List<SanPham> getAllActive() {
-        return sanPhamRepo.findAllByTrangThai(1); 
+        return sanPhamRepo.findAllByTrangThaiOrderByIdDesc(1); 
     }
 
     // 2. Lấy sản phẩm theo trạng thái
     public List<SanPham> getProducts() {
-        return sanPhamRepo.findAllByTrangThai(1);
+        return sanPhamRepo.findAllByTrangThaiOrderByIdDesc(1);
     }
 
     // 3. Hệ thống tìm kiếm

@@ -12,7 +12,10 @@ const TRANG_THAI = [
   { value: 2, label: 'Chờ nhận', color: '#1976d2' },
   { value: 3, label: 'Chờ nhận', color: '#1976d2' },
   { value: 4, label: 'Đã giao', color: '#009688' },
-  { value: 5, label: 'Đã hủy', color: '#e53935' }
+  { value: 5, label: 'Đã hủy', color: '#e53935' },
+  { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' },
+  { value: 7, label: 'Thất bại', color: '#6366f1' },
+  { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
 ];
 
 const formatImage = (raw) => {
@@ -646,6 +649,30 @@ const OrderDetailPage = () => {
           confirmButtonText: 'OK'
         });
       }
+    }
+  };
+
+  const handleThanhToanLai = async () => {
+    try {
+      Swal.fire({
+        title: 'Đang tạo liên kết thanh toán...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+      const amount = orderInfo.tongTien || 0;
+      const res = await fetch(`http://localhost:8080/api/payment/create?amount=${amount}&orderId=${id}`);
+      if (!res.ok) throw new Error('Không thể tạo liên kết thanh toán');
+      const url = await res.text();
+      
+      Swal.close();
+      window.location.href = url;
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Lỗi',
+        text: 'Không thể tạo liên kết thanh toán VNPay. Vui lòng thử lại sau.'
+      });
     }
   };
 
@@ -1530,6 +1557,30 @@ const OrderDetailPage = () => {
 
   // Stepper trạng thái (chỉ hiện các bước đã đi qua)
   const renderOrderStatusStepper = (currentStatus) => {
+    // Xử lý các trạng thái đặc biệt bên ngoài luồng chuẩn
+    if (currentStatus === 8) {
+      const stop = TRANG_THAI.find(t => t.value === 8) || { value: 8, label: 'Chờ thanh toán', color: '#d97706' };
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: stop.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, marginBottom: 4, border: `2px solid ${stop.color}` }}>1</div>
+            <span style={{ color: stop.color, fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{stop.label}</span>
+          </div>
+        </div>
+      );
+    }
+    if (currentStatus === 6) {
+      const stop = TRANG_THAI.find(t => t.value === 6) || { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' };
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: stop.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, marginBottom: 4, border: `2px solid ${stop.color}` }}>1</div>
+            <span style={{ color: stop.color, fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{stop.label}</span>
+          </div>
+        </div>
+      );
+    }
+
     // Tạo mảng các bước thực tế mà đơn hàng đã trải qua
     let actualSteps = [];
 
@@ -1974,12 +2025,20 @@ const OrderDetailPage = () => {
 
           {/* Nút chức năng: Phân quyền theo vai trò */}
           <div style={{ marginTop: 16 }}>
-            {/* 1. Nút Hủy đơn (Chỉ khách hàng thấy khi đơn mới - Trạng thái 0) */}
-            {orderInfo.trangThai === 0 && (
+            {/* 1. Nút Hủy đơn (Khách hàng & Admin đều thấy khi đơn mới hoặc đã xác nhận) */}
+            {(orderInfo.trangThai === 0 || orderInfo.trangThai === 1 || orderInfo.trangThai === 8) && (
               <button
                 style={{ padding: '8px 20px', background: '#e53935', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
                 onClick={handleHuy}
               >❌ Hủy đơn</button>
+            )}
+
+            {/* Nút Thanh toán lại (Chỉ khách hàng thấy khi đơn chờ thanh toán) */}
+            {!isAdmin && orderInfo.trangThai === 8 && (
+              <button
+                style={{ padding: '8px 20px', background: '#d97706', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
+                onClick={handleThanhToanLai}
+              >💳 Thanh toán lại</button>
             )}
 
             {/* 2. Nút Quản lý - CHỈ ADMIN MỚI THẤY */}
