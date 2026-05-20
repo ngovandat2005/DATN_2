@@ -46,10 +46,13 @@ public class Voucher {
     @Column(name = "TrangThai")
     private Integer trangThai;
 
+    @Column(name = "GiamGiaToiDa")
+    private Double giamGiaToiDa;
+
     public Voucher() {
     }
 
-    public Voucher(Integer id, String maVoucher, String tenVoucher, String loaiVoucher, String moTa, Integer soLuong, Double donToiThieu, Double giaTri, LocalDateTime ngayBatDau, LocalDateTime ngayKetThuc, Integer trangThai) {
+    public Voucher(Integer id, String maVoucher, String tenVoucher, String loaiVoucher, String moTa, Integer soLuong, Double donToiThieu, Double giaTri, LocalDateTime ngayBatDau, LocalDateTime ngayKetThuc, Integer trangThai, Double giamGiaToiDa) {
         this.id = id;
         this.maVoucher = maVoucher;
         this.tenVoucher = tenVoucher;
@@ -61,6 +64,7 @@ public class Voucher {
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
         this.trangThai = trangThai;
+        this.giamGiaToiDa = giamGiaToiDa;
     }
 
     public Integer getId() {
@@ -149,5 +153,13 @@ public class Voucher {
 
     public void setTrangThai(Integer trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public Double getGiamGiaToiDa() {
+        return giamGiaToiDa;
+    }
+
+    public void setGiamGiaToiDa(Double giamGiaToiDa) {
+        this.giamGiaToiDa = giamGiaToiDa;
     }
 }

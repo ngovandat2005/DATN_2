@@ -14,20 +14,19 @@ const CheckPayment = () => {
   const [status, setStatus] = useState("info");
   const [title, setTitle] = useState("Đang xử lý thanh toán...");
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
   const hasProcessed = useRef(false); // ✅ Guard against double processing
 
 
 
   useEffect(() => {
-    if (isProcessing) {
-      console.log('⚠️ Đang xử lý, bỏ qua...');
+    // ✅ FIX: Dùng ref làm guard thực sự - không re-trigger khi ref thay đổi
+    if (hasProcessed.current) {
+      console.log('⚠️ Đã xử lý rồi, bỏ qua...');
       return;
     }
+    hasProcessed.current = true;
 
     const processPayment = async () => {
-      setIsProcessing(true);
-
       try {
         const vnpResponseCode = searchParams.get('vnp_ResponseCode');
         const vnpTxnRef = searchParams.get('vnp_TxnRef');
@@ -36,7 +35,7 @@ const CheckPayment = () => {
         console.log('📊 Response Code:', vnpResponseCode);
         console.log('📊 Order ID:', vnpTxnRef);
 
-        // Gọi backend để cập nhật trạng thái đơn hàng và DB
+        // Gọi backend để cập nhật trạng thái đơn hàng và DB (chỉ 1 lần)
         try {
             const { data } = await axios.get(
                 config.getApiUrl(`api/payment/vnpay-return?${searchParams.toString()}`)
@@ -71,7 +70,7 @@ const CheckPayment = () => {
             default: errorMessage = `Thanh toán thất bại với mã lỗi: ${vnpResponseCode}`;
           }
 
-          toast.error('❌ ' + errorMessage + '. Đơn hàng đã bị hủy.', {
+          toast.error('❌ ' + errorMessage + '. Đơn hàng vẫn ở trạng thái "Chờ thanh toán", bạn có thể thanh toán lại trong Lịch sử đơn hàng.', {
             position: "top-center",
             autoClose: 3000,
           });
@@ -94,7 +93,8 @@ const CheckPayment = () => {
     };
 
     processPayment();
-  }, [isProcessing, navigate, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ✅ FIX: Empty deps - chỉ chạy 1 lần khi mount
 
   if (loading) {
     return (

@@ -117,6 +117,8 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
 
     List<SanPhamChiTiet> findBySanPham_IdAndTrangThai(Integer sanPhamId, Integer trangThai);
     List<SanPhamChiTiet> findBySanPham_Id(Integer sanPhamId);
+    boolean existsByMa(String ma);
+    boolean existsByMaAndIdNot(String ma, Integer idNot);
     boolean existsBySanPham_IdAndMauSac_IdAndKichThuoc_Id(Integer idSanPham, Integer idMauSac, Integer idKichThuoc);
     boolean existsBySanPham_IdAndMauSac_IdAndKichThuoc_IdAndIdNot(
             Integer idSanPham, Integer idMauSac, Integer idKichThuoc, Integer idNot

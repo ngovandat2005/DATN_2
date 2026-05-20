@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, DatePicker, Select, Space, message, InputNumber, Popconfirm, Row, Col, Card } from 'antd';
-import { TagOutlined, FileTextOutlined, CalendarOutlined, PoundOutlined, NumberOutlined, AlignLeftOutlined, SearchOutlined, FilterOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, DatePicker, Select, Space, message, InputNumber, Row, Col, Card } from 'antd';
+import { TagOutlined, CalendarOutlined, PoundOutlined, NumberOutlined, AlignLeftOutlined, SearchOutlined, FilterOutlined, ReloadOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import Swal from 'sweetalert2';
 import '../styles/AdminPanel.css'; // Import the CSS file
-import ProductManagementPage from './ProductManagementPage'; // Đảm bảo import này vẫn ở đó
 
 const { Option } = Select;
 const { Search } = Input;
@@ -42,6 +41,7 @@ export default function VoucherPage() {
       console.log('🔍 Có thay đổi tìm kiếm, gọi filterVouchers...');
       filterVouchers();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText, selectedType]);
 
   // ✅ SỬA: Debounce filter local thay vì gọi API
@@ -53,6 +53,7 @@ export default function VoucherPage() {
       }, 300);
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText, selectedType]);
 
   // ✅ SỬA: Sử dụng danh sách loại cố định thay vì gọi API
@@ -70,8 +71,20 @@ export default function VoucherPage() {
         const data = await response.json();
         console.log('✅ API trả về data:', data);
         console.log('📊 Số lượng voucher:', data.length);
-        setVouchers(data);
-        setFilteredVouchers(data); // ✅ Đảm bảo filteredVouchers có data
+        
+        // Mapped loaiVoucher to frontend friendly names
+        const mappedData = data.map(voucher => {
+          let loai = voucher.loaiVoucher;
+          if (loai === 'PERCENT' || loai === 'PHAN_TRAM') {
+            loai = 'Giảm giá %';
+          } else if (loai === 'CASH' || loai === 'TIEN_MAT') {
+            loai = 'Giảm giá số tiền';
+          }
+          return { ...voucher, loaiVoucher: loai };
+        });
+
+        setVouchers(mappedData);
+        setFilteredVouchers(mappedData); // ✅ Đảm bảo filteredVouchers có data
       } else {
         console.error('❌ API response không ok:', response.status, response.statusText);
         message.error('API trả về lỗi: ' + response.status);
@@ -148,14 +161,68 @@ export default function VoucherPage() {
     },
     { title: 'Mã Voucher', dataIndex: 'maVoucher', key: 'maVoucher' },
     { title: 'Tên Voucher', dataIndex: 'tenVoucher', key: 'tenVoucher' },
-    { title: 'Loại Voucher', dataIndex: 'loaiVoucher', key: 'loaiVoucher' },
+    {
+      title: 'Loại Voucher',
+      dataIndex: 'loaiVoucher',
+      key: 'loaiVoucher',
+      render: (value) => {
+        if (!value) return '';
+        const isPercent = value.toUpperCase() === 'PERCENT' || value.toLowerCase().includes('%') || value.includes('percent');
+        return isPercent ? (
+          <span style={{ fontWeight: 500, color: '#1677ff' }}>Phần trăm (%)</span>
+        ) : (
+          <span style={{ fontWeight: 500, color: '#52c41a' }}>Tiền mặt (đ)</span>
+        );
+      }
+    },
     { title: 'Mô Tả', dataIndex: 'moTa', key: 'moTa' },
     { title: 'Số Lượng', dataIndex: 'soLuong', key: 'soLuong' },
-    { title: 'Giá Trị', dataIndex: 'giaTri', key: 'giaTri' },
-    { title: 'Đơn Tối Thiểu', dataIndex: 'donToiThieu', key: 'donToiThieu' },
+    {
+      title: 'Giá Trị',
+      dataIndex: 'giaTri',
+      key: 'giaTri',
+      render: (value, record) => {
+        if (value === undefined || value === null) return '';
+        const isPercent = record.loaiVoucher?.toUpperCase() === 'PERCENT' || record.loaiVoucher?.toLowerCase().includes('%') || record.loaiVoucher?.includes('percent');
+        return isPercent ? (
+          <span style={{ fontWeight: 'bold', color: '#1677ff' }}>{value}%</span>
+        ) : (
+          <span style={{ fontWeight: 'bold', color: '#e74c3c' }}>{value.toLocaleString()} đ</span>
+        );
+      }
+    },
+    {
+      title: 'Đơn Tối Thiểu',
+      dataIndex: 'donToiThieu',
+      key: 'donToiThieu',
+      render: (value) => value !== undefined && value !== null ? <span style={{ fontWeight: 500 }}>{value.toLocaleString()} đ</span> : '0 đ'
+    },
+    {
+      title: 'Giảm Tối Đa',
+      dataIndex: 'giamGiaToiDa',
+      key: 'giamGiaToiDa',
+      render: (value, record) => {
+        const isPercent = record.loaiVoucher?.toUpperCase() === 'PERCENT' || record.loaiVoucher?.toLowerCase().includes('%') || record.loaiVoucher?.includes('percent');
+        if (!isPercent) return 'N/A';
+        return value !== undefined && value !== null && value > 0 ? <span style={{ fontWeight: 500, color: '#e74c3c' }}>{value.toLocaleString()} đ</span> : 'Không giới hạn';
+      }
+    },
     { title: 'Ngày Bắt Đầu', dataIndex: 'ngayBatDau', key: 'ngayBatDau', render: (value) => value ? moment(value).format('DD/MM/YYYY') : '' },
     { title: 'Ngày Kết Thúc', dataIndex: 'ngayKetThuc', key: 'ngayKetThuc', render: (value) => value ? moment(value).format('DD/MM/YYYY') : '' },
-    { title: 'Trạng Thái', dataIndex: 'trangThai', key: 'trangThai', render: (value) => value === 1 ? <span style={{ color: "green" }}>Đang hoạt động</span> : <span style={{ color: "red" }}>Hết Hạn</span> },
+    { 
+      title: 'Trạng Thái', 
+      dataIndex: 'trangThai', 
+      key: 'trangThai', 
+      render: (value) => {
+        if (value === 1) {
+          return <span style={{ color: "green", fontWeight: 500 }}>Đang hoạt động</span>;
+        } else if (value === 2) {
+          return <span style={{ color: "orange", fontWeight: 500 }}>Tạm ngưng</span>;
+        } else {
+          return <span style={{ color: "red", fontWeight: 500 }}>Hết Hạn / Vô hiệu</span>;
+        }
+      }
+    },
 
     {
       title: 'Hành Động',
@@ -216,14 +283,23 @@ export default function VoucherPage() {
 
     // ✅ SỬA: Bỏ validation ở FE vì đã có ở BE
     // Đảm bảo đúng định dạng dữ liệu gửi lên
+    let normalizedLoai = values.loaiVoucher;
+    if (normalizedLoai === 'Giảm giá %') {
+      normalizedLoai = 'PERCENT';
+    } else if (normalizedLoai === 'Giảm giá số tiền') {
+      normalizedLoai = 'CASH';
+    }
+
     const dataSend = {
       ...values,
+      loaiVoucher: normalizedLoai,
       soLuong: Number(values.soLuong),
       giaTri: Number(values.giaTri),
       donToiThieu: Number(values.donToiThieu),
+      giamGiaToiDa: values.giamGiaToiDa ? Number(values.giamGiaToiDa) : null,
       ngayBatDau: values.ngayBatDau ? values.ngayBatDau.format('YYYY-MM-DDTHH:mm:ss') : null,
       ngayKetThuc: values.ngayKetThuc ? values.ngayKetThuc.format('YYYY-MM-DDTHH:mm:ss') : null,
-      trangThai: editingVoucher ? Number(values.trangThai) : undefined, // Chỉ gửi trạng thái khi sửa
+      trangThai: values.trangThai !== undefined ? Number(values.trangThai) : undefined,
     };
     if (editingVoucher) {
       // Sửa
@@ -325,6 +401,7 @@ export default function VoucherPage() {
     handleCancel();
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleDeleteVoucher = (id) => {
     Swal.fire({
       title: 'Bạn có chắc chắn muốn xóa vĩnh viễn voucher này không?',
@@ -528,7 +605,7 @@ export default function VoucherPage() {
               max={selectedVoucherType === 'Giảm giá %' ? 100 : undefined}
               style={{ width: '100%' }}
               formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-              parser={value => value.replace(/\s?|(,*)/g, '')}
+              parser={value => value.replace(/\s|,/g, '')}
               prefix={<PoundOutlined />}
               placeholder={selectedVoucherType === 'Giảm giá %' ? 'Nhập % (1-100)' : 'Nhập số tiền'}
             />
@@ -558,9 +635,39 @@ export default function VoucherPage() {
             <InputNumber
               min={0}
               style={{ width: '100%' }}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\s|,/g, '')}
               placeholder="Đơn Tối Thiểu"
             />
           </Form.Item>
+          {selectedVoucherType === 'Giảm giá %' && (
+            <Form.Item
+              name="giamGiaToiDa"
+              label="Giảm Giá Tối Đa"
+              rules={[{ required: false }]}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: '100%' }}
+                placeholder="Giảm tối đa (để trống nếu không giới hạn)"
+                formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={value => value.replace(/\s|,/g, '')}
+              />
+            </Form.Item>
+          )}
+          {editingVoucher && (
+            <Form.Item
+              name="trangThai"
+              label="Trạng Thái"
+              rules={[{ required: true, message: 'Vui lòng chọn Trạng Thái!' }]}
+            >
+              <Select placeholder="Chọn Trạng Thái">
+                <Option value={1}>Đang hoạt động</Option>
+                <Option value={2}>Tạm ngưng</Option>
+                <Option value={0}>Hết Hạn / Vô hiệu</Option>
+              </Select>
+            </Form.Item>
+          )}
           <Form.Item>
             <Button type="primary" htmlType="submit">
               {editingVoucher ? "Cập Nhật" : "Thêm Mới"}

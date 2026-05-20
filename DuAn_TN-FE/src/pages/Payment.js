@@ -493,19 +493,18 @@ const Payment = () => {
           const data = await response.json();
 
           // ✅ Sử dụng trực tiếp data từ API (đã được backend log sẵn)
-          setVouchers(data);
+          setVouchers(Array.isArray(data) ? data : []);
         } else {
-          // Fallback: sử dụng API cũ nếu API mới lỗi
           // Fallback: sử dụng API cũ nếu API mới lỗi
           const fallbackResponse = await fetch(config.getApiUrl('api/voucher'));
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
-            const availableVouchers = fallbackData.filter(voucher =>
+            const availableVouchers = Array.isArray(fallbackData) ? fallbackData.filter(voucher =>
               voucher.trangThai === 1 &&
               voucher.soLuong > 0 &&
               new Date(voucher.ngayBatDau) <= new Date() &&
               new Date(voucher.ngayKetThuc) >= new Date()
-            );
+            ) : [];
             setVouchers(availableVouchers);
 
           }
@@ -516,12 +515,12 @@ const Payment = () => {
           const fallbackResponse = await fetch(config.getApiUrl('api/voucher'));
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
-            const availableVouchers = fallbackData.filter(voucher =>
+            const availableVouchers = Array.isArray(fallbackData) ? fallbackData.filter(voucher =>
               voucher.trangThai === 1 &&
               voucher.soLuong > 0 &&
               new Date(voucher.ngayBatDau) <= new Date() &&
               new Date(voucher.ngayKetThuc) >= new Date()
-            );
+            ) : [];
             setVouchers(availableVouchers);
 
           }
@@ -1602,10 +1601,9 @@ const Payment = () => {
       return;
     }
 
-    // ✅ THÊM: Kiểm tra đã tính được phí vận chuyển
+    // ✅ Cảnh báo nếu chưa tính được phí ship nhưng vẫn cho phép tiếp tục
     if (shippingFee <= 0) {
-      toast.warning('Vui lòng chờ tính phí vận chuyển hoặc thử lại!');
-      return;
+      toast.warning('Chưa tính được phí vận chuyển, sẽ sử dụng phí mặc định 30.000₫');
     }
 
     // ✅ THÊM: Kiểm tra giới hạn đơn hàng TRƯỚC KHI xử lý bất kỳ phương thức thanh toán nào
@@ -1656,7 +1654,7 @@ const Payment = () => {
             width: '500px'
           }).then((result) => {
             if (result.isConfirmed) {
-              navigate('/order-history');
+              navigate('/orders');
             }
           });
         } else {
@@ -1708,141 +1706,60 @@ const Payment = () => {
 
     try {
       const customerId = getCustomerId();
-      
-      // BƯỚC 1: TẠO ĐƠN HÀNG (Dùng cho cả COD và VNPAY để validate Voucher/Stock ngay lập tức)
-      const orderData = {
-        idkhachHang: customerId,
-        idnhanVien: null,
-        idgiamGia: selectedVoucherId || null,
-        ngayTao: null,
-        // Backend create() sẽ tự trừ voucher thêm lần nữa: donHang.setTongTien(tongTien - giam)
-        tongTien: total - itemDiscountTotal,
-        tongTienGiamGia: orderDiscount, 
-        phiVanChuyen: shippingFee, 
+
+      // ✅ Build danh sách sản phẩm đặt theo đúng format HoaDonOnlineRequest
+      const sanPhamDatList = cart.map((item, i) => {
+        // Lấy idSanPhamChiTiet từ nhiều cấu trúc dữ liệu khác nhau
+        const idSpct =
+          item.sanPhamChiTiet?.id ||
+          item.idSanPhamChiTiet ||
+          item.id;
+        const soLuong = item.soLuong || item.quantity || 1;
+
+        if (!idSpct) {
+          throw new Error(`Không thể xác định sản phẩm thứ ${i + 1}`);
+        }
+        return { idSanPhamChiTiet: idSpct, soLuong };
+      });
+
+      // ✅ BƯỚC 1: Tạo đơn hàng online (1 API duy nhất - xử lý cả chi tiết + trừ kho)
+      const onlineRequest = {
+        idKhachHang: customerId ? parseInt(customerId) : null,
         tenNguoiNhan: customerName,
+        diaChiGiaoHang: customerAddress,
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
-        diaChiGiaoHang: customerAddress,
-        idService: selectedServiceId, // ✅ THÊM: Gửi idService
-        loaiDonHang: 'online', 
-        trangThai: paymentMethod === 'bank' ? 8 : 0 // 8: Chờ thanh toán VNPay, 0: Chờ xác nhận COD
+        idVoucher: selectedVoucherId ? parseInt(selectedVoucherId) : null,
+        phiVanChuyen: Math.round(shippingFee) || 30000,
+        idService: selectedServiceId || null,
+        sanPhamDat: sanPhamDatList
       };
 
-      console.log('📦 Đang gửi yêu cầu tạo đơn hàng Atomic:', orderData);
+      console.log('📦 Tạo đơn hàng online (1-shot):', onlineRequest);
 
-      const orderRes = await fetch(config.getApiUrl('api/donhang/create'), {
+      const orderRes = await fetch(config.getApiUrl('api/donhang/online'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
+        body: JSON.stringify(onlineRequest)
       });
 
       if (!orderRes.ok) {
-        const errorData = await orderRes.json();
-        // Ném lỗi Voucher/Stock từ Backend
-        throw new Error(errorData.message || 'Lỗi khi tạo đơn hàng. Vui lòng kiểm tra lại Voucher hoặc Sản phẩm.');
+        let errMsg = 'Lỗi khi tạo đơn hàng.';
+        try { const e = await orderRes.json(); errMsg = e.message || errMsg; } catch { errMsg = await orderRes.text() || errMsg; }
+        throw new Error(errMsg);
       }
 
       const createdOrder = await orderRes.json();
       const newOrderId = createdOrder.id;
-      console.log('✅ Đã tạo đơn hàng thành công, ID:', newOrderId);
+      console.log('✅ Đã tạo đơn hàng online thành công, ID:', newOrderId);
 
-
-      // BƯỚC 2: Tạo đơn hàng chi tiết cho từng sản phẩm (giống BanHangTaiQuay)
-
-      for (let i = 0; i < cart.length; i++) {
-        const item = cart[i];
-
-        // Xử lý data từ giỏ hàng
-        let chiTietData;
-
-        // ✅ SỬA: Logic xử lý cấu trúc dữ liệu giỏ hàng
-        if (item.sanPhamChiTiet && item.sanPhamChiTiet.id) {
-          // 📦 Cấu trúc từ giỏ hàng với sanPhamChiTiet
-          const hasDiscount = item.sanPhamChiTiet.giaBanGiamGia &&
-            item.sanPhamChiTiet.giaBanGiamGia > 0 &&
-            item.sanPhamChiTiet.giaBanGiamGia < item.sanPhamChiTiet.giaBan;
-          const giaBan = hasDiscount ? item.sanPhamChiTiet.giaBanGiamGia : item.sanPhamChiTiet.giaBan;
-
-          chiTietData = {
-            idDonHang: newOrderId,
-            idSanPhamChiTiet: item.sanPhamChiTiet.id,
-            soLuong: item.soLuong || 1,
-            gia: giaBan,
-            thanhTien: giaBan * (item.soLuong || 1),
-          };
-
-
-
-        } else if (item.giaBan !== undefined && item.idSanPhamChiTiet) {
-          // 🆕 Cấu trúc mới từ backend
-          const hasDiscount = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < item.giaBan;
-          const finalPrice = hasDiscount ? item.giaBanGiamGia : item.giaBan;
-
-          chiTietData = {
-            idDonHang: newOrderId,
-            idSanPhamChiTiet: item.idSanPhamChiTiet,
-            soLuong: item.soLuong || 1,
-            gia: finalPrice,
-            thanhTien: finalPrice * (item.soLuong || 1),
-          };
-
-
-
-        } else if (item.gia !== undefined && item.idSanPhamChiTiet) {
-          // 🔍 Cấu trúc có trường gia trực tiếp
-          chiTietData = {
-            idDonHang: newOrderId,
-            idSanPhamChiTiet: item.idSanPhamChiTiet,
-            soLuong: item.soLuong || 1,
-            gia: item.gia,
-            thanhTien: item.gia * (item.soLuong || 1),
-          };
-
-
-
-        } else if (item.price !== undefined) {
-          // 🛒 Data từ mua ngay
-          const hasDiscount = item.discountPrice && item.discountPrice < item.originalPrice;
-          const finalPrice = hasDiscount ? item.discountPrice : item.price;
-
-          chiTietData = {
-            idDonHang: newOrderId,
-            idSanPhamChiTiet: item.id,
-            soLuong: item.quantity || 1,
-            gia: finalPrice,
-            thanhTien: finalPrice * (item.quantity || 1),
-          };
-
-
-
-        } else {
-          // ❌ Không nhận diện được cấu trúc
-          console.error(`❌ Không thể xử lý item ${i + 1}:`, item);
-          throw new Error(`Không thể xử lý sản phẩm ${i + 1}`);
-        }
-
-        console.log(`Tạo chi tiết sản phẩm ${i + 1}:`, chiTietData);
-
-        // Cả COD và VNPAY đều dùng chung API tạo chi tiết (việc trừ kho được Backend lo)
-        const apiUrl = config.getApiUrl('api/donhangchitiet/create');
-
-        const chiTietRes = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(chiTietData)
+      // ✅ BƯỚC 2 (nếu là VNPay): cập nhật trạng thái sang CHỜ THANH TOÁN (8)
+      if (paymentMethod === 'bank') {
+        await fetch(config.getApiUrl(`api/donhang/${newOrderId}/trang-thai?value=8`), {
+          method: 'PUT'
         });
-
-        if (!chiTietRes.ok) {
-          console.error(`Lỗi tạo chi tiết sản phẩm ${i + 1}:`, await chiTietRes.text());
-          throw new Error(`Lỗi khi tạo chi tiết sản phẩm ${i + 1}`);
-        }
-
-        console.log(`Đã tạo chi tiết sản phẩm ${i + 1} thành công`);
+        console.log('✅ Đã chuyển trạng thái sang Chờ thanh toán (8)');
       }
-
-      console.log('Hoàn thành tạo đơn hàng và chi tiết!');
-
-      console.log('✅ Hoàn thành tạo đơn hàng và chi tiết sản phẩm.');
 
       // ✅ BƯỚC 5: Xóa giỏ hàng CHỈ KHI thanh toán từ giỏ hàng, KHÔNG xóa khi mua ngay
       console.log('Bước 5: Xử lý xóa giỏ hàng...');

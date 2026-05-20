@@ -60,6 +60,8 @@ public class DonHangDTO {
 
     private String tenKhachHang;
 
+    private String ghiChu;
+
     public DonHangDTO(DonHang dh) {
         if (dh == null)
             return;
@@ -94,6 +96,7 @@ public class DonHangDTO {
         this.phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0;
         this.maVanDon = dh.getMaVanDon();
         this.idService = dh.getIdService();
+        this.ghiChu = dh.getGhiChu();
 
         if (dh.getDonHangChiTiets() != null) {
             this.donHangChiTiets = dh.getDonHangChiTiets().stream()

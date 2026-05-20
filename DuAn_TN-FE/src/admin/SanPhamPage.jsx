@@ -168,6 +168,41 @@ const SanPhamPage = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     
+    // Validate trước khi hỏi xác nhận
+    if (!addForm.tenSanPham || !addForm.tenSanPham.trim()) {
+      Swal.fire({ icon: 'error', title: 'Tên sản phẩm không được để trống!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!addForm.ma || !addForm.ma.trim()) {
+      Swal.fire({ icon: 'error', title: 'Mã sản phẩm không được để trống!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!/^[a-zA-Z0-9-_]+$/.test(addForm.ma.trim())) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã sản phẩm không hợp lệ!',
+        text: 'Mã sản phẩm chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!addForm.idDanhMuc) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn danh mục!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!addForm.idThuongHieu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn thương hiệu!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!addForm.idChatLieu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn chất liệu!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!addForm.idXuatXu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn xuất xứ!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+
     const result = await Swal.fire({
       title: 'Xác nhận thêm sản phẩm mới?',
       text: "Vui lòng kiểm tra kỹ thông tin sản phẩm trước khi xác nhận.",
@@ -271,6 +306,41 @@ const SanPhamPage = () => {
 
   const handleEditProduct = async (e) => {
     e.preventDefault();
+
+    // Validate trước khi hỏi xác nhận
+    if (!editForm.tenSanPham || !editForm.tenSanPham.trim()) {
+      Swal.fire({ icon: 'error', title: 'Tên sản phẩm không được để trống!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!editForm.ma || !editForm.ma.trim()) {
+      Swal.fire({ icon: 'error', title: 'Mã sản phẩm không được để trống!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!/^[a-zA-Z0-9-_]+$/.test(editForm.ma.trim())) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã sản phẩm không hợp lệ!',
+        text: 'Mã sản phẩm chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!editForm.idDanhMuc) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn danh mục!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!editForm.idThuongHieu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn thương hiệu!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!editForm.idChatLieu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn chất liệu!', confirmButtonColor: '#1976d2' });
+      return;
+    }
+    if (!editForm.idXuatXu) {
+      Swal.fire({ icon: 'error', title: 'Vui lòng chọn xuất xứ!', confirmButtonColor: '#1976d2' });
+      return;
+    }
 
     const result = await Swal.fire({
       title: 'Xác nhận cập nhật sản phẩm?',
@@ -739,7 +809,7 @@ const SanPhamPage = () => {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm (Tùy chọn)</label>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm <span style={{ color: "red" }}>*</span></label>
                 <Input
                   placeholder="Nhập mã sản phẩm"
                   value={addForm.ma}
@@ -949,7 +1019,7 @@ const SanPhamPage = () => {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm</label>
+                <label style={{ fontWeight: 600, fontSize: "14px", color: "#333" }}>Mã sản phẩm <span style={{ color: "red" }}>*</span></label>
                 <Input
                   placeholder="Nhập mã sản phẩm"
                   value={editForm.ma}

@@ -1,7 +1,4 @@
-
 package com.example.backend.service;
-
-
 
 import com.example.backend.entity.XuatXu;
 import com.example.backend.repository.XuatXuInterface;
@@ -94,4 +91,3 @@ public class XuatXuService {
         return xuatXuRepo.findAllByTrangThai(0);
     }
 }
-

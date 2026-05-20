@@ -167,8 +167,11 @@ const BanHangTaiQuayPage = () => {
   // Load danh sách voucher khi mount
   useEffect(() => {
     fetch('http://localhost:8080/api/voucher')
-      .then(res => res.json())
-      .then(data => setVouchers(data || []))
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch vouchers');
+        return res.json();
+      })
+      .then(data => setVouchers(Array.isArray(data) ? data : []))
       .catch(err => {
         console.error('Lỗi khi load danh sách voucher:', err);
         setVouchers([]);
@@ -178,8 +181,11 @@ const BanHangTaiQuayPage = () => {
   // Load danh sách khách hàng khi mount
   useEffect(() => {
     fetch('http://localhost:8080/api/khachhang')
-      .then(res => res.json())
-      .then(data => setCustomers(data || []))
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch customers');
+        return res.json();
+      })
+      .then(data => setCustomers(Array.isArray(data) ? data : []))
       .catch(err => {
         console.error('Lỗi khi load danh sách khách hàng:', err);
         setCustomers([]);
@@ -612,7 +618,6 @@ const BanHangTaiQuayPage = () => {
         idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
         loaiDonHang: 'Bán hàng tại quầy',
         trangThai: 0,
-        ngayTao: now.toISOString().slice(0, 10), // Format: YYYY-MM-DD cho LocalDate
         ngayMua: null // Để null, sẽ set khi thanh toán
       };
 
@@ -726,11 +731,10 @@ const BanHangTaiQuayPage = () => {
 
       const now = new Date();
       const orderData = {
-        idKhachHang: customerId,
+        idkhachHang: customerId,
         idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
         loaiDonHang: 'Bán hàng tại quầy',
         trangThai: 0,
-        ngayTao: now.toISOString().slice(0, 10), // Format: YYYY-MM-DD cho LocalDate
         ngayMua: null // Để null, sẽ set khi thanh toán
       };
 
@@ -764,7 +768,7 @@ const BanHangTaiQuayPage = () => {
   }, [orderId]);
 
   // Hàm mở modal thanh toán
-  const handleOpenPaymentModal = () => {
+  const handleOpenPaymentModal = async () => {
     if (cart.length === 0) {
       Swal.fire({
         icon: 'warning',
@@ -775,6 +779,52 @@ const BanHangTaiQuayPage = () => {
       });
       return;
     }
+
+    // Kiểm tra và xác thực voucher (Nếu có áp dụng)
+    if (selectedVoucherId) {
+      try {
+        const resV = await fetch(`http://localhost:8080/api/voucher/${selectedVoucherId}`);
+        if (resV.ok) {
+          const latestVoucher = await resV.json();
+          // Tính toán giá trị giảm giá mong đợi từ voucher mới nhất
+          const isPercent = latestVoucher.loaiVoucher?.toUpperCase() === 'PERCENT' || latestVoucher.loaiVoucher?.includes('%');
+          const value = latestVoucher.giaTri || 0;
+          let expectedDiscount = 0;
+          if (isPercent) {
+            expectedDiscount = (totalHang * value) / 100;
+            if (latestVoucher.giamGiaToiDa && latestVoucher.giamGiaToiDa > 0) {
+              expectedDiscount = Math.min(expectedDiscount, latestVoucher.giamGiaToiDa);
+            }
+          } else {
+            expectedDiscount = value;
+          }
+          expectedDiscount = Math.min(expectedDiscount, totalHang);
+
+          // Nếu có sự chênh lệch giá trị giảm giá giữa DB và hiển thị
+          if (Math.abs(expectedDiscount - orderDiscount) > 1) {
+            // Gọi API cập nhật lại tổng tiền đơn hàng trong DB
+            await fetch(`http://localhost:8080/api/donhang/${orderId}/cap-nhat-tong-tien`, {
+              method: 'PUT'
+            });
+            // Fetch lại thông tin hóa đơn mới nhất
+            await fetchOrderInfo(orderId);
+            await fetchCartFromBE(orderId);
+
+            Swal.fire({
+              icon: 'warning',
+              title: 'Cập nhật giá trị Voucher!',
+              text: `Voucher áp dụng vừa được thay đổi giá trị trên hệ thống. Tổng tiền giảm giá đã tự động cập nhật lại (Giảm cũ: ${orderDiscount.toLocaleString()} đ -> Giảm mới: ${expectedDiscount.toLocaleString()} đ). Vui lòng xác nhận lại hóa đơn!`,
+              confirmButtonColor: '#1976d2',
+              confirmButtonText: 'Đồng ý'
+            });
+            return; // Dừng thanh toán để nhân viên kiểm tra lại
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi kiểm tra voucher:', err);
+      }
+    }
+
     setPaymentAmount("");
     setPaymentMethod('TIEN_MAT');
     setShowPaymentModal(true);
@@ -980,6 +1030,8 @@ const BanHangTaiQuayPage = () => {
       setVoucherMessage(voucherId ? 'Áp dụng voucher thành công!' : 'Đã bỏ chọn voucher!');
       // Fetch lại thông tin hóa đơn để cập nhật tổng tiền và giảm giá
       await fetchOrderInfo(orderId);
+      // Fetch lại giỏ hàng để đồng bộ state
+      await fetchCartFromBE(orderId);
     } catch (err) {
       setVoucherMessage(err.message || 'Lỗi khi áp dụng voucher!');
     }
@@ -1528,7 +1580,13 @@ const BanHangTaiQuayPage = () => {
                             {item.idSanPhamChiTiet}
                           </Typography>
                         </TableCell>
-                        <TableCell>{item.tenSanPham}</TableCell>
+                        <TableCell>
+                          <div style={{ fontWeight: 500 }}>
+                            {item.tenSanPham}
+                            {item.sanPhamChiTiet?.ma && <span style={{ color: '#888', marginLeft: 8 }}>({item.sanPhamChiTiet.ma})</span>}
+                          </div>
+                          <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}></div>
+                        </TableCell>
                         <TableCell>{item.mauSac}</TableCell>
                         <TableCell>{item.kichThuoc}</TableCell>
                         <TableCell>
@@ -1814,8 +1872,13 @@ const BanHangTaiQuayPage = () => {
             Chọn voucher
           </Button>
           {selectedVoucherId && (
-            <span style={{ marginLeft: 12, color: '#1976d2', fontWeight: 500 }}>
+            <span style={{ marginLeft: 12, color: '#1976d2', fontWeight: 600 }}>
               Đã chọn: {vouchers.find(v => v.id === Number(selectedVoucherId))?.tenVoucher}
+              {orderDiscount > 0 && (
+                <span style={{ color: '#388e3c', marginLeft: 6 }}>
+                  (-{orderDiscount.toLocaleString()} đ)
+                </span>
+              )}
             </span>
           )}
           {voucherMessage && (
@@ -1837,6 +1900,7 @@ const BanHangTaiQuayPage = () => {
                 <TableCell>Số lượng</TableCell>
                 <TableCell>Giá trị</TableCell>
                 <TableCell>Đơn tối thiểu</TableCell>
+                <TableCell>Giảm tối đa</TableCell>
                 <TableCell></TableCell>
               </TableRow>
             </TableHead>
@@ -1860,18 +1924,42 @@ const BanHangTaiQuayPage = () => {
                   </TableCell>
                   <TableCell>{v.maVoucher}</TableCell>
                   <TableCell>{v.tenVoucher}</TableCell>
-                  <TableCell>{v.loaiVoucher}</TableCell>
+                  <TableCell>
+                    {v.loaiVoucher?.toUpperCase() === 'PERCENT' || v.loaiVoucher?.includes('%') ? (
+                      <span style={{ fontWeight: 500, color: '#1976d2' }}>Phần trăm (%)</span>
+                    ) : (
+                      <span style={{ fontWeight: 500, color: '#2e7d32' }}>Tiền mặt (đ)</span>
+                    )}
+                  </TableCell>
                   <TableCell>{v.soLuong}</TableCell>
                   <TableCell>
-                    {v.loaiVoucher?.toLowerCase().includes('%') ? `${v.giaTri}%` : v.giaTri?.toLocaleString() + ' đ'}
+                    {v.loaiVoucher?.toUpperCase() === 'PERCENT' || v.loaiVoucher?.includes('%') ? (
+                      <span style={{ fontWeight: 'bold', color: '#1976d2' }}>{v.giaTri}%</span>
+                    ) : (
+                      <span style={{ fontWeight: 'bold', color: '#d32f2f' }}>{v.giaTri?.toLocaleString()} đ</span>
+                    )}
                   </TableCell>
-                  <TableCell>{v.donToiThieu?.toLocaleString() || 0} đ</TableCell>
+                  <TableCell><span style={{ fontWeight: 500 }}>{v.donToiThieu?.toLocaleString() || 0} đ</span></TableCell>
+                  <TableCell>
+                    {v.giamGiaToiDa ? `${v.giamGiaToiDa.toLocaleString()} đ` : 'Không giới hạn'}
+                  </TableCell>
                   <TableCell>
                     <Button
                       variant="contained"
                       color="success"
                       size="small"
                       onClick={async () => {
+                        // Hiển thị thông báo xác nhận trước khi thay đổi voucher
+                        const confirm = await Swal.fire({
+                          title: 'Xác nhận áp dụng',
+                          text: `Bạn có chắc chắn muốn áp dụng voucher "${v.tenVoucher}" cho hóa đơn này không?`,
+                          icon: 'question',
+                          showCancelButton: true,
+                          confirmButtonText: 'Đồng ý',
+                          cancelButtonText: 'Hủy bỏ'
+                        });
+                        if (!confirm.isConfirmed) return;
+
                         setShowVoucherModal(false);
                         setSelectedVoucherId(v.id);
                         // Gọi API áp dụng voucher như hiện tại
@@ -1908,6 +1996,18 @@ const BanHangTaiQuayPage = () => {
         <DialogActions>
           <Button
             onClick={async () => {
+              // Hiển thị thông báo xác nhận trước khi bỏ voucher
+              const confirm = await Swal.fire({
+                title: 'Xác nhận bỏ voucher',
+                text: 'Bạn có chắc chắn muốn bỏ voucher đang áp dụng cho hóa đơn này không?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e53935',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy bỏ'
+              });
+              if (!confirm.isConfirmed) return;
+
               setShowVoucherModal(false);
               setSelectedVoucherId(null); // Sử dụng null thay vì chuỗi rỗng
               if (orderId) {
@@ -1920,6 +2020,7 @@ const BanHangTaiQuayPage = () => {
                   if (!res.ok) throw new Error('Lỗi khi bỏ voucher');
                   setVoucherMessage('Đã bỏ voucher!');
                   await fetchOrderInfo(orderId);
+                  await fetchCartFromBE(orderId);
                 } catch (err) {
                   setVoucherMessage(err.message || 'Lỗi khi bỏ voucher!');
                 }
@@ -2021,7 +2122,7 @@ const BanHangTaiQuayPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>ID SPCT</TableCell>
+                  <TableCell>Mã SP</TableCell>
                   <TableCell>Ảnh</TableCell>
                   <TableCell>Tên sản phẩm</TableCell>
                   <TableCell>Màu</TableCell>
@@ -2036,7 +2137,7 @@ const BanHangTaiQuayPage = () => {
                   <TableRow key={product.id}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#666' }}>
-                        {product.id}
+                        {product.ma || product.id}
                       </Typography>
                     </TableCell>
                     <TableCell>

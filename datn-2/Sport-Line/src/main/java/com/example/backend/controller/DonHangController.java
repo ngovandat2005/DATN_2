@@ -83,6 +83,11 @@ public class DonHangController {
         return ResponseEntity.ok(donHangService.filterByTrangThaiAndLoai(6, "online"));
     }
 
+    @GetMapping("/donhang/giaohangthatbai")
+    public ResponseEntity<List<DonHangDTO>> giaoHangThatBai() {
+        return ResponseEntity.ok(donHangService.filterByTrangThaiAndLoai(7, "online"));
+    }
+
     @PostMapping("/donhang/create")
     public ResponseEntity<DonHangDTO> create(@RequestBody DonHangDTO dto) {
         return ResponseEntity.ok(donHangService.create(dto));
@@ -153,8 +158,9 @@ public class DonHangController {
     }
 
     @PutMapping("/donhang/huy/{id}")
-    public ResponseEntity<DonHangDTO> huyDon(@PathVariable Integer id) {
-        donHangService.huyDon(id);
+    public ResponseEntity<DonHangDTO> huyDon(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> body) {
+        String ghiChu = body != null ? body.get("ghiChu") : null;
+        donHangService.huyDon(id, ghiChu);
         DonHang updated = donHangService.layChiTietDon(id);
         return ResponseEntity.ok(new DonHangDTO(updated));
     }

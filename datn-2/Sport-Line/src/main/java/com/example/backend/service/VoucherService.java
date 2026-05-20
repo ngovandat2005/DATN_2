@@ -38,7 +38,8 @@ public class VoucherService {
                 voucher.getNgayKetThuc(),
                 isAvailable
         );
-        // Trạng thái sẽ được tính động bởi getTrangThai()
+        dto.setTrangThai(voucher.getTrangThai());
+        dto.setGiamGiaToiDa(voucher.getGiamGiaToiDa());
         return dto;
     }
     //Hàm 1 tham số dụng cho các hàm crud
@@ -49,42 +50,20 @@ public class VoucherService {
     // ham lay all voucher
     public List<VoucherDTO> getall(){
         return voucherRepository.findAll().stream()
-                .map(voucher -> new VoucherDTO(
-                        voucher.getId(),
-                        voucher.getMaVoucher(),
-                        voucher.getTenVoucher(),
-                        voucher.getLoaiVoucher(),
-                        voucher.getMoTa(),
-                        voucher.getSoLuong(),
-                        voucher.getGiaTri(),
-                        voucher.getDonToiThieu(),
-                        voucher.getNgayBatDau(),
-                        voucher.getNgayKetThuc(),
-                        null // hoặc true nếu muốn mặc định là đủ điều kiện
-                )).toList();
+                .map(voucher -> convertDTO(voucher))
+                .toList();
     }
 
 
     //ham lay danh sach theo id
     public VoucherDTO findById(Integer id){
         return voucherRepository.findById(id)
-                .map(voucher -> new VoucherDTO(
-                        voucher.getId(),
-                        voucher.getMaVoucher(),
-                        voucher.getTenVoucher(),
-                        voucher.getLoaiVoucher(),
-                        voucher.getMoTa(),
-                        voucher.getSoLuong(),
-                        voucher.getGiaTri(),
-                        voucher.getDonToiThieu(),
-                        voucher.getNgayBatDau(),
-                        voucher.getNgayKetThuc(),
-                        null // hoặc true
-                ))
+                .map(voucher -> convertDTO(voucher))
                 .orElse(null);
     }
 
     // ham create voucher
+    @Transactional
     public VoucherDTO create(VoucherDTO dto){
         Voucher v = new Voucher();
         v.setMaVoucher(dto.getMaVoucher());
@@ -96,9 +75,8 @@ public class VoucherService {
         v.setDonToiThieu(dto.getDonToiThieu());
         v.setNgayBatDau(dto.getNgayBatDau());
         v.setNgayKetThuc(dto.getNgayKetThuc());
-
-        // KHÔNG set trangThai nữa, để tính động
-        // v.setTrangThai(0); // Có thể set mặc định là 0
+        v.setGiamGiaToiDa(dto.getGiamGiaToiDa());
+        v.setTrangThai(dto.getTrangThai());
 
         return convertDTO(voucherRepository.save(v));
     }
@@ -117,6 +95,7 @@ public class VoucherService {
     }
 
     //ham update voucher
+    @Transactional
     public VoucherDTO update (int id, VoucherDTO dto){
         return voucherRepository.findById(id)
                 .map( v  -> {
@@ -129,6 +108,7 @@ public class VoucherService {
                     v.setDonToiThieu(dto.getDonToiThieu());
                     v.setNgayBatDau(dto.getNgayBatDau());
                     v.setNgayKetThuc(dto.getNgayKetThuc());
+                    v.setGiamGiaToiDa(dto.getGiamGiaToiDa());
                     v.setTrangThai(dto.getTrangThai());
 
                     return convertDTO(voucherRepository.save(v));
@@ -153,9 +133,19 @@ public class VoucherService {
 
         List<Voucher> voucherList = voucherRepository.findAll();
         List<Voucher> vouchersToUpdate = new ArrayList<>();
-        List<DonHang> donHangsToUpdate = new ArrayList<>();
 
         for (Voucher v : voucherList) {
+            // Nếu voucher bị tạm ngưng thủ công (trangThai == 2), ta giữ nguyên trạng thái tạm ngưng
+            // trừ khi voucher đó đã hết hạn (ngayKetThuc trước now) thì ta cho hết hạn hẳn (setTrangThai(0))
+            if (v.getTrangThai() != null && v.getTrangThai() == 2) {
+                boolean isExpired = v.getNgayKetThuc().isBefore(now);
+                if (isExpired) {
+                    v.setTrangThai(0);
+                    vouchersToUpdate.add(v);
+                }
+                continue;
+            }
+
             boolean isExpired = v.getNgayKetThuc().isBefore(now);
             boolean isNotStarted = v.getNgayBatDau().isAfter(now);
             boolean isOutOfStock = v.getSoLuong() != null && v.getSoLuong() == 0;
@@ -163,19 +153,7 @@ public class VoucherService {
             boolean isInvalid = isExpired || isNotStarted || isOutOfStock;
             boolean isActive = !isInvalid;
 
-            List<DonHang> donHangsWithVoucher = donHangRepository.findAllByGiamGia_Id(v.getId());
-
             if (isInvalid) {
-                for (DonHang dh : donHangsWithVoucher) {
-                    dh.setGiamGia(null);
-                    dh.setTongTienGiamGia(0.0);
-                    // Cần cộng lại số tiền đã giảm vào tổng tiền
-                    // Ở đây tốt nhất nên gọi hàm tính lại tổng tiền, nhưng nếu không có thì set lại bằng tổng tiền cũ (nếu lưu)
-                    // Tuy nhiên, đơn giản nhất là set lại giá trị gốc nếu có lưu.
-                    // Giả sử capNhatTongTienDonHang trong DonHangService sẽ được gọi lại sau.
-                    donHangsToUpdate.add(dh);
-                }
-
                 if (v.getTrangThai() == null || v.getTrangThai() != 0) {
                     v.setTrangThai(0);
                     vouchersToUpdate.add(v);
@@ -187,10 +165,6 @@ public class VoucherService {
                     vouchersToUpdate.add(v);
                 }
             }
-        }
-
-        if (!donHangsToUpdate.isEmpty()) {
-            donHangRepository.saveAll(donHangsToUpdate);
         }
 
         if (!vouchersToUpdate.isEmpty()) {
@@ -267,6 +241,9 @@ public class VoucherService {
 
         if ("PHAN_TRAM".equalsIgnoreCase(loai) || "PERCENT".equalsIgnoreCase(loai) || "Giảm giá %".equalsIgnoreCase(loai)) {
             giam = tongTien * (giaTri / 100.0);
+            if (voucher.getGiamGiaToiDa() != null && voucher.getGiamGiaToiDa() > 0) {
+                giam = Math.min(giam, voucher.getGiamGiaToiDa());
+            }
         } else if ("TIEN_MAT".equalsIgnoreCase(loai) || "CASH".equalsIgnoreCase(loai) || "Giảm giá số tiền".equalsIgnoreCase(loai)) {
             giam = giaTri;
         }

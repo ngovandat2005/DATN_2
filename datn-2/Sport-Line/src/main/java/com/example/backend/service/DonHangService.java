@@ -247,10 +247,6 @@ public class DonHangService {
             SanPhamChiTiet sp = sanPhamChiTietRepository.findById(dto.getIdSanPhamChiTiet()).orElseThrow();
             if (sp.getSoLuong() < dto.getSoLuong()) throw new RuntimeException("Sản phẩm hết hàng");
             
-            // Trừ tồn kho ngay khi tạo đơn online
-            sp.setSoLuong(sp.getSoLuong() - dto.getSoLuong());
-            sanPhamChiTietRepository.save(sp);
-            
             Double gia = (sp.getGiaBanGiamGia() != null && sp.getGiaBanGiamGia() > 0 && sp.getGiaBanGiamGia() < sp.getGiaBan()) ? sp.getGiaBanGiamGia() : sp.getGiaBan();
             DonHangChiTiet ct = new DonHangChiTiet();
             ct.setDonHang(don);
@@ -289,19 +285,46 @@ public class DonHangService {
     @Transactional
     public void xacNhanDon(Integer id) {
         DonHang d = donHangRepository.findById(id).orElseThrow();
-        // Tồn kho đã được trừ khi tạo đơn (trạng thái 0)
+        
+        // Trừ tồn kho nếu là đơn online đang ở trạng thái chờ xác nhận hoặc chờ thanh toán
+        if ((d.getTrangThai() == TrangThaiDonHang.CHO_XAC_NHAN.getValue() 
+                || d.getTrangThai() == TrangThaiDonHang.CHO_THANH_TOAN.getValue()) 
+                && "ONLINE".equalsIgnoreCase(d.getLoaiDonHang())) {
+            for (DonHangChiTiet ct : d.getDonHangChiTiets()) {
+                SanPhamChiTiet sp = ct.getSanPhamChiTiet();
+                if (sp != null) {
+                    if (sp.getSoLuong() < ct.getSoLuong()) {
+                        throw new RuntimeException("Sản phẩm " + sp.getSanPham().getTenSanPham() + " không đủ số lượng tồn kho!");
+                    }
+                    sp.setSoLuong(sp.getSoLuong() - ct.getSoLuong());
+                    sanPhamChiTietRepository.save(sp);
+                }
+            }
+        }
+        
         d.setTrangThai(TrangThaiDonHang.XAC_NHAN.getValue());
         d.setNgayMua(LocalDate.now());
         donHangRepository.save(d);
     }
 
     @Transactional
-    public void huyDon(Integer idDon) {
+    public void huyDon(Integer idDon, String ghiChu) {
         DonHang don = donHangRepository.findById(idDon).orElseThrow();
         if (don.getTrangThai() > 3 && don.getTrangThai() != 8) throw new RuntimeException("Không thể hủy");
         int oldST = don.getTrangThai();
         don.setTrangThai(TrangThaiDonHang.DA_HUY.getValue());
-        if (oldST >= 0) {
+        if (ghiChu != null && !ghiChu.trim().isEmpty()) {
+            don.setGhiChu(ghiChu.trim());
+        }
+        
+        // Chỉ hoàn trả tồn kho nếu KHÔNG phải là đơn hàng online đang chờ xác nhận hoặc chờ thanh toán
+        boolean shouldRestoreStock = true;
+        if ("ONLINE".equalsIgnoreCase(don.getLoaiDonHang()) 
+                && (oldST == TrangThaiDonHang.CHO_XAC_NHAN.getValue() || oldST == TrangThaiDonHang.CHO_THANH_TOAN.getValue())) {
+            shouldRestoreStock = false;
+        }
+        
+        if (shouldRestoreStock) {
             for (DonHangChiTiet ct : don.getDonHangChiTiets()) {
                 SanPhamChiTiet sp = ct.getSanPhamChiTiet();
                 if (sp != null) {
@@ -310,6 +333,7 @@ public class DonHangService {
                 }
             }
         }
+        
         if (don.getGiamGia() != null) {
             Voucher v = don.getGiamGia();
             v.setSoLuong(v.getSoLuong() + 1);
@@ -362,15 +386,44 @@ public class DonHangService {
         
         if (moi == TrangThaiDonHang.DA_GIAO) don.setNgayMua(LocalDate.now());
 
-        // Tồn kho đã trừ từ trạng thái 0 nên không trừ lại ở đây nữa
-
-        if (hienTai != TrangThaiDonHang.DA_HUY && moi == TrangThaiDonHang.DA_HUY) {
+        // Trừ tồn kho nếu là đơn online chuyển từ CHO_XAC_NHAN hoặc CHO_THANH_TOAN sang XAC_NHAN
+        if ((hienTai == TrangThaiDonHang.CHO_XAC_NHAN || hienTai == TrangThaiDonHang.CHO_THANH_TOAN) 
+                && moi == TrangThaiDonHang.XAC_NHAN 
+                && "ONLINE".equalsIgnoreCase(don.getLoaiDonHang())) {
             for (DonHangChiTiet ct : don.getDonHangChiTiets()) {
                 SanPhamChiTiet sp = ct.getSanPhamChiTiet();
                 if (sp != null) {
-                    sp.setSoLuong(sp.getSoLuong() + ct.getSoLuong());
+                    if (sp.getSoLuong() < ct.getSoLuong()) {
+                        throw new RuntimeException("Sản phẩm " + sp.getSanPham().getTenSanPham() + " không đủ số lượng tồn kho!");
+                    }
+                    sp.setSoLuong(sp.getSoLuong() - ct.getSoLuong());
                     sanPhamChiTietRepository.save(sp);
                 }
+            }
+        }
+
+        if (hienTai != TrangThaiDonHang.DA_HUY && moi == TrangThaiDonHang.DA_HUY) {
+            boolean shouldRestoreStock = true;
+            if ("ONLINE".equalsIgnoreCase(don.getLoaiDonHang()) 
+                    && (hienTai == TrangThaiDonHang.CHO_XAC_NHAN || hienTai == TrangThaiDonHang.CHO_THANH_TOAN)) {
+                shouldRestoreStock = false;
+            }
+            
+            if (shouldRestoreStock) {
+                for (DonHangChiTiet ct : don.getDonHangChiTiets()) {
+                    SanPhamChiTiet sp = ct.getSanPhamChiTiet();
+                    if (sp != null) {
+                        sp.setSoLuong(sp.getSoLuong() + ct.getSoLuong());
+                        sanPhamChiTietRepository.save(sp);
+                    }
+                }
+            }
+            
+            // BỔ SUNG: Hoàn trả số lượng voucher khi huỷ đơn hàng qua đổi trạng thái
+            if (don.getGiamGia() != null) {
+                Voucher v = don.getGiamGia();
+                v.setSoLuong(v.getSoLuong() + 1);
+                voucherRepository.save(v);
             }
         }
 
@@ -387,10 +440,11 @@ public class DonHangService {
     private boolean isTrangThaiHopLe(TrangThaiDonHang hienTai, TrangThaiDonHang moi) {
         return switch (hienTai) {
             case CHO_THANH_TOAN -> moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DA_HUY;
-            case CHO_XAC_NHAN -> moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DA_HUY;
+            case CHO_XAC_NHAN -> moi == TrangThaiDonHang.XAC_NHAN || moi == TrangThaiDonHang.DA_HUY || moi == TrangThaiDonHang.CHO_THANH_TOAN;
             case XAC_NHAN -> moi == TrangThaiDonHang.DANG_CHUAN_BI || moi == TrangThaiDonHang.DA_HUY;
             case DANG_CHUAN_BI -> moi == TrangThaiDonHang.DANG_GIAO || moi == TrangThaiDonHang.DA_HUY;
-            case DANG_GIAO -> moi == TrangThaiDonHang.DA_GIAO || moi == TrangThaiDonHang.DA_HUY;
+            case DANG_GIAO -> moi == TrangThaiDonHang.DA_GIAO || moi == TrangThaiDonHang.DA_HUY || moi == TrangThaiDonHang.GIAO_HANG_THAT_BAI;
+            case GIAO_HANG_THAT_BAI -> moi == TrangThaiDonHang.DA_HUY || moi == TrangThaiDonHang.DANG_GIAO || moi == TrangThaiDonHang.DANG_CHUAN_BI;
             case DA_GIAO -> moi == TrangThaiDonHang.TRA_HANG_HOAN_TIEN;
             default -> false;
         };
@@ -404,6 +458,9 @@ public class DonHangService {
 
         if (loai != null && (loai.equalsIgnoreCase("PHAN_TRAM") || loai.equalsIgnoreCase("PERCENT") || loai.contains("%"))) {
             giam = total * giaTri / 100.0;
+            if (v.getGiamGiaToiDa() != null && v.getGiamGiaToiDa() > 0) {
+                giam = Math.min(giam, v.getGiamGiaToiDa());
+            }
         } else {
             giam = giaTri;
         }

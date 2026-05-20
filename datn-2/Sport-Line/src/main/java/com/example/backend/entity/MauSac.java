@@ -16,12 +16,9 @@ public class MauSac {
     @Column(name = "Id")
     private Integer id;
 
-
     @Column(name = "TenMauSac")
     private String tenMauSac;
 
     @Column(name = "TrangThai")
     private Integer trangThai;
-
-
 }

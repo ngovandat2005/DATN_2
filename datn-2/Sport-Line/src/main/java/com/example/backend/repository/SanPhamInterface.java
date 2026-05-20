@@ -15,6 +15,9 @@ public interface SanPhamInterface extends JpaRepository<SanPham, Integer> {
     // 2. Tìm kiếm theo tên (thuần)
     Optional<SanPham> findByTenSanPhamIgnoreCase(String tenSanPham);
 
+    boolean existsByMa(String ma);
+    boolean existsByMaAndIdNot(String ma, Integer id);
+
     // 3. Hệ thống lọc sản phẩm Mega
     @Query("""
         SELECT s FROM SanPham s

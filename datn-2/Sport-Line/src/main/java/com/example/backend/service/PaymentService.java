@@ -24,11 +24,15 @@ public class PaymentService {
     @Autowired
     private DonHangService donHangService;
 
+    public String createPaymentUrl(int amount, String ipAddress) throws Exception {
+        return createPaymentUrl(amount, ipAddress, null);
+    }
+
     public String createPaymentUrl(int amount, String ipAddress, String orderId) throws Exception {
         if (ipAddress == null || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("localhost")) {
             ipAddress = "127.0.0.1";
         }
-        System.out.println("DEBUG VNPAY - Client IP: " + ipAddress);
+        System.out.println("DEBUG VNPAY - Client IP: " + ipAddress + ", Order ID: " + orderId);
 
         Map<String, String> vnpParams = vnpayConfig.createVNPayParams(amount, ipAddress, orderId);
 
@@ -82,35 +86,69 @@ public class PaymentService {
     }
 
     public String processReturn(HttpServletRequest request) {
+        // 1. Kiểm tra chữ ký bảo mật (Secure Hash) từ VNPay để tránh giả mạo request
+        Map<String, String> fields = new HashMap<>();
+        for (Enumeration<String> params = request.getParameterNames(); params.hasMoreElements();) {
+            String fieldName = params.nextElement();
+            String fieldValue = request.getParameter(fieldName);
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                fields.put(fieldName, fieldValue);
+            }
+        }
+
+        String vnp_SecureHash = request.getParameter("vnp_SecureHash");
+        fields.remove("vnp_SecureHash");
+        fields.remove("vnp_SecureHashType");
+
+        // Sắp xếp các tham số theo thứ tự alphabet
+        List<String> fieldNames = new ArrayList<>(fields.keySet());
+        Collections.sort(fieldNames);
+
+        List<String> hashParts = new ArrayList<>();
+        for (String fieldName : fieldNames) {
+            String fieldValue = fields.get(fieldName);
+            String encodedValue = encodeValue(fieldValue);
+            hashParts.add(fieldName + "=" + encodedValue);
+        }
+
+        String hashDataStr = String.join("&", hashParts);
+        String secretKey = vnpayConfig.getSecretKey().trim();
+        String secureHash = VNPayUtil.hmacSHA512(secretKey, hashDataStr);
+
+        System.out.println("DEBUG VNPAY RETURN - Calculated Hash: [" + secureHash + "]");
+        System.out.println("DEBUG VNPAY RETURN - Received Hash: [" + vnp_SecureHash + "]");
+
+        if (vnp_SecureHash == null || !secureHash.equalsIgnoreCase(vnp_SecureHash)) {
+            System.out.println("❌ Chữ ký VNPay không hợp lệ! Có thể có hành vi giả mạo hoặc cấu hình sai.");
+            return "Thanh toán thất bại. Mã: Invalid Signature";
+        }
+
         String vnp_ResponseCode = request.getParameter("vnp_ResponseCode");
         String vnp_TxnRef = request.getParameter("vnp_TxnRef");
         String amount = request.getParameter("vnp_Amount");
 
-        try {
-            if ("00".equals(vnp_ResponseCode)) {
-                // 1. Cập nhật trạng thái đơn hàng sang ĐÃ XÁC NHẬN (Trạng thái 1) trước để hoàn tất nghiệp vụ chính
-                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
-                    donHangService.capNhatTrangThai(Integer.parseInt(vnp_TxnRef), com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
-                }
-
-                // 2. Gửi email trong một khối try-catch độc lập để nếu lỗi SMTP cũng không ảnh hưởng giao dịch
-                try {
+        if (vnp_TxnRef != null) {
+            try {
+                int orderId = Integer.parseInt(vnp_TxnRef);
+                if ("00".equals(vnp_ResponseCode)) {
+                    donHangService.capNhatTrangThai(orderId, com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
                     sendSuccessEmail(vnp_TxnRef, amount);
-                } catch (Exception emailEx) {
-                    System.err.println("⚠️ Lỗi gửi email thành công VNPay: " + emailEx.getMessage());
+                    return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
+                } else {
+                    // Thanh toán thất bại hoặc người dùng hủy giao dịch
+                    // Giữ nguyên trạng thái CHO_THANH_TOAN (8) để cho phép khách hàng thanh toán lại sau
+                    return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
                 }
-
-                return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
-            } else {
-                if (vnp_TxnRef != null && !vnp_TxnRef.isEmpty()) {
-                    donHangService.huyDon(Integer.parseInt(vnp_TxnRef));
-                }
-                return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
+            } catch (Exception e) {
+                System.out.println("❌ Lỗi khi cập nhật trạng thái đơn hàng sau thanh toán VNPay: " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.err.println("Lỗi khi cập nhật trạng thái đơn hàng VNPay: " + e.getMessage());
-            return "Lỗi hệ thống hoặc định dạng mã giao dịch không hợp lệ.";
         }
+
+        if ("00".equals(vnp_ResponseCode)) {
+            sendSuccessEmail(vnp_TxnRef, amount);
+            return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
+        }
+        return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
     }
 
     private void sendSuccessEmail(String txnRef, String amount) {

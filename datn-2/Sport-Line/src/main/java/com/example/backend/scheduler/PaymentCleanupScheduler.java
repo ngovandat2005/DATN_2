@@ -41,7 +41,7 @@ public class PaymentCleanupScheduler {
             if (dh.getNgayTao() != null && dh.getNgayTao().isBefore(thresholdTime)) {
                 try {
                     // Gọi hàm hủy đơn hiện có để vừa chuyển trạng thái 5, vừa hoàn kho và hoàn voucher
-                    donHangService.huyDon(dh.getId());
+                    donHangService.huyDon(dh.getId(), "Hệ thống tự động hủy do quá hạn thanh toán");
                     System.out.println("[SCHEDULER] Đã tự động hủy đơn hàng VNPay quá hạn (#ID: " + dh.getId() + ")");
                     count++;
                 } catch (Exception e) {

@@ -14,43 +14,74 @@ public class SanPhamService {
     @Autowired
     private SanPhamInterface sanPhamRepo;
 
-    // 1. Lấy tất cả Sản phẩm đang kinh doanh
     public List<SanPham> getAllActive() {
-        return sanPhamRepo.findAllByTrangThaiOrderByIdDesc(1); 
-    }
-
-    // 2. Lấy sản phẩm theo trạng thái
-    public List<SanPham> getProducts() {
         return sanPhamRepo.findAllByTrangThaiOrderByIdDesc(1);
-    }
-
-    // 3. Hệ thống tìm kiếm
-    public List<SanPham> searchAndFilter(Integer idCategory, Integer idBrand, String search) {
-        return sanPhamRepo.filterProducts(idCategory, idBrand, search);
     }
 
     public SanPham getById(Integer id) {
         return sanPhamRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với ID: " + id));
     }
 
-    // 4. Tạo mới sản phẩm
+    public List<SanPham> searchAndFilter(Integer idDanhMuc, Integer idThuongHieu, String search) {
+        return sanPhamRepo.filterProducts(idDanhMuc, idThuongHieu, search);
+    }
+
     public SanPham create(SanPham sanPham) {
-        Optional<SanPham> existing = sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham());
+        if (sanPham.getTenSanPham() == null || sanPham.getTenSanPham().trim().isEmpty()) {
+            throw new RuntimeException("Tên sản phẩm không được để trống!");
+        }
+        if (sanPham.getMa() == null || sanPham.getMa().trim().isEmpty()) {
+            throw new RuntimeException("Mã sản phẩm không được để trống!");
+        }
+        String maSp = sanPham.getMa().trim();
+        if (!maSp.matches("^[a-zA-Z0-9-_]+$")) {
+            throw new RuntimeException("Mã sản phẩm không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+        }
+        if (sanPhamRepo.existsByMa(maSp)) {
+            throw new RuntimeException("Mã sản phẩm \"" + maSp + "\" đã tồn tại!");
+        }
+
+        Optional<SanPham> existing =
+                sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham().trim());
+
         if (existing.isPresent()) {
             throw new RuntimeException("Tên sản phẩm đã tồn tại!");
         }
+
+        sanPham.setMa(maSp);
         sanPham.setTrangThai(1);
         return sanPhamRepo.save(sanPham);
     }
 
-    // 5. Cập nhật sản phẩm
     public SanPham update(Integer id, SanPham sanPham) {
+
         SanPham current = sanPhamRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
-        current.setTenSanPham(sanPham.getTenSanPham());
-        current.setMa(sanPham.getMa());
+        if (sanPham.getTenSanPham() == null || sanPham.getTenSanPham().trim().isEmpty()) {
+            throw new RuntimeException("Tên sản phẩm không được để trống!");
+        }
+        if (sanPham.getMa() == null || sanPham.getMa().trim().isEmpty()) {
+            throw new RuntimeException("Mã sản phẩm không được để trống!");
+        }
+        String maSp = sanPham.getMa().trim();
+        if (!maSp.matches("^[a-zA-Z0-9-_]+$")) {
+            throw new RuntimeException("Mã sản phẩm không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+        }
+        if (sanPhamRepo.existsByMaAndIdNot(maSp, id)) {
+            throw new RuntimeException("Mã sản phẩm \"" + maSp + "\" đã tồn tại!");
+        }
+
+        Optional<SanPham> existing =
+                sanPhamRepo.findByTenSanPhamIgnoreCase(sanPham.getTenSanPham().trim());
+
+        if (existing.isPresent() && !existing.get().getId().equals(id)) {
+            throw new RuntimeException("Tên sản phẩm đã tồn tại!");
+        }
+
+        current.setTenSanPham(sanPham.getTenSanPham().trim());
+        current.setMa(maSp); // ✅ THÊM: Mã sản phẩm
         current.setThuongHieu(sanPham.getThuongHieu());
         current.setDanhMuc(sanPham.getDanhMuc());
         current.setChatLieu(sanPham.getChatLieu());
@@ -63,12 +94,20 @@ public class SanPhamService {
     public void delete(Integer id) {
         SanPham sanPham = sanPhamRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+
         sanPham.setTrangThai(0);
         sanPhamRepo.save(sanPham);
     }
 
-    // Lấy sản phẩm nổi bật cho trang chủ
-    public List<SanPham> getFeaturedProducts() {
-        return sanPhamRepo.findFeaturedProducts();
+    public void restoreSanPham(Integer id) {
+        SanPham sp = sanPhamRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+
+        sp.setTrangThai(1);
+        sanPhamRepo.save(sp);
+    }
+
+    public List<SanPham> getDeleted() {
+        return sanPhamRepo.findAllByTrangThaiOrderByIdDesc(0);
     }
 }

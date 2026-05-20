@@ -105,6 +105,7 @@ function ProductList() {
   const params = new URLSearchParams(location.search);
   const initialBrandId = params.get("idThuongHieu");
   const initialCategoryId = params.get("idDanhMuc");
+  const initialSearch = params.get("search") || "";
 
   // State cho filter
   const [sizeList, setSizeList] = useState([]);
@@ -113,7 +114,7 @@ function ProductList() {
   const [filters, setFilters] = useState({
     size: undefined,
     brandId: initialBrandId || undefined,
-    name: "",
+    name: initialSearch,
     categoryId: initialCategoryId || undefined,
   });
   const [products, setProducts] = useState([]);
@@ -277,6 +278,7 @@ function ProductList() {
       ...f,
       brandId: params.get("idThuongHieu") || undefined,
       categoryId: params.get("idDanhMuc") || undefined,
+      name: params.get("search") || "",
     }));
   }, [location.search]);
 

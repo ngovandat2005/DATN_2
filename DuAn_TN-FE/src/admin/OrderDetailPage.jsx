@@ -10,7 +10,7 @@ const TRANG_THAI = [
   { value: 3, label: 'Đang giao', color: '#1976d2' },
   { value: 4, label: 'Hoàn thành', color: '#009688' },
   { value: 5, label: 'Đã hủy', color: '#e53935' },
-  { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' },
+
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' },
   { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
 ];
@@ -110,10 +110,10 @@ const OrderDetail = () => {
     return `http://localhost:8080/images/${encodeURIComponent(img)}`;
   };
 
-  // Hàm hủy đơn hàng (chỉ cho trạng thái 0)
+  // Hàm hủy đơn hàng (Cho phép hủy ở các trạng thái chưa hoàn thành)
   const handleHuyDon = async () => {
-    if (!order || order.trangThai !== 0) {
-      alert('Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận"!');
+    if (!order || ![0, 1, 2, 3, 8].includes(order.trangThai)) {
+      alert('Chỉ có thể hủy các đơn hàng chưa hoàn thành (Chờ xác nhận, Đã xác nhận, Đang chuẩn bị, Đang giao hoặc Chờ thanh toán)!');
       return;
     }
 
@@ -278,17 +278,7 @@ const OrderDetail = () => {
         </div>
       );
     }
-    if (currentStatus === 6) {
-      const stop = TRANG_THAI.find(t => t.value === 6) || { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' };
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 110 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: stop.color, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, marginBottom: 4, border: `2px solid ${stop.color}` }}>1</div>
-            <span style={{ color: stop.color, fontWeight: 700, fontSize: 14, textAlign: 'center' }}>{stop.label}</span>
-          </div>
-        </div>
-      );
-    }
+
 
     // Tạo mảng các bước thực tế mà đơn hàng đã trải qua
     let actualSteps = [];

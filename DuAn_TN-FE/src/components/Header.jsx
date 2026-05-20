@@ -26,9 +26,37 @@ function Header() {
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userMenuItems, setUserMenuItems] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get("search") || "";
+    setSearchQuery(searchParam);
+    if (searchParam) {
+      setShowSearch(true);
+    }
+  }, [location.search]);
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSearchClick = () => {
+    if (!showSearch) {
+      setShowSearch(true);
+    } else {
+      if (searchQuery.trim()) {
+        handleSearch();
+      } else {
+        setShowSearch(false);
+      }
+    }
+  };
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -177,9 +205,12 @@ function Header() {
                   size="small"
                   style={{ width: '200px', marginRight: '10px' }}
                   autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onPressEnter={handleSearch}
                 />
               )}
-              <Button type="text" icon={<SearchOutlined style={{ fontSize: '20px' }} />} onClick={() => setShowSearch(!showSearch)} />
+              <Button type="text" icon={<SearchOutlined style={{ fontSize: '20px' }} />} onClick={handleSearchClick} />
             </div>
 
             <Link to="/cart" className="action-btn">

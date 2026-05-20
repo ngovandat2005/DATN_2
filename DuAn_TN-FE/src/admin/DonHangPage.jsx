@@ -14,7 +14,7 @@ const TRANG_THAI = [
   { value: 3, label: 'Đang giao', color: '#1976d2' },
   { value: 4, label: 'Hoàn thành', color: '#009688' },
   { value: 5, label: 'Đã hủy', color: '#e53935' },
-  { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' },
+
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' },
   { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
 ];

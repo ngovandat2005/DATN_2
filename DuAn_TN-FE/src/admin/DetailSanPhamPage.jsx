@@ -115,8 +115,16 @@ const DetailSanPhamPage = () => {
   const handleAddSpct = async (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra định dạng SKU (nếu có nhập)
-    if (spctForm.ma && !/^[a-zA-Z0-9-_]+$/.test(spctForm.ma)) {
+    // 1. Kiểm tra định dạng SKU
+    if (!spctForm.ma || !spctForm.ma.trim()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU không được để trống!',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!/^[a-zA-Z0-9-_]+$/.test(spctForm.ma.trim())) {
       Swal.fire({
         icon: 'error',
         title: 'Mã SKU không hợp lệ!',
@@ -127,22 +135,58 @@ const DetailSanPhamPage = () => {
     }
 
     // 2. Kiểm tra trùng SKU trong danh sách hiện tại
-    if (spctForm.ma) {
-      const isSkuDuplicate = chiTietList.some(ct => ct.ma?.trim().toLowerCase() === spctForm.ma.trim().toLowerCase());
-      if (isSkuDuplicate) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Mã SKU đã tồn tại!',
-          text: `Mã SKU "${spctForm.ma}" đã được sử dụng cho một biến thể khác của sản phẩm này.`,
-          confirmButtonColor: '#d32f2f'
-        });
-        return;
-      }
+    const isSkuDuplicate = chiTietList.some(ct => ct.ma?.trim().toLowerCase() === spctForm.ma.trim().toLowerCase());
+    if (isSkuDuplicate) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU đã tồn tại!',
+        text: `Mã SKU "${spctForm.ma}" đã được sử dụng cho một biến thể khác của sản phẩm này.`,
+        confirmButtonColor: '#d32f2f'
+      });
+      return;
+    }
+
+    // 2.2. Kiểm tra chưa chọn màu sắc & kích thước
+    if (!spctForm.idMauSac) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Chưa chọn màu sắc!',
+        text: 'Vui lòng chọn màu sắc cho biến thể.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!spctForm.idKichThuoc) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Chưa chọn kích thước!',
+        text: 'Vui lòng chọn kích thước cho biến thể.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
     }
 
     // 3. Kiểm tra giá bán hợp lệ
-    if (Number(spctForm.giaBan) <= 0) {
-      Swal.fire({ icon: 'error', title: 'Giá bán không hợp lệ!', text: 'Giá bán phải lớn hơn 0.' });
+    const priceVal = Number(spctForm.giaBan);
+    if (isNaN(priceVal) || priceVal <= 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Giá bán không hợp lệ!',
+        text: 'Giá bán phải là số lớn hơn 0.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 3.2. Kiểm tra số lượng hợp lệ
+    const qtyVal = Number(spctForm.soLuong);
+    if (spctForm.soLuong === "" || isNaN(qtyVal) || qtyVal < 0 || !Number.isInteger(qtyVal)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng không hợp lệ!',
+        text: 'Số lượng phải là số nguyên không âm (>= 0).',
+        confirmButtonColor: '#1976d2'
+      });
       return;
     }
 
@@ -204,8 +248,81 @@ const DetailSanPhamPage = () => {
     e.preventDefault();
 
     // 1. Kiểm tra định dạng SKU
-    if (editSpct.ma && !/^[a-zA-Z0-9-_]+$/.test(editSpct.ma)) {
-      Swal.fire({ icon: 'error', title: 'Mã SKU không hợp lệ!', text: 'Mã SKU không được chứa ký tự đặc biệt.' });
+    if (!editSpct.ma || !editSpct.ma.trim()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU không được để trống!',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!/^[a-zA-Z0-9-_]+$/.test(editSpct.ma.trim())) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU không hợp lệ!',
+        text: 'Mã SKU chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không có khoảng trắng.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 1.2. Kiểm tra trùng SKU trong danh sách hiện tại (trừ chính nó)
+    const isSkuDuplicate = chiTietList.some(
+      (ct) => ct.id !== editSpct.id && ct.ma?.trim().toLowerCase() === editSpct.ma.trim().toLowerCase()
+    );
+    if (isSkuDuplicate) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Mã SKU đã tồn tại!',
+        text: `Mã SKU "${editSpct.ma}" đã được sử dụng cho một biến thể khác.`,
+        confirmButtonColor: '#d32f2f'
+      });
+      return;
+    }
+
+    // 1.3. Kiểm tra chưa chọn màu sắc & kích thước
+    const colorId = editSpct.mauSac?.id || editSpct.idMauSac;
+    const sizeId = editSpct.kichThuoc?.id || editSpct.idKichThuoc;
+    if (!colorId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Chưa chọn màu sắc!',
+        text: 'Vui lòng chọn màu sắc cho biến thể.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+    if (!sizeId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Chưa chọn kích thước!',
+        text: 'Vui lòng chọn kích thước cho biến thể.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 1.4. Kiểm tra giá bán hợp lệ
+    const priceVal = Number(editSpct.giaBan);
+    if (isNaN(priceVal) || priceVal <= 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Giá bán không hợp lệ!',
+        text: 'Giá bán phải là số lớn hơn 0.',
+        confirmButtonColor: '#1976d2'
+      });
+      return;
+    }
+
+    // 1.5. Kiểm tra số lượng hợp lệ
+    const qtyVal = Number(editSpct.soLuong);
+    if (editSpct.soLuong === "" || isNaN(qtyVal) || qtyVal < 0 || !Number.isInteger(qtyVal)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Số lượng không hợp lệ!',
+        text: 'Số lượng phải là số nguyên không âm (>= 0).',
+        confirmButtonColor: '#1976d2'
+      });
       return;
     }
 
@@ -213,8 +330,8 @@ const DetailSanPhamPage = () => {
     const isDuplicate = chiTietList.some(
       (ct) =>
         ct.id !== editSpct.id &&
-        String(ct.mauSac?.id || ct.idMauSac) === String(editSpct.mauSac?.id || editSpct.idMauSac) &&
-        String(ct.kichThuoc?.id || ct.idKichThuoc) === String(editSpct.kichThuoc?.id || editSpct.idKichThuoc)
+        String(ct.mauSac?.id || ct.idMauSac) === String(colorId) &&
+        String(ct.kichThuoc?.id || ct.idKichThuoc) === String(sizeId)
     );
 
     if (isDuplicate) {
@@ -797,11 +914,11 @@ const DetailSanPhamPage = () => {
               <form onSubmit={handleAddSpct} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '16px', fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                    🆔 Mã SKU
+                    🆔 Mã SKU (Bắt buộc)
                   </label>
                   <input 
                     type="text" 
-                    placeholder="Nhập mã SKU (Tùy chọn)..." 
+                    placeholder="Nhập mã SKU..." 
                     value={spctForm.ma} 
                     onChange={e => setSpctForm(f => ({ ...f, ma: e.target.value }))} 
                     style={{

@@ -11,7 +11,6 @@ import lombok.*;
 @Table(name = "KichThuoc")
 public class KichThuoc {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "Id")

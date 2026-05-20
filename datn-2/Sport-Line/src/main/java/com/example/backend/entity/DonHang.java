@@ -64,6 +64,9 @@ public class DonHang {
     @Column(name="IdService")
     private Integer idService;
 
+    @Column(name="GhiChu")
+    private String ghiChu;
+
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<DonHangChiTiet> donHangChiTiets;
 
@@ -88,6 +91,7 @@ public class DonHang {
         this.phiVanChuyen = phiVanChuyen;
         this.maVanDon = maVanDon;
         this.idService = idService;
+        this.ghiChu = null;
         this.donHangChiTiets = donHangChiTiets;
     }
 
@@ -232,6 +236,14 @@ public class DonHang {
 
     public void setIdService(Integer idService) {
         this.idService = idService;
+    }
+
+    public String getGhiChu() {
+        return ghiChu;
+    }
+
+    public void setGhiChu(String ghiChu) {
+        this.ghiChu = ghiChu;
     }
 
     public List<DonHangChiTiet> getDonHangChiTiets() {

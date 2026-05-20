@@ -15,6 +15,8 @@ public class VoucherDTO {
     private LocalDateTime ngayBatDau;
     private LocalDateTime ngayKetThuc;
     private Boolean isAvailable;
+    private Integer trangThai;
+    private Double giamGiaToiDa;
 
     public VoucherDTO() {
     }
@@ -122,6 +124,9 @@ public class VoucherDTO {
     }
 
     public Integer getTrangThai() {
+        if (trangThai != null) {
+            return trangThai;
+        }
         if (ngayBatDau == null || ngayKetThuc == null) {
             return 0; // Hết hạn nếu không có ngày
         }
@@ -139,5 +144,17 @@ public class VoucherDTO {
         } else {
             return 0; // Hết hạn
         }
+    }
+
+    public void setTrangThai(Integer trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public Double getGiamGiaToiDa() {
+        return giamGiaToiDa;
+    }
+
+    public void setGiamGiaToiDa(Double giamGiaToiDa) {
+        this.giamGiaToiDa = giamGiaToiDa;
     }
 }

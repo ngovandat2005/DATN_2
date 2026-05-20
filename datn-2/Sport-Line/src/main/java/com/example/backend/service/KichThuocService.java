@@ -73,4 +73,3 @@ public class KichThuocService {
         return kti.findAllByTrangThai(0);
     }
 }
-

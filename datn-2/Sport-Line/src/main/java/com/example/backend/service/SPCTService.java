@@ -1,12 +1,9 @@
-
 package com.example.backend.service;
 
 import com.example.backend.dto.SPCTDTO;
-
 import com.example.backend.dto.SPCTRequest;
 import com.example.backend.dto.SanPhamDonHangResponse;
 import com.example.backend.entity.*;
-
 import com.example.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,12 +12,12 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
 @Service
 public class SPCTService {
 
     @Autowired
     private SanPhamChiTietRepository spcti;
-
 
     @Autowired
     private SanPhamInterface spi;
@@ -39,6 +36,18 @@ public class SPCTService {
 
     public SanPhamChiTiet createSanPhamChiTiet(Integer id, SPCTRequest request) {
         request.setIdSanPham(id);
+
+        // Kiểm tra mã SKU
+        if (request.getMa() == null || request.getMa().trim().isEmpty()) {
+            throw new RuntimeException("Mã SKU không được để trống!");
+        }
+        String maSku = request.getMa().trim();
+        if (!maSku.matches("^[a-zA-Z0-9-_]+$")) {
+            throw new RuntimeException("Mã SKU không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+        }
+        if (spcti.existsByMa(maSku)) {
+            throw new RuntimeException("Mã SKU \"" + maSku + "\" đã tồn tại trên hệ thống!");
+        }
 
         // Kiểm tra trùng biến thể
         boolean exists = spcti.existsBySanPham_IdAndMauSac_IdAndKichThuoc_Id(
@@ -61,7 +70,7 @@ public class SPCTService {
         spct.setSanPham(sanPham);
         spct.setKichThuoc(kichThuoc);
         spct.setMauSac(mauSac);
-        spct.setMa(request.getMa()); // ✅ THÊM: Mã SKU
+        spct.setMa(maSku); // ✅ THÊM: Mã SKU đã trim
         spct.setSoLuong(request.getSoLuong());
         spct.setGiaBan(request.getGiaBan());
         spct.setNgaySanXuat((Date) request.getNgaySanXuat());
@@ -70,6 +79,7 @@ public class SPCTService {
 
         return spcti.save(spct);
     }
+
     public SanPhamChiTiet updateSanPhamChiTiet(Integer idSpct, SPCTRequest request) {
         // Tìm biến thể cũ
         SanPhamChiTiet spct = spcti.findById(idSpct)
@@ -105,7 +115,17 @@ public class SPCTService {
             spct.setMauSac(mauSac);
         }
         if (request.getMa() != null) { // ✅ THÊM: Mã SKU
-            spct.setMa(request.getMa());
+            String maSku = request.getMa().trim();
+            if (maSku.isEmpty()) {
+                throw new RuntimeException("Mã SKU không được để trống!");
+            }
+            if (!maSku.matches("^[a-zA-Z0-9-_]+$")) {
+                throw new RuntimeException("Mã SKU không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+            }
+            if (spcti.existsByMaAndIdNot(maSku, idSpct)) {
+                throw new RuntimeException("Mã SKU \"" + maSku + "\" đã tồn tại trên hệ thống!");
+            }
+            spct.setMa(maSku);
         }
         if (request.getSoLuong() != null) {
             spct.setSoLuong(request.getSoLuong());
@@ -113,28 +133,16 @@ public class SPCTService {
         if (request.getGiaBan() != null) {
             spct.setGiaBan(request.getGiaBan());
         }
-
-        // ✅ THÊM: Logic cập nhật giá giảm (giaBanGiamGia)
-        // Luôn cập nhật giá giảm từ yêu cầu (giúp dọn dẹp giá rác)
-        spct.setGiaBanGiamGia(request.getGiaBanGiamGia());
-
-        // Nếu đôi giày đang có khuyến mãi đang chạy (trangThai == 1), ta tự tính lại giá giảm 
-        // để đảm bảo SQL luôn chuẩn, đề phòng trường hợp edit lẻ tẻ từng ô
-        if (spct.getKhuyenMai() != null && spct.getKhuyenMai().getTrangThai() == 1) {
-             double giatri = spct.getKhuyenMai().getGiaTri();
-             double calculated = (double) Math.round(spct.getGiaBan() * (1 - giatri / 100));
-             spct.setGiaBanGiamGia(calculated);
-        }
         if (request.getNgaySanXuat() != null) {
             spct.setNgaySanXuat((Date) request.getNgaySanXuat());
         }
 
         return spcti.save(spct);
     }
+
     public List<SanPhamChiTiet> getAll() {
         return spcti.findAll();
     }
-
 
     public List<SPCTDTO> getAllForOffline() {
         return spcti.getAllSPCTDTO();
@@ -180,16 +188,20 @@ public class SPCTService {
     public List<SanPhamChiTiet> getSPCTDTOById(Integer id) {
         return spcti.findBySanPham_Id(id);
     }
+
     public SPCTDTO getSPCTDTOByIdSPCT(Integer id) {
         return spcti.getSPCTDTOById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết"));
     }
+
     public List<SanPhamChiTiet> getThungrac(Integer id) {
         return spcti.findBySanPham_IdAndTrangThai(id,0);
     }
+
     public List<SPCTDTO> searchByTenSanPham(String keyword) {
         return spcti.searchByTenSanPham(keyword);
     }
+
     public List<SanPhamChiTiet> filterSPCT(Integer sanPhamId, Integer mauSacId, Integer kichThuocId, Integer trangThai) {
         return spcti.filterSPCT(sanPhamId, mauSacId, kichThuocId, trangThai);
     }
@@ -198,6 +210,7 @@ public class SPCTService {
         return spcti.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết"));
     }
+
     public void khoi_phuc(Integer id) {
         Optional<SanPhamChiTiet> optional = spcti.findById(id);
         if (optional.isPresent()) {
@@ -208,6 +221,7 @@ public class SPCTService {
             throw new RuntimeException("Không tìm thấy sản phẩm");
         }
     }
+
     public void xoa_mem(Integer id) {
         Optional<SanPhamChiTiet> optional = spcti.findById(id);
         if (optional.isPresent()) {
@@ -218,6 +232,7 @@ public class SPCTService {
             throw new RuntimeException("Không tìm thấy sản phẩm");
         }
     }
+
     public SanPhamChiTiet create(SanPhamChiTiet s) {
         s.setNgayTao(LocalDateTime.now());
         return spcti.save(s);
@@ -232,12 +247,4 @@ public class SPCTService {
     public void delete(Integer id) {
         spcti.deleteById(id);
     }
-
-
-
-
-
-
-
-
 }

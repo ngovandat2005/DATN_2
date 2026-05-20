@@ -66,11 +66,19 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
             throw new RuntimeException("Số lượng tồn kho không đủ!");
         }
 
-        // 3. Trừ tồn kho (✅ Luôn trừ khi thêm vào đơn hàng)
+        // 3. Trừ tồn kho
         DonHang donHang = donHangRepository.findById(dto.getIdDonHang()).orElse(null);
         if (donHang != null && donHang.getTrangThai() != null) {
-            spct.setSoLuong(spct.getSoLuong() - dto.getSoLuong());
-            sanPhamChiTietRepository.save(spct);
+            boolean shouldDeduct = true;
+            // Nếu là đơn hàng online và đang chờ xác nhận (COD), KHÔNG trừ kho lúc tạo
+            if ("online".equalsIgnoreCase(donHang.getLoaiDonHang()) && donHang.getTrangThai() == com.example.backend.enums.TrangThaiDonHang.CHO_XAC_NHAN.getValue()) {
+                shouldDeduct = false;
+            }
+            
+            if (shouldDeduct) {
+                spct.setSoLuong(spct.getSoLuong() - dto.getSoLuong());
+                sanPhamChiTietRepository.save(spct);
+            }
         }
 
         // 4. Xử lý cộng dồn hoặc tạo mới chi tiết hóa đơn

@@ -1,3 +1,0 @@
-  origin/HEAD -> origin/main
-  origin/khang
-  origin/main
