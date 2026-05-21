@@ -109,12 +109,13 @@ public class DonHangService {
             Voucher oldVoucher = donHang.getGiamGia();
 
             if (oldVoucher != null) {
+                oldVoucher = voucherRepository.findByIdWithLock(oldVoucher.getId()).orElse(oldVoucher);
                 oldVoucher.setSoLuong(oldVoucher.getSoLuong() + 1);
                 voucherRepository.save(oldVoucher);
             }
 
             if (idgiamGia != null) {
-                Voucher newVoucher = voucherRepository.findById(idgiamGia).orElseThrow();
+                Voucher newVoucher = voucherRepository.findByIdWithLock(idgiamGia).orElseThrow();
                 
                 if (newVoucher.getTrangThai() == null || newVoucher.getTrangThai() != 1) {
                     throw new RuntimeException("Voucher không hoạt động!");
@@ -162,6 +163,7 @@ public class DonHangService {
                     for (DonHangChiTiet ct : donHang.getDonHangChiTiets()) {
                         SanPhamChiTiet sp = ct.getSanPhamChiTiet();
                         if (sp != null) {
+                            sp = sanPhamChiTietRepository.findByIdWithLock(sp.getId()).orElse(sp);
                             sp.setSoLuong(sp.getSoLuong() + ct.getSoLuong());
                             sanPhamChiTietRepository.save(sp);
                         }
@@ -170,7 +172,7 @@ public class DonHangService {
                 
                 // ✅ BỔ SUNG: Hoàn trả số lượng voucher khi xóa đơn hàng (nếu có và đơn chưa huỷ)
                 if (isStockDeducted(donHang) && donHang.getGiamGia() != null) {
-                    Voucher v = donHang.getGiamGia();
+                    Voucher v = voucherRepository.findByIdWithLock(donHang.getGiamGia().getId()).orElse(donHang.getGiamGia());
                     v.setSoLuong(v.getSoLuong() + 1);
                     voucherRepository.save(v);
                 }
@@ -270,7 +272,7 @@ public class DonHangService {
         double tongTien = 0;
         List<DonHangChiTiet> chiTiets = new ArrayList<>();
         for (SanPhamDatDTO dto : req.getSanPhamDat()) {
-            SanPhamChiTiet sp = sanPhamChiTietRepository.findById(dto.getIdSanPhamChiTiet()).orElseThrow();
+            SanPhamChiTiet sp = sanPhamChiTietRepository.findByIdWithLock(dto.getIdSanPhamChiTiet()).orElseThrow();
             if (sp.getSoLuong() < dto.getSoLuong()) throw new RuntimeException("Sản phẩm hết hàng");
             
             // ✅ BỔ SUNG: Trừ tồn kho ngay khi tạo đơn
@@ -291,7 +293,7 @@ public class DonHangService {
 
         double giam = 0;
         if (req.getIdVoucher() != null) {
-            Voucher v = voucherRepository.findById(req.getIdVoucher())
+            Voucher v = voucherRepository.findByIdWithLock(req.getIdVoucher())
                     .orElseThrow(() -> new RuntimeException("Voucher không tồn tại!"));
             if (v.getTrangThai() == null || v.getTrangThai() != 1) {
                 throw new RuntimeException("Voucher không hoạt động hoặc đã hết hạn!");
@@ -355,7 +357,7 @@ public class DonHangService {
         }
         
         if (don.getGiamGia() != null) {
-            Voucher v = don.getGiamGia();
+            Voucher v = voucherRepository.findByIdWithLock(don.getGiamGia().getId()).orElse(don.getGiamGia());
             v.setSoLuong(v.getSoLuong() + 1);
             voucherRepository.save(v);
         }
@@ -413,6 +415,7 @@ public class DonHangService {
                 for (DonHangChiTiet ct : don.getDonHangChiTiets()) {
                     SanPhamChiTiet sp = ct.getSanPhamChiTiet();
                     if (sp != null) {
+                        sp = sanPhamChiTietRepository.findByIdWithLock(sp.getId()).orElse(sp);
                         sp.setSoLuong(sp.getSoLuong() + ct.getSoLuong());
                         sanPhamChiTietRepository.save(sp);
                     }
@@ -421,7 +424,7 @@ public class DonHangService {
             
             // BỔ SUNG: Hoàn trả số lượng voucher khi huỷ đơn hàng qua đổi trạng thái
             if (don.getGiamGia() != null) {
-                Voucher v = don.getGiamGia();
+                Voucher v = voucherRepository.findByIdWithLock(don.getGiamGia().getId()).orElse(don.getGiamGia());
                 v.setSoLuong(v.getSoLuong() + 1);
                 voucherRepository.save(v);
             }

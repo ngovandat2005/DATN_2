@@ -61,7 +61,7 @@ public class DonHangChiTietService {
     @Transactional
     public DonHangChiTietDTO create(DonHangChiTietDTO dto) {
         // 1. Lấy sản phẩm chi tiết từ DB
-        SanPhamChiTiet spct = sanPhamChiTietRepository.findById(dto.getIdSanPhamChiTiet())
+        SanPhamChiTiet spct = sanPhamChiTietRepository.findByIdWithLock(dto.getIdSanPhamChiTiet())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm chi tiết!"));
 
         // 2. Kiểm tra tồn kho
@@ -110,6 +110,7 @@ public class DonHangChiTietService {
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
             // ✅ Cập nhật tồn kho
             if (donHangService.isStockDeducted(chiTiet.getDonHang())) {
+                spct = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).orElse(spct);
                 if (diff > 0) {
                     if (spct.getSoLuong() < diff)
                         throw new RuntimeException("Không đủ tồn kho!");
@@ -140,6 +141,7 @@ public class DonHangChiTietService {
             SanPhamChiTiet spct = chiTiet.getSanPhamChiTiet();
             // Hoàn lại tồn kho
             if (donHangService.isStockDeducted(chiTiet.getDonHang())) {
+                spct = sanPhamChiTietRepository.findByIdWithLock(spct.getId()).orElse(spct);
                 spct.setSoLuong(spct.getSoLuong() + chiTiet.getSoLuong());
                 sanPhamChiTietRepository.save(spct);
             }

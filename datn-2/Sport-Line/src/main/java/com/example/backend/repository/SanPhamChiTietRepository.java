@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 
 import java.util.Optional;
@@ -146,4 +148,7 @@ public interface SanPhamChiTietRepository extends JpaRepository<SanPhamChiTiet,I
 
 
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM SanPhamChiTiet s WHERE s.id = :id")
+    Optional<SanPhamChiTiet> findByIdWithLock(@Param("id") Integer id);
 }
