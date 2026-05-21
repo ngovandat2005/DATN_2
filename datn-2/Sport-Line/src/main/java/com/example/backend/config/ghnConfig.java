@@ -6,8 +6,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Configuration
 public class GHNConfig {
+    private static final Logger logger = LoggerFactory.getLogger(GHNConfig.class);
+
     @Value("${ghn.token}")
     private String token;
 
@@ -39,9 +44,9 @@ public class GHNConfig {
 
     @PostConstruct
     public void printDebug() {
-        System.out.println("GHN Token: " + token);
-        System.out.println("Shop ID: " + shopId);
-        System.out.println("Base URL: " + baseUrl);
+        logger.info("GHN Token: {}", token);
+        logger.info("Shop ID: {}", shopId);
+        logger.info("Base URL: {}", baseUrl);
     }
 }
 

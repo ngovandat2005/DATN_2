@@ -96,7 +96,8 @@ public class KhuyenMaiService {
 
     @Transactional
     public boolean delete(Integer id) {
-        if (khuyenMaiRepository.existsById(id)) {
+        Optional<KhuyenMai> opt = khuyenMaiRepository.findById(id);
+        if (opt.isPresent()) {
             // Cần gỡ khuyến mãi khỏi các sản phẩm chi tiết trước
             List<SanPhamChiTiet> chiTietList = sanPhamChiTietRepository.findByKhuyenMai_Id(id);
             for (SanPhamChiTiet ct : chiTietList) {
@@ -104,7 +105,11 @@ public class KhuyenMaiService {
                 ct.setGiaBanGiamGia(ct.getGiaBan());
             }
             sanPhamChiTietRepository.saveAll(chiTietList);
-            khuyenMaiRepository.deleteById(id);
+            
+            KhuyenMai km = opt.get();
+            km.setTrangThai(0);
+            km.setNgayKetThuc(LocalDateTime.now());
+            khuyenMaiRepository.save(km);
             return true;
         }
         return false;

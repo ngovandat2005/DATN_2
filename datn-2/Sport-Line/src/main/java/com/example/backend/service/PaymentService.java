@@ -12,8 +12,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class PaymentService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 
     @Autowired
     private VNpayConfig vnpayConfig;
@@ -28,7 +33,7 @@ public class PaymentService {
         if (ipAddress == null || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("localhost")) {
             ipAddress = "127.0.0.1";
         }
-        System.out.println("DEBUG VNPAY - Client IP: " + ipAddress + ", Order ID: " + orderId);
+        logger.info("DEBUG VNPAY - Client IP: {}, Order ID: {}", ipAddress, orderId);
 
         int amount = 0;
         if (orderId != null && !orderId.trim().isEmpty()) {
@@ -80,9 +85,9 @@ public class PaymentService {
 
         String finalUrl = vnpayConfig.getPayUrl() + "?" + queryStr + "&vnp_SecureHash=" + secureHash;
 
-        System.out.println("DEBUG VNPAY - Hash Data: [" + hashDataStr + "]");
-        System.out.println("DEBUG VNPAY - Hash Output: [" + secureHash + "]");
-        System.out.println("DEBUG VNPAY - Full URL: " + finalUrl);
+        logger.info("DEBUG VNPAY - Hash Data: [{}]", hashDataStr);
+        logger.info("DEBUG VNPAY - Hash Output: [{}]", secureHash);
+        logger.info("DEBUG VNPAY - Full URL: {}", finalUrl);
 
         return finalUrl;
     }
@@ -126,11 +131,11 @@ public class PaymentService {
         String secretKey = vnpayConfig.getSecretKey().trim();
         String secureHash = VNPayUtil.hmacSHA512(secretKey, hashDataStr);
 
-        System.out.println("DEBUG VNPAY RETURN - Calculated Hash: [" + secureHash + "]");
-        System.out.println("DEBUG VNPAY RETURN - Received Hash: [" + vnp_SecureHash + "]");
+        logger.info("DEBUG VNPAY RETURN - Calculated Hash: [{}]", secureHash);
+        logger.info("DEBUG VNPAY RETURN - Received Hash: [{}]", vnp_SecureHash);
 
         if (vnp_SecureHash == null || !secureHash.equalsIgnoreCase(vnp_SecureHash)) {
-            System.out.println("❌ Chữ ký VNPay không hợp lệ! Có thể có hành vi giả mạo hoặc cấu hình sai.");
+            logger.error("Chữ ký VNPay không hợp lệ! Có thể có hành vi giả mạo hoặc cấu hình sai.");
             return "Thanh toán thất bại. Mã: Invalid Signature";
         }
 
@@ -144,7 +149,7 @@ public class PaymentService {
                 if ("00".equals(vnp_ResponseCode)) {
                     com.example.backend.entity.DonHang donHang = donHangService.layChiTietDon(orderId);
                     if (donHang != null && donHang.getTrangThai() != null && donHang.getTrangThai() >= 1 && donHang.getTrangThai() != 8) {
-                        System.out.println("ℹ️ Đơn hàng #" + orderId + " đã được xác nhận thanh toán trước đó.");
+                        logger.info("Đơn hàng #{} đã được xác nhận thanh toán trước đó.", orderId);
                         return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
                     }
                     donHangService.capNhatTrangThai(orderId, com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
@@ -157,7 +162,7 @@ public class PaymentService {
                     return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
                 }
             } catch (Exception e) {
-                System.out.println("❌ Lỗi khi cập nhật trạng thái đơn hàng sau thanh toán VNPay: " + e.getMessage());
+                logger.error("Lỗi khi cập nhật trạng thái đơn hàng sau thanh toán VNPay: {}", e.getMessage());
             }
         }
 

@@ -11,8 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Component
 public class PaymentCleanupScheduler {
+
+    private static final Logger logger = LoggerFactory.getLogger(PaymentCleanupScheduler.class);
 
     @Autowired
     private DonHangRepository donHangRepository;
@@ -42,16 +47,16 @@ public class PaymentCleanupScheduler {
                 try {
                     // Gọi hàm hủy đơn hiện có để vừa chuyển trạng thái 5, vừa hoàn kho và hoàn voucher
                     donHangService.huyDon(dh.getId(), "Hệ thống tự động hủy do quá hạn thanh toán");
-                    System.out.println("[SCHEDULER] Đã tự động hủy đơn hàng VNPay quá hạn (#ID: " + dh.getId() + ")");
+                    logger.info("[SCHEDULER] Đã tự động hủy đơn hàng VNPay quá hạn (#ID: {})", dh.getId());
                     count++;
                 } catch (Exception e) {
-                    System.err.println("[SCHEDULER ERROR] Lỗi khi hủy đơn #" + dh.getId() + ": " + e.getMessage());
+                    logger.error("[SCHEDULER ERROR] Lỗi khi hủy đơn #{}: {}", dh.getId(), e.getMessage());
                 }
             }
         }
 
         if (count > 0) {
-            System.out.println("[SCHEDULER] Hoàn tất dọn dẹp. Đã hủy thành công " + count + " đơn hàng quá hạn thanh toán.");
+            logger.info("[SCHEDULER] Hoàn tất dọn dẹp. Đã hủy thành công {} đơn hàng quá hạn thanh toán.", count);
         }
     }
 }

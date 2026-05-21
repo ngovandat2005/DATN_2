@@ -92,15 +92,18 @@ public class VoucherService {
     }
 
     // ham delete voucher
+    @Transactional
     public boolean delete(Integer id){
-        voucherRepository.findById(id)
+        Voucher voucher = voucherRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
         // Kiểm tra có đơn hàng nào đang dùng voucher này không
         List<DonHang> donHangs = donHangRepository.findAllByGiamGia_Id(id);
         if (!donHangs.isEmpty()) {
             throw new RuntimeException("Không thể xóa voucher vì đang được áp dụng cho đơn hàng!");
         }
-        voucherRepository.deleteById(id);
+        // Xóa mềm thay vì xóa cứng
+        voucher.setTrangThai(0);
+        voucherRepository.save(voucher);
         return true;
     }
 

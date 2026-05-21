@@ -15,8 +15,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class GHNClientService {
+
+    private static final Logger logger = LoggerFactory.getLogger(GHNClientService.class);
 
     @Value("${ghn.token}")
     private String ghnToken;
@@ -62,7 +67,7 @@ public class GHNClientService {
                 return services;
             }
         } catch (Exception e) {
-            System.err.println("Lỗi lấy dịch vụ GHN: " + e.getMessage());
+            logger.error("Lỗi lấy dịch vụ GHN: {}", e.getMessage());
         }
         return new ArrayList<>();
     }
@@ -94,7 +99,7 @@ public class GHNClientService {
                 return data.get("total") instanceof Number ? ((Number) data.get("total")).intValue() : null;
             }
         } catch (Exception e) {
-            System.err.println("Lỗi tính phí GHN: " + e.getMessage());
+            logger.error("Lỗi tính phí GHN: {}", e.getMessage());
         }
         return null;
     }
@@ -269,6 +274,6 @@ public class GHNClientService {
 
     @PostConstruct
     public void init() {
-        System.out.println("Config loaded → Token: " + ghnToken + ", ShopId: " + ghnShopId);
+        logger.info("Config loaded → Token: {}, ShopId: {}", ghnToken, ghnShopId);
     }
 }

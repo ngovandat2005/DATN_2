@@ -12,6 +12,7 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SPCTService {
@@ -34,6 +35,7 @@ public class SPCTService {
     @Autowired
     private KhuyenMaiService khuyenMaiService;
 
+    @Transactional
     public SanPhamChiTiet createSanPhamChiTiet(Integer id, SPCTRequest request) {
         request.setIdSanPham(id);
 
@@ -80,6 +82,7 @@ public class SPCTService {
         return spcti.save(spct);
     }
 
+    @Transactional
     public SanPhamChiTiet updateSanPhamChiTiet(Integer idSpct, SPCTRequest request) {
         // Tìm biến thể cũ
         SanPhamChiTiet spct = spcti.findById(idSpct)
@@ -306,7 +309,13 @@ public class SPCTService {
         return spcti.save(old);
     }
 
+    @Transactional
     public void delete(Integer id) {
-        spcti.deleteById(id);
+        Optional<SanPhamChiTiet> optional = spcti.findById(id);
+        if (optional.isPresent()) {
+            SanPhamChiTiet spct = optional.get();
+            spct.setTrangThai(0); // Soft delete
+            spcti.save(spct);
+        }
     }
 }
