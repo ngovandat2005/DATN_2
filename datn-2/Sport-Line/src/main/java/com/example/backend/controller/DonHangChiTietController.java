@@ -3,19 +3,14 @@ package com.example.backend.controller;
 
 
 import com.example.backend.dto.DonHangChiTietDTO;
-import com.example.backend.entity.DonHang;
 import com.example.backend.repository.DonHangRepository;
 import com.example.backend.service.DonHangChiTietService;
-import com.example.backend.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import com.example.backend.repository.VoucherRepository;
 import com.example.backend.service.DonHangService;
-import com.example.backend.entity.Voucher;
-import org.springframework.transaction.annotation.Transactional;
 
 
 @RestController
@@ -26,12 +21,6 @@ public class DonHangChiTietController {
     private DonHangChiTietService chiTietService;
     @Autowired
     private DonHangRepository donHangRepository;
-
-    @Autowired
-    private VoucherService voucherService;
-
-    @Autowired
-    private VoucherRepository voucherRepository;
 
     @Autowired
     private DonHangService donHangService;
@@ -76,39 +65,27 @@ public class DonHangChiTietController {
             @PathVariable Integer idDonHang,
             @PathVariable Integer idVoucher
     ) {
-        DonHang dh = donHangRepository.findById(idDonHang)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
-
         try {
-            voucherService.updateVoucherForDonHang(dh,idVoucher);
-            donHangRepository.save(dh);
-
-            return ResponseEntity.ok(dh);
+            com.example.backend.dto.DonHangDTO updated = donHangService.updateVoucher(idDonHang, idVoucher);
+            if (updated != null) {
+                return ResponseEntity.ok(donHangRepository.findById(idDonHang).orElse(null));
+            }
+            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @DeleteMapping("/don-hang-chi-tiet/{idDonHang}/remove-voucher")
-    @Transactional
     public ResponseEntity<?> removeVoucherFromDonHang(@PathVariable Integer idDonHang) {
-        DonHang dh = donHangRepository.findById(idDonHang)
-                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
-
-        if (dh.getGiamGia() != null) {
-            Voucher v = dh.getGiamGia();
-            v.setSoLuong(v.getSoLuong() + 1);
-            voucherRepository.save(v);
+        try {
+            com.example.backend.dto.DonHangDTO updated = donHangService.updateVoucher(idDonHang, null);
+            if (updated != null) {
+                return ResponseEntity.ok(donHangRepository.findById(idDonHang).orElse(null));
+            }
+            return ResponseEntity.badRequest().body("Không tìm thấy đơn hàng");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        dh.setGiamGia(null);
-        dh.setTongTienGiamGia(0.0);
-        donHangRepository.save(dh);
-
-        // Cập nhật lại tổng tiền đơn hàng sau khi gỡ voucher
-        donHangService.capNhatTongTienDonHang(idDonHang);
-
-        DonHang updatedDh = donHangRepository.findById(idDonHang).orElse(dh);
-        return ResponseEntity.ok(updatedDh);
     }
 }
