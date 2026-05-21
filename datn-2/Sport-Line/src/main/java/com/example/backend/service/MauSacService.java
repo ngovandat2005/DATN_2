@@ -31,10 +31,15 @@ public class MauSacService {
     }
 
     public ResponseEntity<?> create(MauSac mauSac) {
-        Optional<MauSac> existing = msi.findByTenMauSacIgnoreCase(mauSac.getTenMauSac());
+        if (mauSac.getTenMauSac() == null || mauSac.getTenMauSac().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên màu sắc không được để trống!");
+        }
+        String tenTrim = mauSac.getTenMauSac().trim();
+        Optional<MauSac> existing = msi.findByTenMauSacIgnoreCase(tenTrim);
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Màu sắc đã tồn tại!");
         }
+        mauSac.setTenMauSac(tenTrim);
         MauSac saved = msi.save(mauSac);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -45,14 +50,18 @@ public class MauSacService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Màu sắc với ID: " + id);
         }
 
-        Optional<MauSac> existing = msi.findByTenMauSacIgnoreCase(mauSac.getTenMauSac());
+        if (mauSac.getTenMauSac() == null || mauSac.getTenMauSac().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên màu sắc không được để trống!");
+        }
+        String tenTrim = mauSac.getTenMauSac().trim();
+        Optional<MauSac> existing = msi.findByTenMauSacIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên màu sắc đã tồn tại!");
         }
-
-        mauSac.setId(id);
-        MauSac updated = msi.save(mauSac);
-        return ResponseEntity.ok(updated);
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
+        MauSac ms = current.get();
+        ms.setTenMauSac(tenTrim);
+        return ResponseEntity.ok(msi.save(ms));
     }
 
     public ResponseEntity<?> delete(Integer id) {
@@ -72,7 +81,7 @@ public class MauSacService {
     }
     public void khoiPhucMauSac(Integer id) {
         MauSac ms = msi.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy màu sắc!"));
         ms.setTrangThai(1); // 1 = Đang hoạt động
         msi.save(ms);
     }

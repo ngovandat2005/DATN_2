@@ -54,9 +54,9 @@ public class GHNClientService {
                 List<GhnService> services = new ArrayList<>();
                 for (Map<String, Object> item : data) {
                     GhnService s = new GhnService();
-                    s.setService_id((Integer) item.get("service_id"));
+                    s.setService_id(item.get("service_id") instanceof Number ? ((Number) item.get("service_id")).intValue() : null);
                     s.setShort_name((String) item.get("short_name"));
-                    s.setService_type_id((Integer) item.get("service_type_id"));
+                    s.setService_type_id(item.get("service_type_id") instanceof Number ? ((Number) item.get("service_type_id")).intValue() : null);
                     services.add(s);
                 }
                 return services;
@@ -91,7 +91,7 @@ public class GHNClientService {
             ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
-                return (Integer) data.get("total");
+                return data.get("total") instanceof Number ? ((Number) data.get("total")).intValue() : null;
             }
         } catch (Exception e) {
             System.err.println("Lỗi tính phí GHN: " + e.getMessage());
@@ -255,8 +255,10 @@ public class GHNClientService {
             if (response.getBody() != null && response.getBody().get("data") instanceof List) {
                 List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
                 for (Map<String, Object> district : data) {
-                    if (districtId.equals(district.get("DistrictID"))) {
-                        return (Integer) district.get("ProvinceID");
+                    Object distIdObj = district.get("DistrictID");
+                    if (distIdObj instanceof Number && districtId.equals(((Number) distIdObj).intValue())) {
+                        Object provIdObj = district.get("ProvinceID");
+                        return provIdObj instanceof Number ? ((Number) provIdObj).intValue() : null;
                     }
                 }
             }

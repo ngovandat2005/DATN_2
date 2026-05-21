@@ -1,18 +1,24 @@
 package com.example.backend.service;
 
+import com.example.backend.KhongTimThay;
 import com.example.backend.dto.NhanVienDTO;
 import com.example.backend.entity.NhanVien;
 import com.example.backend.repository.NhanVienRepository;
+import com.example.backend.PasswordUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class NhanVienService {
 
     @Autowired
     private NhanVienRepository nhanVienRepository;
+
+    @Autowired
+    private PasswordUtil passwordUtil;
     
     // ham convert entity sang dto
     public NhanVienDTO convertDTO (NhanVien nv){
@@ -65,22 +71,54 @@ public class NhanVienService {
     
     // ham create nhanvien
     public NhanVienDTO create(NhanVienDTO dto){
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            if (nhanVienRepository.findByEmail(dto.getEmail().trim()).isPresent()) {
+                throw new RuntimeException("Email đã tồn tại!");
+            }
+        }
+        if (dto.getSoDienThoai() != null && !dto.getSoDienThoai().trim().isEmpty()) {
+            if (nhanVienRepository.findBySoDienThoai(dto.getSoDienThoai().trim()).isPresent()) {
+                throw new RuntimeException("Số điện thoại đã tồn tại!");
+            }
+        }
+        if (dto.getCccd() != null && !dto.getCccd().trim().isEmpty()) {
+            if (nhanVienRepository.findByCccd(dto.getCccd().trim()).isPresent()) {
+                throw new RuntimeException("CCCD đã tồn tại!");
+            }
+        }
+
         NhanVien nv = new NhanVien();
         nv.setTenNhanVien(dto.getTenNhanVien());
-        nv.setEmail(dto.getEmail());
-        nv.setSoDienThoai(dto.getSoDienThoai());
+        nv.setEmail(dto.getEmail() != null ? dto.getEmail().trim() : null);
+        nv.setSoDienThoai(dto.getSoDienThoai() != null ? dto.getSoDienThoai().trim() : null);
         nv.setNgaySinh(dto.getNgaySinh());
         nv.setDiaChi(dto.getDiaChi());
         nv.setVaiTro(dto.getVaiTro());
-        nv.setCccd(dto.getCccd());
+        nv.setCccd(dto.getCccd() != null ? dto.getCccd().trim() : null);
         nv.setTrangThai(dto.getTrangThai());
+        if (dto.getMatKhau() != null && !dto.getMatKhau().trim().isEmpty()) {
+            nv.setMatKhau(passwordUtil.encode(dto.getMatKhau().trim()));
+        }
         return convertDTO(nhanVienRepository.save(nv));
     }
 
-    // ham delete nhan vien
+    public void datMatKhau(Integer id, String matKhau) {
+        NhanVien nv = nhanVienRepository.findById(id)
+                .orElseThrow(() -> new KhongTimThay("Không tìm thấy nhân viên!"));
+        if (matKhau == null || matKhau.trim().isEmpty()) {
+            throw new RuntimeException("Mật khẩu không được để trống!");
+        }
+        nv.setMatKhau(passwordUtil.encode(matKhau.trim()));
+        nhanVienRepository.save(nv);
+    }
+
+    // ham delete nhan vien (soft delete)
     public boolean delete(Integer id){
-        if (nhanVienRepository.existsById(id)) {
-            nhanVienRepository.deleteById(id);
+        Optional<NhanVien> optional = nhanVienRepository.findById(id);
+        if (optional.isPresent()) {
+            NhanVien nv = optional.get();
+            nv.setTrangThai(false);
+            nhanVienRepository.save(nv);
             return true;
         }
         return false;
@@ -90,14 +128,36 @@ public class NhanVienService {
     public NhanVienDTO update (int id, NhanVienDTO dto){
         return nhanVienRepository.findById(id)
                 .map( nhanVien -> {
+                    if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+                        Optional<NhanVien> duplicateEmail = nhanVienRepository.findByEmail(dto.getEmail().trim());
+                        if (duplicateEmail.isPresent() && !duplicateEmail.get().getId().equals(id)) {
+                            throw new RuntimeException("Email đã tồn tại!");
+                        }
+                    }
+                    if (dto.getSoDienThoai() != null && !dto.getSoDienThoai().trim().isEmpty()) {
+                        Optional<NhanVien> duplicatePhone = nhanVienRepository.findBySoDienThoai(dto.getSoDienThoai().trim());
+                        if (duplicatePhone.isPresent() && !duplicatePhone.get().getId().equals(id)) {
+                            throw new RuntimeException("Số điện thoại đã tồn tại!");
+                        }
+                    }
+                    if (dto.getCccd() != null && !dto.getCccd().trim().isEmpty()) {
+                        Optional<NhanVien> duplicateCccd = nhanVienRepository.findByCccd(dto.getCccd().trim());
+                        if (duplicateCccd.isPresent() && !duplicateCccd.get().getId().equals(id)) {
+                            throw new RuntimeException("CCCD đã tồn tại!");
+                        }
+                    }
+
                     nhanVien.setTenNhanVien(dto.getTenNhanVien());
-                    nhanVien.setEmail(dto.getEmail());
-                    nhanVien.setSoDienThoai(dto.getSoDienThoai());
+                    nhanVien.setEmail(dto.getEmail() != null ? dto.getEmail().trim() : null);
+                    nhanVien.setSoDienThoai(dto.getSoDienThoai() != null ? dto.getSoDienThoai().trim() : null);
                     nhanVien.setNgaySinh(dto.getNgaySinh());
                     nhanVien.setDiaChi(dto.getDiaChi());
                     nhanVien.setVaiTro(dto.getVaiTro());
-                    nhanVien.setCccd(dto.getCccd());
+                    nhanVien.setCccd(dto.getCccd() != null ? dto.getCccd().trim() : null);
                     nhanVien.setTrangThai(dto.getTrangThai());
+                    if (dto.getMatKhau() != null && !dto.getMatKhau().trim().isEmpty()) {
+                        nhanVien.setMatKhau(passwordUtil.encode(dto.getMatKhau().trim()));
+                    }
                     return convertDTO(nhanVienRepository.save(nhanVien));
                 })
                 .orElse(null);

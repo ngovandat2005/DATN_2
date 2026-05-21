@@ -11,7 +11,6 @@ import {
   CustomerServiceOutlined,
   ShoppingCartOutlined,
   BarChartOutlined,
-  UserOutlined,
   LogoutOutlined,
 } from '@ant-design/icons';
 import SanPhamPage from './SanPhamPage';
@@ -37,9 +36,6 @@ function AdminPanel() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Lấy thông tin user từ localStorage
-  const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -206,7 +202,7 @@ function AdminPanel() {
                 height: 64,
               }}
             />
-            <h2 style={{ margin: 0, marginLeft: 16 }}></h2>
+            <h2 style={{ margin: 0, marginLeft: 16 }}>Bảng điều khiển</h2>
           </div>
 
           <div style={{ marginRight: 24 }}>

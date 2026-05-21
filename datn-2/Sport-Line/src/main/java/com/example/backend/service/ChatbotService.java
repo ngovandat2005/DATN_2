@@ -16,25 +16,30 @@ import java.util.Map;
 @Service
 public class ChatbotService {
 
-    @Value("${gemini.api.key:AIzaSyBvjeGQmWCM6NcLfuCkFfIpsHws7iZlhi4}")
+    @Value("${gemini.api.key:}")
     private String geminiApiKey;
 
     private final WebClient webClient = WebClient.builder().build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private String getSystemInstructions(String contextInfo) {
-        String instructions = "Bạn là trợ lý ảo AI của hệ thống giày thể thao KingStep (KingStep.vn). " +
-                "Nhiệm vụ: Tư vấn giày (Nike, Adidas, Puma, v.v.), size giày, thanh toán. " +
-                "QUY TẮC CỐT LÕI: " +
-                "1. Trả lời cực kỳ ngắn gọn, tập trung đúng vào câu hỏi của khách. " +
-                "2. CHỈ cung cấp địa chỉ, hotline hoặc chính sách đổi trả KHI khách hàng thực sự hỏi về những điều đó. "
-                +
-                "3. Xưng 'Shop', gọi khách là 'Quý khách'. " +
-                "4. Thông tin cửa hàng: 'Số 10, Ngõ 20, Ba Đình, Hà Nội', Hotline '0987.654.321'. " +
-                "5. Chính sách: Miễn phí vận chuyển đơn trên 2.000.000đ. Đổi trả 30 ngày. ";
+        String instructions = "Bạn là trợ lý ảo AI cao cấp của hệ thống giày thể thao KingStep (KingStep.vn). " +
+                "Nhiệm vụ của bạn là: Tư vấn các dòng giày sneaker (Nike, Adidas, Puma, Converse, Vans, v.v.), hướng dẫn chọn size, giải đáp thắc mắc về đơn hàng, thanh toán và các chính sách của cửa hàng.\n\n" +
+                "QUY TẮC ỨNG XỬ:\n" +
+                "1. Phong cách: Thân thiện, nhiệt tình, chuyên nghiệp và có sử dụng một vài emoji (như 👟, 🔥, 😊) để tạo cảm giác gần gũi nhưng không quá lố.\n" +
+                "2. Xưng hô: Luôn xưng là 'Shop' hoặc 'KingStep', và gọi khách hàng là 'Quý khách' hoặc 'Bạn'.\n" +
+                "3. Trình bày: Trả lời ngắn gọn, súc tích, đi thẳng vào trọng tâm câu hỏi của khách hàng. Tránh nói dài dòng.\n\n" +
+                "KIẾN THỨC CỬA HÀNG:\n" +
+                "- Địa chỉ: Số 10, Ngõ 20, Ba Đình, Hà Nội.\n" +
+                "- Hotline hỗ trợ 24/7: 0987.654.321.\n" +
+                "- Chính sách giao hàng: Miễn phí vận chuyển (Freeship) toàn quốc cho đơn hàng từ 2.000.000đ trở lên. Các đơn dưới 2.000.000đ có phí ship đồng giá là 30.000đ.\n" +
+                "- Chính sách đổi trả: Khách hàng được hỗ trợ đổi size hoặc trả hàng trong vòng 30 ngày kể từ ngày nhận nếu có lỗi từ nhà sản xuất hoặc mang không vừa (điều kiện giày còn nguyên tem mác, chưa qua sử dụng).\n" +
+                "- Hướng dẫn chọn Size: Nếu khách phân vân về size, hãy khuyên khách đặt chân lên tờ giấy, vạch điểm gót và ngón dài nhất, đo khoảng cách rồi nhắn lại để Shop tư vấn (Ví dụ: 39~24.5cm, 40~25cm, 41~26cm, 42~26.5cm, 43~27.5cm).\n" +
+                "- Phương thức thanh toán: Hỗ trợ thanh toán khi nhận hàng (COD) và thanh toán chuyển khoản an toàn qua cổng VNPay.\n\n" +
+                "LƯU Ý ĐẶC BIÊT: CHỈ cung cấp địa chỉ, hotline hoặc chính sách đổi trả/giao hàng KHI khách hàng thực sự hỏi về những điều đó. Không tự động chèn vào mọi câu trả lời để tránh gây khó chịu.";
 
         if (contextInfo != null && !contextInfo.trim().isEmpty()) {
-            instructions += "Bối cảnh sản phẩm hiện tại: " + contextInfo + ". ";
+            instructions += "\n\nTHÔNG TIN SẢN PHẨM KHÁCH ĐANG XEM HOẶC ĐANG QUAN TÂM HIỆN TẠI:\n" + contextInfo;
         }
         return instructions;
     }
@@ -44,8 +49,8 @@ public class ChatbotService {
             return Flux.just("Tính năng Chatbot AI chưa được cấu hình.");
         }
 
-        // Đổi sang model gemini-1.5-flash ổn định và nhanh hơn
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key="
+        // Đổi sang model gemini-3.5-flash mới nhất
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?key="
                 + geminiApiKey.trim();
 
         Map<String, Object> requestBody = createRequestBody(history, contextInfo);

@@ -5,9 +5,8 @@ import config from '../config/config';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
   Button, TextField, Avatar, Dialog, DialogTitle, DialogContent, DialogActions,
-  Snackbar, Alert, Card, CardHeader, CardContent, Chip, Box, MenuItem
+  Snackbar, Alert, Card, CardContent, Box, MenuItem
 } from '@mui/material';
-import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -21,60 +20,35 @@ const BanHangTaiQuayPage = () => {
   // State mẫu cho UI demo
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState('');
-  const [voucher, setVoucher] = useState('');
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [showProductTable, setShowProductTable] = useState(false);
 
   // State cho sản phẩm
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // State cho tìm kiếm
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState('');
-
   // State cho hóa đơn
   const [orderId, setOrderId] = useState(null);
-  const [orderLoading, setOrderLoading] = useState(false);
-  const [orderError, setOrderError] = useState('');
+  const [, setOrderLoading] = useState(false);
+  const [, setOrderError] = useState('');
 
   // State cho modal chọn số lượng khi thêm
   const [showQtyModal, setShowQtyModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [qty, setQty] = useState(1);
-  const [addLoading, setAddLoading] = useState(false);
+  const [, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
 
   // State cho modal sửa số lượng
   const [showEditModal, setShowEditModal] = useState(false);
   const [editIdx, setEditIdx] = useState(null);
   const [editQty, setEditQty] = useState(1);
-  const [editLoading, setEditLoading] = useState(false);
+  const [, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
 
   // State cho danh sách hóa đơn chờ
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
-
-  // State thu gọn/mở rộng bảng hóa đơn chờ
-  const [collapsed, setCollapsed] = useState(false);
-  const toggleCollapse = () => setCollapsed(c => !c);
-
-  // State thu gọn/mở rộng hóa đơn tạm
-  const [collapsedCart, setCollapsedCart] = useState(false);
-  const toggleCollapseCart = () => setCollapsedCart(c => !c);
-
-  // State thu gọn/xổ danh sách sản phẩm
-  const [showAllProducts, setShowAllProducts] = useState(false);
-  const PRODUCTS_PER_ROW = 4;
-  const ROWS_SHOWN = 2;
-  const MAX_PRODUCTS_SHOWN = PRODUCTS_PER_ROW * ROWS_SHOWN;
-
-
 
   // State cho thông tin khách hàng và voucher
   const [customerName, setCustomerName] = useState('');
@@ -118,7 +92,6 @@ const BanHangTaiQuayPage = () => {
 
   // Thêm state cho in hóa đơn
   const [showInvoice, setShowInvoice] = useState(false);
-  const [invoiceData, setInvoiceData] = useState(null);
 
   // Thêm state ở đầu component nếu chưa có
   const [showProductModal, setShowProductModal] = useState(false);
@@ -509,7 +482,6 @@ const BanHangTaiQuayPage = () => {
       if (!orderId || !cart[idx]) return;
       try {
         const itemToRemove = cart[idx];
-        const quantityToRestore = itemToRemove.quantity; // Số lượng cần hoàn lại
 
         // Xóa chi tiết đơn hàng
         const res = await fetch(`http://localhost:8080/api/donhangchitiet/delete/${itemToRemove.id}`, {
@@ -537,22 +509,96 @@ const BanHangTaiQuayPage = () => {
     }
   };
 
-  // Tính tổng tiền
-  const total = cart.reduce((sum, item) => {
-    const giaBan = item.giaBanGiamGia && item.giaBanGiamGia < item.giaBan ? item.giaBanGiamGia : item.giaBan;
-    return sum + giaBan * item.quantity;
-  }, 0);
   const totalHang = cart.reduce((sum, item) => {
     const giaBan = item.giaBanGiamGia && item.giaBanGiamGia < item.giaBan ? item.giaBanGiamGia : item.giaBan;
     return sum + giaBan * item.quantity;
   }, 0);
-  const totalGiamGia = cart.reduce((sum, item) => {
-    if (item.giaBanGiamGia && item.giaBanGiamGia < item.giaBan) {
-      return sum + (item.giaBan - item.giaBanGiamGia) * item.quantity;
+
+  /** Đồng bộ tổng tiền đơn từ server (gỡ voucher hết hạn, cập nhật giảm giá) */
+  const syncOrderTotalsFromServer = async () => {
+    if (!orderId) return null;
+    const recalcRes = await fetch(config.getApiUrl(`api/donhang/${orderId}/cap-nhat-tong-tien`), {
+      method: 'PUT'
+    });
+    if (recalcRes.ok) {
+      const updated = await recalcRes.json();
+      setOrderTotal(updated.tongTien || 0);
+      setOrderDiscount(updated.tongTienGiamGia || 0);
+      setSelectedVoucherId(updated.idgiamGia || null);
+      return updated;
     }
-    return sum;
-  }, 0);
-  const totalThanhToan = totalHang - totalGiamGia + (isShipping ? shippingFee : 0);
+    await fetchOrderInfo(orderId);
+    return null;
+  };
+
+  /** Kiểm tra voucher với server trước khi mở modal / xác nhận thanh toán */
+  const validateVoucherBeforePayment = async () => {
+    if (!selectedVoucherId) {
+      await syncOrderTotalsFromServer();
+      return { ok: true };
+    }
+
+    try {
+      const res = await fetch(config.getApiUrl('api/voucher/kiem-tra'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idVoucher: Number(selectedVoucherId),
+          tongTienHang: totalHang
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.valid === false) {
+        await syncOrderTotalsFromServer();
+        await Swal.fire({
+          icon: 'error',
+          title: 'Voucher không hợp lệ',
+          text: data.message || 'Voucher đã hết hạn hoặc không còn áp dụng được.',
+          confirmButtonColor: '#1976d2'
+        });
+        return { ok: false };
+      }
+
+      const serverDiscount = Number(data.discount) || 0;
+      const updated = await syncOrderTotalsFromServer();
+      const appliedDiscount = updated?.tongTienGiamGia ?? orderDiscount;
+      const stillHasVoucher = updated?.idgiamGia != null;
+
+      if (!stillHasVoucher) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Voucher không còn hiệu lực',
+          text: 'Voucher đã được gỡ khỏi hóa đơn. Vui lòng kiểm tra lại tổng tiền trước khi thanh toán.',
+          confirmButtonColor: '#1976d2'
+        });
+        return { ok: false };
+      }
+
+      if (Math.abs(serverDiscount - orderDiscount) > 1 || Math.abs(appliedDiscount - orderDiscount) > 1) {
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Voucher đã thay đổi!',
+          html: `Giảm giá cũ: <b>${orderDiscount.toLocaleString()}đ</b><br/>
+            Giảm giá mới: <b>${appliedDiscount.toLocaleString()}đ</b><br/>
+            Vui lòng xác nhận lại hóa đơn trước khi thanh toán.`,
+          confirmButtonColor: '#1976d2'
+        });
+        return { ok: false, changed: true };
+      }
+
+      return { ok: true, discount: serverDiscount };
+    } catch (err) {
+      console.error('Lỗi kiểm tra voucher:', err);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Lỗi kiểm tra voucher',
+        text: 'Không thể xác thực voucher. Vui lòng thử lại.',
+        confirmButtonColor: '#1976d2'
+      });
+      return { ok: false };
+    }
+  };
 
   // Lấy giá trị duy nhất cho màu sắc và size
   const colorOptions = [...new Set(products.map(p => p.mauSac).filter(Boolean))];
@@ -613,7 +659,6 @@ const BanHangTaiQuayPage = () => {
       }
       const idNhanVien = adminValidation.adminId;
 
-      const now = new Date();
       const orderData = {
         idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
         loaiDonHang: 'Bán hàng tại quầy',
@@ -672,93 +717,6 @@ const BanHangTaiQuayPage = () => {
     console.log('loading:', loading, 'error:', error);
   }, [products, filteredProducts, loading, error]);
 
-  // Hàm thêm khách hàng và tạo hóa đơn mới
-  const addCustomerAndCreateOrder = async (e) => {
-    if (e) e.stopPropagation();
-    // Nếu tất cả các trường đều rỗng => khách lẻ
-    if (!customerName && !customerEmail && !customerPhone) {
-      // Tạo hóa đơn không có idKhachHang (khách lẻ)
-      handleCreateOrder();
-      return;
-    }
-    // Validate số điện thoại không trùng
-    if (customerPhone && customers.some(c => c.soDienThoai === customerPhone)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Số điện thoại đã tồn tại!',
-        text: 'Vui lòng nhập số điện thoại khác.',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1800,
-        width: 300
-      });
-      return;
-    }
-    // Nếu đã nhập thông tin khách hàng (ít nhất 1 trường)
-    const customerBody = {
-      tenKhachHang: customerName,
-      email: customerEmail,
-      ngaySinh: "",
-      diaChi: "",
-      soDienThoai: customerPhone,
-      trangThai: "",
-      maThongBao: null,
-      thoiGianThongBao: null
-    };
-    try {
-      const res = await fetch('http://localhost:8080/api/khachhang/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerBody)
-      });
-      if (!res.ok) throw new Error('Lỗi khi thêm khách hàng!');
-      const customer = await res.json();
-      const customerId = customer.id;
-      // Tạo hóa đơn với idKhachHang
-      setOrderLoading(true);
-      setOrderError('');
-
-      // Debug: Kiểm tra thông tin admin
-      debugAdminInfo();
-
-      // Validate thông tin nhân viên
-      const adminValidation = validateAdminForOrder();
-      if (!adminValidation.success) {
-        throw new Error(adminValidation.message);
-      }
-      const idNhanVien = adminValidation.adminId;
-
-      const now = new Date();
-      const orderData = {
-        idkhachHang: customerId,
-        idnhanVien: idNhanVien, // Thêm ID nhân viên (khớp với DTO backend)
-        loaiDonHang: 'Bán hàng tại quầy',
-        trangThai: 0,
-        ngayMua: null // Để null, sẽ set khi thanh toán
-      };
-
-      // Debug: Log order data
-      console.log('Creating order with customer data:', orderData);
-      console.log('Admin ID:', idNhanVien);
-      console.log('Customer ID:', customerId);
-
-      const resOrder = await fetch('http://localhost:8080/api/donhang/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-      if (!resOrder.ok) throw new Error('Lỗi khi tạo hóa đơn!');
-      const order = await resOrder.json();
-      setOrderId(order.id);
-      await fetchOrders();
-    } catch (err) {
-      setOrderError(err.message || 'Lỗi không xác định');
-    } finally {
-      setOrderLoading(false);
-    }
-  };
-
   // Reset form thông tin khách hàng và voucher khi chọn hóa đơn khác hoặc tạo mới
   useEffect(() => {
     setCustomerName('');
@@ -780,79 +738,26 @@ const BanHangTaiQuayPage = () => {
       return;
     }
 
-    // Kiểm tra và xác thực voucher (Nếu có áp dụng)
-    if (selectedVoucherId) {
-      try {
-        const resV = await fetch(`http://localhost:8080/api/voucher/${selectedVoucherId}`);
-        if (resV.ok) {
-          const latestVoucher = await resV.json();
-          // Tính toán giá trị giảm giá mong đợi từ voucher mới nhất
-          const isPercent = latestVoucher.loaiVoucher?.toUpperCase() === 'PERCENT' || latestVoucher.loaiVoucher?.includes('%');
-          const value = latestVoucher.giaTri || 0;
-          let expectedDiscount = 0;
-          if (isPercent) {
-            expectedDiscount = (totalHang * value) / 100;
-            if (latestVoucher.giamGiaToiDa && latestVoucher.giamGiaToiDa > 0) {
-              expectedDiscount = Math.min(expectedDiscount, latestVoucher.giamGiaToiDa);
-            }
-          } else {
-            expectedDiscount = value;
-          }
-          expectedDiscount = Math.min(expectedDiscount, totalHang);
-
-          // Nếu có sự chênh lệch giá trị giảm giá giữa DB và hiển thị
-          if (Math.abs(expectedDiscount - orderDiscount) > 1) {
-            // Gọi API cập nhật lại tổng tiền đơn hàng trong DB
-            await fetch(`http://localhost:8080/api/donhang/${orderId}/cap-nhat-tong-tien`, {
-              method: 'PUT'
-            });
-            // Fetch lại thông tin hóa đơn mới nhất
-            await fetchOrderInfo(orderId);
-            await fetchCartFromBE(orderId);
-
-            Swal.fire({
-              icon: 'warning',
-              title: 'Cập nhật giá trị Voucher!',
-              text: `Voucher áp dụng vừa được thay đổi giá trị trên hệ thống. Tổng tiền giảm giá đã tự động cập nhật lại (Giảm cũ: ${orderDiscount.toLocaleString()} đ -> Giảm mới: ${expectedDiscount.toLocaleString()} đ). Vui lòng xác nhận lại hóa đơn!`,
-              confirmButtonColor: '#1976d2',
-              confirmButtonText: 'Đồng ý'
-            });
-            return; // Dừng thanh toán để nhân viên kiểm tra lại
-          }
-        }
-      } catch (err) {
-        console.error('Lỗi kiểm tra voucher:', err);
+    const voucherCheck = await validateVoucherBeforePayment();
+    if (!voucherCheck.ok) {
+      if (orderId) {
+        await fetchCartFromBE(orderId);
       }
+      return;
     }
 
-    setPaymentAmount("");
+    setPaymentAmount(String(orderTotal || 0));
     setPaymentMethod('TIEN_MAT');
     setShowPaymentModal(true);
   };
 
-  // Hàm xác nhận thanh toán (gọi API cập nhật tổng tiền và trạng thái)
-  const handleConfirmPayment = async () => {
-    if (!orderId) return;
-
-    // Bổ sung xác nhận thanh toán
-    const confirmResult = await Swal.fire({
-      title: 'Xác nhận thanh toán?',
-      text: `Tổng tiền thanh toán là ${orderTotal.toLocaleString()} đ. Bạn đã nhận đủ tiền từ khách hàng?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1976d2',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Xác nhận thanh toán',
-      cancelButtonText: 'Quay lại'
-    });
-
-    if (!confirmResult.isConfirmed) return;
-
-    setOrderLoading(true); // Đảm bảo hiện loading
+  /** Hoàn tất thanh toán tiền mặt (dùng chung cho đủ tiền / modal) */
+  const processCashPayment = async () => {
+    setOrderLoading(true);
     try {
       const payload = {
-        tongTien: orderTotal, // Sử dụng orderTotal thay vì total để bao gồm giảm giá voucher
-        idgiamGia: selectedVoucherId, // Thêm thông tin voucher để BE không reset
+        tongTien: orderTotal,
+        idgiamGia: selectedVoucherId,
         idkhachHang: selectedCustomerId || null,
         tenKhachHang: !selectedCustomerId && customerName ? customerName : null,
         email: !selectedCustomerId && customerEmail ? customerEmail : null,
@@ -860,7 +765,7 @@ const BanHangTaiQuayPage = () => {
         phiVanChuyen: isShipping ? shippingFee : 0,
         diaChiGiaoHang: isShipping ? `${shippingDetail}, ${wards.find(w => w.WardCode === selectedWard)?.WardName}, ${districts.find(d => d.DistrictID === selectedDistrict)?.DistrictName}, ${provinces.find(p => p.ProvinceID === selectedProvince)?.ProvinceName}` : null
       };
-      const res = await fetch(`http://localhost:8080/api/xacnhanthanhtoan/${orderId}`, {
+      const res = await fetch(config.getApiUrl(`api/xacnhanthanhtoan/${orderId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -877,28 +782,22 @@ const BanHangTaiQuayPage = () => {
         width: 250
       });
       await fetchOrders();
-      // Lấy lại dữ liệu đơn hàng và chi tiết đơn hàng từ API
       const [orderRes, chiTietRes, spctRes] = await Promise.all([
-        fetch(`http://localhost:8080/api/donhang/${orderId}`),
-        fetch(`http://localhost:8080/api/donhangchitiet/don-hang/${orderId}`),
-        fetch('http://localhost:8080/api/san-pham-chi-tiet/getAll')
+        fetch(config.getApiUrl(`api/donhang/${orderId}`)),
+        fetch(config.getApiUrl(`api/donhangchitiet/don-hang/${orderId}`)),
+        fetch(config.getApiUrl('api/san-pham-chi-tiet/getAll'))
       ]);
       const orderData = await orderRes.json();
       const chiTietData = await chiTietRes.json();
       const spctData = await spctRes.json();
-
-      // Thêm thông tin khách hàng vào orderData
       const khachHang = customers.find(c => c.id === Number(orderData.idkhachHang));
-      const orderDataWithCustomer = {
+      setOrderInfo({
         ...orderData,
         customerName: khachHang ? khachHang.tenKhachHang : null
-      };
-
-      setOrderInfo(orderDataWithCustomer);
+      });
       setChiTietList(chiTietData);
       setSpctList(spctData);
       setShowInvoice(true);
-      // RESET trạng thái hóa đơn tạm
       resetAllStates();
     } catch (err) {
       setOrderError(err.message || 'Lỗi không xác định');
@@ -911,6 +810,68 @@ const BanHangTaiQuayPage = () => {
     } finally {
       setOrderLoading(false);
     }
+  };
+
+  const showPaymentConfirmDialog = async () => {
+    const payTotal = orderTotal;
+    const voucherLine = orderDiscount > 0
+      ? `<p>Giảm voucher: <b>-${orderDiscount.toLocaleString()}đ</b></p>`
+      : '';
+    const confirmResult = await Swal.fire({
+      title: 'Xác nhận thanh toán?',
+      html: `
+        <div style="text-align:left;font-size:15px">
+          <p>Tạm tính hàng: <b>${totalHang.toLocaleString()}đ</b></p>
+          ${voucherLine}
+          <p style="margin-top:8px">Tổng thanh toán: <b style="color:#d32f2f">${payTotal.toLocaleString()}đ</b></p>
+          <p style="color:#666;margin-top:8px">Khách đưa đủ tiền?</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1976d2',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Xác nhận thanh toán',
+      cancelButtonText: 'Quay lại'
+    });
+    return confirmResult.isConfirmed;
+  };
+
+  /** Khách đưa đủ tiền — không mở modal nhập số tiền */
+  const handleQuickPayExact = async () => {
+    if (cart.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Không thể thanh toán khi hóa đơn chưa có sản phẩm!',
+        showConfirmButton: false,
+        timer: 1800,
+        width: 350
+      });
+      return;
+    }
+    if (!orderId) return;
+
+    const voucherCheck = await validateVoucherBeforePayment();
+    if (!voucherCheck.ok) return;
+
+    const confirmed = await showPaymentConfirmDialog();
+    if (!confirmed) return;
+
+    await processCashPayment();
+  };
+
+  // Hàm xác nhận thanh toán từ modal (khi cần tính tiền thừa)
+  const handleConfirmPayment = async () => {
+    if (!orderId) return;
+    if (Number(paymentAmount) < orderTotal) return;
+
+    const voucherCheck = await validateVoucherBeforePayment();
+    if (!voucherCheck.ok) return;
+
+    const confirmed = await showPaymentConfirmDialog();
+    if (!confirmed) return;
+
+    await processCashPayment();
   };
 
   // Hàm xử lý khi chọn phương thức thanh toán
@@ -927,10 +888,23 @@ const BanHangTaiQuayPage = () => {
   const handleQRPaymentConfirmed = async () => {
     if (!orderId) return;
 
-    // Bổ sung xác nhận thanh toán chuyển khoản
+    const voucherCheck = await validateVoucherBeforePayment();
+    if (!voucherCheck.ok) return;
+
+    const voucherLine = orderDiscount > 0
+      ? `<p>Giảm voucher: <b>-${orderDiscount.toLocaleString()}đ</b></p>`
+      : '';
+
     const confirmResult = await Swal.fire({
       title: 'Đã nhận được tiền chuyển khoản?',
-      text: `Vui lòng xác nhận rằng bạn đã nhận được số tiền ${orderTotal.toLocaleString()} đ vào tài khoản hệ thống.`,
+      html: `
+        <div style="text-align:left;font-size:15px">
+          <p>Tạm tính hàng: <b>${totalHang.toLocaleString()}đ</b></p>
+          ${voucherLine}
+          <p style="margin-top:8px">Tổng thanh toán: <b style="color:#d32f2f">${orderTotal.toLocaleString()}đ</b></p>
+          <p style="color:#666;margin-top:8px">Xác nhận đã nhận đủ tiền vào tài khoản?</p>
+        </div>
+      `,
       icon: 'info',
       showCancelButton: true,
       confirmButtonColor: '#1976d2',
@@ -1010,66 +984,8 @@ const BanHangTaiQuayPage = () => {
   useEffect(() => {
     if (!orderId) return;
     fetchOrderInfo(orderId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fetchOrderInfo khai báo phía dưới
   }, [orderId, cart, customers]);
-
-  // Thay thế hàm chọn voucher
-  const handleVoucherChange = async (e) => {
-    const voucherId = e.target.value;
-    setSelectedVoucherId(voucherId || null); // Xử lý nhất quán với null
-    setVoucherMessage('');
-
-    if (!orderId) return;
-
-    try {
-      const res = await fetch(`http://localhost:8080/api/update-voucher/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idgiamGia: voucherId ? Number(voucherId) : null })
-      });
-      if (!res.ok) throw new Error('Lỗi khi cập nhật voucher cho hóa đơn');
-      setVoucherMessage(voucherId ? 'Áp dụng voucher thành công!' : 'Đã bỏ chọn voucher!');
-      // Fetch lại thông tin hóa đơn để cập nhật tổng tiền và giảm giá
-      await fetchOrderInfo(orderId);
-      // Fetch lại giỏ hàng để đồng bộ state
-      await fetchCartFromBE(orderId);
-    } catch (err) {
-      setVoucherMessage(err.message || 'Lỗi khi áp dụng voucher!');
-    }
-  };
-
-  // Hàm xử lý khi chọn khách hàng
-  const handleCustomerChange = async (e) => {
-    const customerId = e.target.value;
-    setSelectedCustomerId(customerId);
-    setCustomerMessage('');
-
-    // Cập nhật thông tin form
-    const kh = customers.find(c => c.id === Number(customerId));
-    if (kh) {
-      setCustomerName(kh.tenKhachHang || '');
-      setCustomerEmail(kh.email || '');
-      setCustomerPhone(kh.soDienThoai || '');
-    } else {
-      setCustomerName('');
-      setCustomerEmail('');
-      setCustomerPhone('');
-    }
-
-    if (!orderId) return;
-
-    try {
-      const res = await fetch(`http://localhost:8080/api/update-khachhang/${orderId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idkhachHang: customerId ? Number(customerId) : null })
-      });
-      if (!res.ok) throw new Error('Lỗi khi cập nhật khách hàng cho hóa đơn');
-      setCustomerMessage(customerId ? 'Chọn khách hàng thành công!' : 'Đã chuyển về khách lẻ!');
-      await fetchOrders();
-    } catch (err) {
-      setCustomerMessage(err.message || 'Lỗi khi cập nhật khách hàng!');
-    }
-  };
 
   // Hàm validation form
   const validateForm = () => {
@@ -1380,11 +1296,6 @@ const BanHangTaiQuayPage = () => {
     setAddError('');
     setEditError('');
     setOrderError('');
-
-    // Reset các state UI
-    setCollapsed(false);
-    setCollapsedCart(false);
-    setShowAllProducts(false);
 
     // Reset shipping states
     setIsShipping(false);
@@ -2066,23 +1977,41 @@ const BanHangTaiQuayPage = () => {
           </div>
         </div>
 
-        <button
-          className="bhtq-cart-pay-btn"
-          onClick={handleOpenPaymentModal}
-          disabled={!orderId}
-          style={{
-            fontSize: 18,
-            padding: '12px 32px',
-            backgroundColor: orderId ? '#1976d2' : '#ccc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8,
-            cursor: orderId ? 'pointer' : 'not-allowed',
-            transition: 'background 0.3s ease',
-          }}
-        >
-          Thanh toán
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button
+            className="bhtq-cart-pay-btn"
+            onClick={handleQuickPayExact}
+            disabled={!orderId || cart.length === 0}
+            style={{
+              fontSize: 18,
+              padding: '12px 28px',
+              backgroundColor: orderId && cart.length > 0 ? '#2e7d32' : '#ccc',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: orderId && cart.length > 0 ? 'pointer' : 'not-allowed',
+              transition: 'background 0.3s ease',
+            }}
+          >
+            Thanh toán đủ tiền
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenPaymentModal}
+            disabled={!orderId || cart.length === 0}
+            style={{
+              fontSize: 15,
+              padding: '12px 20px',
+              backgroundColor: 'transparent',
+              color: orderId && cart.length > 0 ? '#1976d2' : '#999',
+              border: `1px solid ${orderId && cart.length > 0 ? '#1976d2' : '#ccc'}`,
+              borderRadius: 8,
+              cursor: orderId && cart.length > 0 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Tính tiền thừa
+          </button>
+        </div>
       </div>
 
       {/* Modal chọn sản phẩm */}
@@ -2254,25 +2183,38 @@ const BanHangTaiQuayPage = () => {
       </Dialog>
       {/* Modal thanh toán */}
       <Dialog open={showPaymentModal} onClose={() => setShowPaymentModal(false)}>
-        <DialogTitle>Thanh toán tiền mặt</DialogTitle>
+        <DialogTitle>Tính tiền thừa / thanh toán</DialogTitle>
         <DialogContent>
           <div style={{ marginBottom: 8, width: '100%' }}>
             <b>Số tiền cần thanh toán:</b> <span style={{ color: '#1976d2', fontSize: 18, fontWeight: 700 }}>{orderTotal.toLocaleString()} đ</span>
           </div>
+          <Button
+            variant="contained"
+            color="success"
+            fullWidth
+            sx={{ mb: 2 }}
+            onClick={async () => {
+              setShowPaymentModal(false);
+              await handleQuickPayExact();
+            }}
+            disabled={!orderId}
+          >
+            Khách đưa đủ tiền (không cần nhập)
+          </Button>
           <TextField
             type="number"
-            label="Số tiền khách đưa"
+            label="Số tiền khách đưa (khi cần tính thừa)"
             variant="outlined"
             fullWidth
             value={paymentAmount}
             onChange={e => {
               const val = e.target.value;
-              // Cho phép rỗng hoặc số >= 0, không cho nhập ký tự không phải số
               if (val === "" || (/^\d+$/.test(val) && Number(val) >= 0)) {
                 setPaymentAmount(val);
               }
             }}
             inputProps={{ min: 0 }}
+            helperText="Chỉ nhập khi khách đưa nhiều hơn để tính tiền trả lại"
             sx={{ mb: 2 }}
             disabled={!orderId}
           />
@@ -2294,6 +2236,8 @@ const BanHangTaiQuayPage = () => {
           <div style={{ marginBottom: 8, width: '100%' }}>
             {Number(paymentAmount) < orderTotal ? (
               <Alert severity="warning">Khách thanh toán thiếu: {(orderTotal - Number(paymentAmount)).toLocaleString()} đ</Alert>
+            ) : Number(paymentAmount) === orderTotal ? (
+              <Alert severity="info">Khách đưa đủ tiền — có thể bấm Thanh toán & In hóa đơn ngay</Alert>
             ) : (
               <Alert severity="success">Tiền thừa trả khách: {(Number(paymentAmount) - orderTotal).toLocaleString()} đ</Alert>
             )}

@@ -34,29 +34,39 @@ public class ChatLieuService {
     }
 
     public ResponseEntity<?> create(ChatLieu chatLieu) {
-        Optional<ChatLieu> existing = cli.findByTenChatLieuIgnoreCase(chatLieu.getTenChatLieu());
+        if (chatLieu.getTenChatLieu() == null || chatLieu.getTenChatLieu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên chất liệu không được để trống!");
+        }
+        String tenTrim = chatLieu.getTenChatLieu().trim();
+        Optional<ChatLieu> existing = cli.findByTenChatLieuIgnoreCase(tenTrim);
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Chất liệu đã tồn tại!");
         }
 
+        chatLieu.setTenChatLieu(tenTrim);
         ChatLieu newChatLieu = cli.save(chatLieu);
         return ResponseEntity.status(HttpStatus.CREATED).body(newChatLieu);
     }
 
     public ResponseEntity<?> update(Integer id, ChatLieu chatLieu) {
+        if (chatLieu.getTenChatLieu() == null || chatLieu.getTenChatLieu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên chất liệu không được để trống!");
+        }
+        String tenTrim = chatLieu.getTenChatLieu().trim();
         Optional<ChatLieu> current = cli.findById(id);
         if (current.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Chất liệu với ID: " + id);
         }
 
-        Optional<ChatLieu> existing = cli.findByTenChatLieuIgnoreCase(chatLieu.getTenChatLieu());
+        Optional<ChatLieu> existing = cli.findByTenChatLieuIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên chất liệu đã tồn tại!");
         }
 
-        chatLieu.setId(id);
-        ChatLieu updated = cli.save(chatLieu);
-        return ResponseEntity.ok(updated);
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
+        ChatLieu cl = current.get();
+        cl.setTenChatLieu(tenTrim);
+        return ResponseEntity.ok(cli.save(cl));
     }
 
     public ResponseEntity<?> delete(Integer id) {
@@ -72,7 +82,7 @@ public class ChatLieuService {
     }
     public void khoiPhucChatLieu(Integer id) {
         ChatLieu cl = cli.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chất liệu!"));
         cl.setTrangThai(1); // 1 = Đang hoạt động
         cli.save(cl);
     }

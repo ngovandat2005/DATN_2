@@ -9,6 +9,8 @@ import '../styles/AdminPanel.css';
 
 const { Title, Text } = Typography;
 
+const sameId = (a, b) => a != null && b != null && String(a) === String(b);
+
 const ApDungKhuyenMaiPage = () => {
   const { khuyenMaiId } = useParams();
   const navigate = useNavigate();
@@ -65,7 +67,7 @@ const ApDungKhuyenMaiPage = () => {
         const selectedIds = response.data
           .filter(spct => {
             const promoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-            return promoId && promoId == khuyenMaiId;
+            return promoId && sameId(promoId, khuyenMaiId);
           })
           .map(spct => spct.id);
         setSelectedSPCTIds(selectedIds);
@@ -110,13 +112,12 @@ const ApDungKhuyenMaiPage = () => {
 
     // ✅ KIỂM TRA: Sản phẩm đã có khuyến mãi khác đang hoạt động
     const conflictProducts = listSPCT.filter(spct => {
-      // Sử dụng == để so sánh ID (tránh lỗi kiểu chuỗi vs số)
-      const isSelected = selectedSPCTIds.some(id => id == spct.id);
+      const isSelected = selectedSPCTIds.some(id => sameId(id, spct.id));
       if (!isSelected) return false;
       
       const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
       // Khuyến mãi khác đang áp dụng (không phải khuyenMaiId hiện tại)
-      if (spPromoId && spPromoId != khuyenMaiId) {
+      if (spPromoId && !sameId(spPromoId, khuyenMaiId)) {
         return true; // Có xung đột
       }
       return false;
@@ -208,7 +209,7 @@ const ApDungKhuyenMaiPage = () => {
     // Lấy danh sách sản phẩm đã được áp dụng khuyến mãi này
     const appliedProducts = listSPCT.filter(spct => {
       const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-      return spPromoId == khuyenMaiId;
+      return sameId(spPromoId, khuyenMaiId);
     });
 
     if (appliedProducts.length === 0) {
@@ -617,7 +618,7 @@ const ApDungKhuyenMaiPage = () => {
                             {/* Badge thông báo nếu sản phẩm đã có khuyến mãi KHÁC */}
                             {(() => {
                               const spPromoId = spct.idKhuyenMai || spct.khuyenMai?.id;
-                              if (spPromoId && spPromoId != khuyenMaiId) {
+                              if (spPromoId && !sameId(spPromoId, khuyenMaiId)) {
                                 // Lấy tên khuyến mãi từ các trường khả thi (ưu tiên trường mới nhất tenKhuyenMai)
                                 const tenKm = spct.tenKhuyenMai || spct.khuyenMai?.tenKhuyenMai;
                                 return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message } from 'antd';
 import { TagOutlined, SearchOutlined } from '@ant-design/icons';
 import Swal from 'sweetalert2';
 import Switch from "antd/lib/switch";
@@ -13,9 +13,6 @@ export default function ThuongHieuPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
   const [thuongHieus, setThuongHieus] = useState([]);
-  // Thêm state cho modal thùng rác và danh sách thương hiệu ngừng hoạt động
-  const [showTrashModal, setShowTrashModal] = useState(false);
-  const [trashThuongHieus, setTrashThuongHieus] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearchọng] = useState(false);
 
@@ -24,12 +21,6 @@ export default function ThuongHieuPage() {
       .then(response => response.json())
       .then(data => setThuongHieus(data))
       .catch(error => console.error('Lỗi khi gọi API thương hiệu:', error));
-  };
-
-  const fetchTrashThuongHieus = () => {
-    fetch('http://localhost:8080/api/thuong-hieu/getThungRac')
-      .then(res => res.json())
-      .then(data => setTrashThuongHieus(data));
   };
 
   const handleSearch = (value) => {
@@ -283,55 +274,6 @@ export default function ThuongHieuPage() {
           });
       }
     });
-  };
-
-  // Thêm hàm handleRestore
-  const handleRestore = async (id) => {
-    const result = await Swal.fire({
-      title: 'Xác nhận khôi phục thương hiệu này?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Khôi phục',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
-    fetch(`http://localhost:8080/api/thuong-hieu/khoi-phuc/${id}`, {
-      method: 'PUT',
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Lỗi khi khôi phục!');
-        return; // Không gọi res.json() nữa
-      })
-      .then(() => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Khôi phục thành công',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 1500,
-          width: 250
-        });
-        fetchTrashThuongHieus();
-        fetch('http://localhost:8080/api/thuong-hieu/getAllFull')
-          .then(res => res.json())
-          .then(data => setThuongHieus(data));
-      })
-      .catch(() => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Khôi phục thất bại',
-          toast: true,
-          position: 'top-end',
-          showConfirmButton: false,
-          timer: 1500,
-          width: 250
-        });
-      });
   };
 
   // Thêm hàm xử lý đổi trạng thái

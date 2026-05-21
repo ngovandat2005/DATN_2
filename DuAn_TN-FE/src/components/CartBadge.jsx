@@ -10,7 +10,7 @@ import { getCustomerId, isLoggedIn } from '../utils/authUtils';
  */
 const CartBadge = () => {
   const [cartCount, setCartCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchCartCount = async () => {

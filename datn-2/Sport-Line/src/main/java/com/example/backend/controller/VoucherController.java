@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -18,10 +19,8 @@ public class VoucherController {
     @GetMapping("/voucher")
     public ResponseEntity<List<VoucherDTO>> getall() {
         return ResponseEntity.ok(voucherService.getall());
-
     }
 
-    // hiển thị những voucher đủ điều kiện áp dụng cho đơn hàng
     @GetMapping("/voucher/available")
     public ResponseEntity<List<VoucherDTO>> getAvailableVouchers(@RequestParam Integer orderId) {
         return ResponseEntity.ok(voucherService.getAvailableVouchers(orderId));
@@ -34,8 +33,7 @@ public class VoucherController {
 
     @PostMapping("/voucher/create")
     public ResponseEntity<VoucherDTO> create(@RequestBody VoucherDTO voucherDTO) {
-        VoucherDTO dto = voucherService.create(voucherDTO);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(voucherService.create(voucherDTO));
     }
 
     @PutMapping("/voucher/update/{id}")
@@ -44,7 +42,24 @@ public class VoucherController {
     }
 
     @DeleteMapping("/voucher/delete/{id}")
-    public Boolean delete(@PathVariable int id) {
-        return voucherService.delete(id);
+    public ResponseEntity<Map<String, Boolean>> delete(@PathVariable int id) {
+        voucherService.delete(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @PostMapping("/voucher/kiem-tra")
+    public ResponseEntity<?> kiemTraVoucher(@RequestBody Map<String, Object> body) {
+        try {
+            Object idObj = body.get("idVoucher");
+            Object tongObj = body.get("tongTienHang");
+            if (idObj == null || tongObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("valid", false, "message", "Thiếu idVoucher hoặc tongTienHang"));
+            }
+            int idVoucher = idObj instanceof Number ? ((Number) idObj).intValue() : Integer.parseInt(idObj.toString());
+            double tongTienHang = tongObj instanceof Number ? ((Number) tongObj).doubleValue() : Double.parseDouble(tongObj.toString());
+            return ResponseEntity.ok(voucherService.kiemTraVaTinhGiam(idVoucher, tongTienHang));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("valid", false, "message", e.getMessage()));
+        }
     }
 }

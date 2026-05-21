@@ -10,7 +10,6 @@ import {
   Spin,
   Tag,
   Pagination,
-  Space,
   Slider,
 } from "antd";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -19,31 +18,6 @@ import "../styles/Home.css";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
-
-// Ảnh mẫu cho từng loại sản phẩm
-const categoryImages = {
-  Sneaker:
-    "https://images.unsplash.com/photo-1517260911205-8a3b66e655a4?auto=format&fit=crop&w=400&q=80",
-  "Thể thao":
-    "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=400&q=80",
-  "Chạy bộ":
-    "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=400&q=80",
-  "Thời trang":
-    "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
-  "Bóng rổ":
-    "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
-  Adidas:
-    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80",
-  Nike: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
-};
-
-const slugify = (s) =>
-  String(s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 
 // Hàm lấy ảnh sản phẩm:
 // - Luôn sử dụng ảnh local trong publog/products theo brand + tên sản phẩm

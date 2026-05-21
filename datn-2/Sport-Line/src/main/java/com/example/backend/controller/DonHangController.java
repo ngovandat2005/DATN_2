@@ -146,27 +146,39 @@ public class DonHangController {
     }
 
     @PostMapping("/donhang/online")
-    public ResponseEntity<DonHangDTO> taoDon(@RequestBody HoaDonOnlineRequest req) {
-        return ResponseEntity.ok(donHangService.taoHoaDonOnline(req));
+    public ResponseEntity<?> taoDon(@RequestBody HoaDonOnlineRequest req) {
+        try {
+            return ResponseEntity.ok(donHangService.taoHoaDonOnline(req));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/donhang/xac-nhan/{id}")
-    public ResponseEntity<DonHangDTO> xacNhanDon(@PathVariable Integer id) {
-        donHangService.xacNhanDon(id);
-        DonHang updated = donHangService.layChiTietDon(id);
-        return ResponseEntity.ok(new DonHangDTO(updated));
+    public ResponseEntity<?> xacNhanDon(@PathVariable Integer id) {
+        try {
+            donHangService.xacNhanDon(id);
+            DonHang updated = donHangService.layChiTietDon(id);
+            return ResponseEntity.ok(new DonHangDTO(updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/donhang/huy/{id}")
-    public ResponseEntity<DonHangDTO> huyDon(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> body) {
-        String ghiChu = body != null ? body.get("ghiChu") : null;
-        donHangService.huyDon(id, ghiChu);
-        DonHang updated = donHangService.layChiTietDon(id);
-        return ResponseEntity.ok(new DonHangDTO(updated));
+    public ResponseEntity<?> huyDon(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String ghiChu = body != null ? body.get("ghiChu") : null;
+            donHangService.huyDon(id, ghiChu);
+            DonHang updated = donHangService.layChiTietDon(id);
+            return ResponseEntity.ok(new DonHangDTO(updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/donhang/sua-dia-chi")
-    public ResponseEntity<DonHangDTO> suaDiaChi(@RequestParam Integer id,
+    public ResponseEntity<?> suaDiaChi(@RequestParam Integer id,
             @RequestParam String diaChiMoi,
             @RequestParam String soDienThoaiMoi,
             @RequestParam String tenNguoiNhanMoi,
@@ -174,9 +186,13 @@ public class DonHangController {
             @RequestParam Integer districtId,
             @RequestParam String wardCode,
             @RequestParam(required = false) Integer phiVanChuyenMoi) {
-        DonHangDTO dto = donHangService.capNhatDiaChiVaTinhPhi(
-                id, diaChiMoi, soDienThoaiMoi, tenNguoiNhanMoi, emailMoi, districtId, wardCode, phiVanChuyenMoi);
-        return ResponseEntity.ok(dto);
+        try {
+            DonHangDTO dto = donHangService.capNhatDiaChiVaTinhPhi(
+                    id, diaChiMoi, soDienThoaiMoi, tenNguoiNhanMoi, emailMoi, districtId, wardCode, phiVanChuyenMoi);
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/donhang/khach/{idKhach}")
@@ -225,7 +241,8 @@ public class DonHangController {
     public ResponseEntity<?> capNhatTongTien(@PathVariable Integer id) {
         try {
             donHangService.capNhatTongTienDonHang(id);
-            return ResponseEntity.ok("Đã cập nhật lại tổng tiền đơn hàng #" + id);
+            DonHang don = donHangService.layChiTietDon(id);
+            return ResponseEntity.ok(new DonHangDTO(don));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi khi cập nhật tổng tiền: " + e.getMessage());
         }

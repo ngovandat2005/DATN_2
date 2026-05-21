@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Select, Spin, message } from 'antd';
+import { Select, message } from 'antd';
 import config from '../config/config';
 import { parseGHNResponse, logGHNResponse } from '../utils/ghnUtils';
 

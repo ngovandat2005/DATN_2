@@ -234,14 +234,76 @@ public class SPCTService {
     }
 
     public SanPhamChiTiet create(SanPhamChiTiet s) {
+        if (s.getMa() == null || s.getMa().trim().isEmpty()) {
+            throw new RuntimeException("Mã SKU không được để trống!");
+        }
+        String maSku = s.getMa().trim();
+        if (!maSku.matches("^[a-zA-Z0-9-_]+$")) {
+            throw new RuntimeException("Mã SKU không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+        }
+        if (spcti.existsByMa(maSku)) {
+            throw new RuntimeException("Mã SKU \"" + maSku + "\" đã tồn tại trên hệ thống!");
+        }
+
+        if (s.getSanPham() != null && s.getMauSac() != null && s.getKichThuoc() != null) {
+            boolean exists = spcti.existsBySanPham_IdAndMauSac_IdAndKichThuoc_Id(
+                    s.getSanPham().getId(), s.getMauSac().getId(), s.getKichThuoc().getId()
+            );
+            if (exists) {
+                throw new RuntimeException("Biến thể với màu sắc và kích thước này đã tồn tại!");
+            }
+        }
+
+        s.setMa(maSku);
         s.setNgayTao(LocalDateTime.now());
+        if (s.getTrangThai() == null) {
+            s.setTrangThai(1);
+        }
         return spcti.save(s);
     }
 
     public SanPhamChiTiet update(Integer id, SanPhamChiTiet s) {
         SanPhamChiTiet old = spcti.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể"));
-        s.setId(old.getId());
-        return spcti.save(s);
+
+        if (s.getMa() != null) {
+            String maSku = s.getMa().trim();
+            if (maSku.isEmpty()) {
+                throw new RuntimeException("Mã SKU không được để trống!");
+            }
+            if (!maSku.matches("^[a-zA-Z0-9-_]+$")) {
+                throw new RuntimeException("Mã SKU không hợp lệ! Chỉ được chứa chữ cái, số, dấu gạch ngang (-) và gạch dưới (_), không chứa khoảng trắng.");
+            }
+            if (spcti.existsByMaAndIdNot(maSku, id)) {
+                throw new RuntimeException("Mã SKU \"" + maSku + "\" đã tồn tại trên hệ thống!");
+            }
+            old.setMa(maSku);
+        }
+
+        Integer idSanPham = s.getSanPham() != null ? s.getSanPham().getId()
+                : (old.getSanPham() != null ? old.getSanPham().getId() : null);
+        Integer idMauSac = s.getMauSac() != null ? s.getMauSac().getId()
+                : (old.getMauSac() != null ? old.getMauSac().getId() : null);
+        Integer idKichThuoc = s.getKichThuoc() != null ? s.getKichThuoc().getId()
+                : (old.getKichThuoc() != null ? old.getKichThuoc().getId() : null);
+
+        if (idSanPham != null && idMauSac != null && idKichThuoc != null) {
+            boolean exists = spcti.existsBySanPham_IdAndMauSac_IdAndKichThuoc_IdAndIdNot(
+                    idSanPham, idMauSac, idKichThuoc, id
+            );
+            if (exists) {
+                throw new RuntimeException("Biến thể này đã tồn tại!");
+            }
+        }
+
+        if (s.getSanPham() != null) old.setSanPham(s.getSanPham());
+        if (s.getMauSac() != null) old.setMauSac(s.getMauSac());
+        if (s.getKichThuoc() != null) old.setKichThuoc(s.getKichThuoc());
+        if (s.getSoLuong() != null) old.setSoLuong(s.getSoLuong());
+        if (s.getGiaBan() != null) old.setGiaBan(s.getGiaBan());
+        if (s.getNgaySanXuat() != null) old.setNgaySanXuat(s.getNgaySanXuat());
+        if (s.getTrangThai() != null) old.setTrangThai(s.getTrangThai());
+
+        return spcti.save(old);
     }
 
     public void delete(Integer id) {

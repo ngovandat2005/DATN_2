@@ -62,17 +62,23 @@ public class KhachHangService {
     }
 
     public KhachHangResponseDTO create(KhachHangResponseDTO dto) {
-        Optional<KhachHang> existing = khachHangRepository.findBySoDienThoai(dto.getSoDienThoai());
-        if (existing.isPresent()) {
-            throw new RuntimeException("Số điện thoại đã tồn tại!");
+        if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+            if (khachHangRepository.findByEmail(dto.getEmail().trim()).isPresent()) {
+                throw new RuntimeException("Email đã tồn tại!");
+            }
+        }
+        if (dto.getSoDienThoai() != null && !dto.getSoDienThoai().trim().isEmpty()) {
+            if (khachHangRepository.findBySoDienThoai(dto.getSoDienThoai().trim()).isPresent()) {
+                throw new RuntimeException("Số điện thoại đã tồn tại!");
+            }
         }
 
         KhachHang kh = new KhachHang();
         kh.setTenKhachHang(dto.getTenKhachHang());
-        kh.setEmail(dto.getEmail());
+        kh.setEmail(dto.getEmail() != null ? dto.getEmail().trim() : null);
         kh.setNgaySinh(dto.getNgaySinh());
         kh.setDiaChi(dto.getDiaChi());
-        kh.setSoDienThoai(dto.getSoDienThoai());
+        kh.setSoDienThoai(dto.getSoDienThoai() != null ? dto.getSoDienThoai().trim() : null);
         kh.setTrangThai(dto.getTrangThai());
         kh.setMaThongBao(dto.getMaThongBao());
         kh.setThoiGianThongBao(dto.getThoiGianThongBao());
@@ -80,8 +86,11 @@ public class KhachHangService {
     }
 
     public Boolean deleteById(int id) {
-        if (khachHangRepository.existsById(id)) {
-            khachHangRepository.deleteById(id);
+        Optional<KhachHang> optional = khachHangRepository.findById(id);
+        if (optional.isPresent()) {
+            KhachHang kh = optional.get();
+            kh.setTrangThai(false);
+            khachHangRepository.save(kh);
             return true;
         }
         return false;
@@ -90,11 +99,24 @@ public class KhachHangService {
     public KhachHangResponseDTO update(int id, KhachHangResponseDTO dto) {
         return khachHangRepository.findById(id)
                 .map(kh -> {
+                    if (dto.getEmail() != null && !dto.getEmail().trim().isEmpty()) {
+                        Optional<KhachHang> duplicateEmail = khachHangRepository.findByEmail(dto.getEmail().trim());
+                        if (duplicateEmail.isPresent() && !duplicateEmail.get().getId().equals(id)) {
+                            throw new RuntimeException("Email đã tồn tại!");
+                        }
+                    }
+                    if (dto.getSoDienThoai() != null && !dto.getSoDienThoai().trim().isEmpty()) {
+                        Optional<KhachHang> duplicatePhone = khachHangRepository.findBySoDienThoai(dto.getSoDienThoai().trim());
+                        if (duplicatePhone.isPresent() && !duplicatePhone.get().getId().equals(id)) {
+                            throw new RuntimeException("Số điện thoại đã tồn tại!");
+                        }
+                    }
+
                     kh.setTenKhachHang(dto.getTenKhachHang());
-                    kh.setEmail(dto.getEmail());
+                    kh.setEmail(dto.getEmail() != null ? dto.getEmail().trim() : null);
                     kh.setNgaySinh(dto.getNgaySinh());
                     kh.setDiaChi(dto.getDiaChi());
-                    kh.setSoDienThoai(dto.getSoDienThoai());
+                    kh.setSoDienThoai(dto.getSoDienThoai() != null ? dto.getSoDienThoai().trim() : null);
                     kh.setTrangThai(dto.getTrangThai());
                     kh.setMaThongBao(dto.getMaThongBao());
                     kh.setThoiGianThongBao(dto.getThoiGianThongBao());

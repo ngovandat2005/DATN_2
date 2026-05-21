@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Layout, Menu, Input, Button, Dropdown, message, Row, Col, Badge } from 'antd';
+import { Layout, Menu, Input, Button, Dropdown, message, Row, Col } from 'antd';
 import './Header.css';
 import axios from 'axios';
 import config from '../config/config';
@@ -8,13 +8,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   SearchOutlined,
   UserOutlined,
-  HeartOutlined,
   LoginOutlined,
   LogoutOutlined,
-  HistoryOutlined,
-  ShoppingCartOutlined
+  HistoryOutlined
 } from '@ant-design/icons';
-import { getCustomerId, getCustomerName, isLoggedIn, getUserRole, logout } from '../utils/authUtils';
+import { getCustomerName, isLoggedIn, getUserRole, logout } from '../utils/authUtils';
 import CartBadge from './CartBadge';
 
 const { Header: AntHeader } = Layout;
@@ -173,18 +171,6 @@ function Header() {
       </div>
     );
   };
-
-  const accessoryMenu = (
-    <div className="mega-menu-content" style={{ padding: '20px 30px', minWidth: '200px' }}>
-      <h3 className="mega-title">PHỤ KIỆN CHĂM SÓC</h3>
-      <ul className="mega-list">
-        <li><Link onClick={closeMenu} to="/products?search=Vớ">Vớ Nam Premium</Link></li>
-        <li><Link onClick={closeMenu} to="/products?search=Dây">Dây Giày Sneaker</Link></li>
-        <li><Link onClick={closeMenu} to="/products?search=Vệ sinh">Bộ Vệ Sinh Giày</Link></li>
-        <li><Link onClick={closeMenu} to="/products?search=Lót">Lót Giày Êm Chân</Link></li>
-      </ul>
-    </div>
-  );
 
   return (
     <AntHeader className="custom-header">

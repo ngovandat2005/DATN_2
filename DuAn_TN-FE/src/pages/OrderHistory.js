@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -67,15 +67,17 @@ const OrderHistory = () => {
   const [filterStatus, setFilterStatus] = useState(-1);
   const [searchText, setSearchText] = useState("");
 
-  useEffect(() => {
-    fetchOrders();
-  }, [filterStatus]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const customerId = localStorage.getItem("customerId") || localStorage.getItem("userId") || 1;
+      const customerId = localStorage.getItem("customerId") || localStorage.getItem("userId");
+
+      if (!customerId) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
 
       let url = `http://localhost:8080/api/donhang/khach/${customerId}`;
       if (filterStatus !== -1 && filterStatus !== "cho-nhan") {
@@ -97,7 +99,11 @@ const OrderHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // Local, instant filtering to prevent layout flashes when typing
   const filteredOrders = useMemo(() => {
@@ -188,6 +194,12 @@ const OrderHistory = () => {
           <Box textAlign="center" py={4}><CircularProgress size={24} sx={{ color: '#111827' }}/></Box>
         ) : error ? (
           <Alert severity="error">{error}</Alert>
+        ) : (!localStorage.getItem("customerId") && !localStorage.getItem("userId")) ? (
+          <Box textAlign="center" py={6} sx={{ bgcolor: '#f9fafb', borderRadius: 2, border: '1px dashed #d1d5db' }}>
+            <Typography variant="h6" color="textSecondary" gutterBottom>Vui lòng đăng nhập</Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>Bạn cần đăng nhập để xem lịch sử mua hàng của mình.</Typography>
+            <Button variant="contained" onClick={() => navigate('/login')} sx={{ bgcolor: '#111827', textTransform: 'none' }}>Đăng nhập ngay</Button>
+          </Box>
         ) : filteredOrders.length === 0 ? (
           <Box textAlign="center" py={6} sx={{ bgcolor: '#f9fafb', borderRadius: 2, border: '1px dashed #d1d5db' }}>
             <Typography variant="body1" color="textSecondary">Không tìm thấy đơn hàng nào.</Typography>

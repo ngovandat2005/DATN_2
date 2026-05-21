@@ -28,28 +28,38 @@ public class KichThuocService {
     }
 
     public ResponseEntity<?> create(KichThuoc kichThuoc) {
-        Optional<KichThuoc> existing = kti.findByTenKichThuocIgnoreCase(kichThuoc.getTenKichThuoc());
+        if (kichThuoc.getTenKichThuoc() == null || kichThuoc.getTenKichThuoc().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên kích thước không được để trống!");
+        }
+        String tenTrim = kichThuoc.getTenKichThuoc().trim();
+        Optional<KichThuoc> existing = kti.findByTenKichThuocIgnoreCase(tenTrim);
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Kích thước đã tồn tại!");
         }
+        kichThuoc.setTenKichThuoc(tenTrim);
         KichThuoc newKichThuoc = kti.save(kichThuoc);
         return ResponseEntity.status(HttpStatus.CREATED).body(newKichThuoc);
     }
 
     public ResponseEntity<?> update(Integer id, KichThuoc kichThuoc) {
+        if (kichThuoc.getTenKichThuoc() == null || kichThuoc.getTenKichThuoc().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên kích thước không được để trống!");
+        }
+        String tenTrim = kichThuoc.getTenKichThuoc().trim();
         Optional<KichThuoc> current = kti.findById(id);
         if (current.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Kích thước với ID: " + id);
         }
 
-        Optional<KichThuoc> existing = kti.findByTenKichThuocIgnoreCase(kichThuoc.getTenKichThuoc());
+        Optional<KichThuoc> existing = kti.findByTenKichThuocIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên kích thước đã tồn tại!");
         }
 
-        kichThuoc.setId(id);
-        KichThuoc updated = kti.save(kichThuoc);
-        return ResponseEntity.ok(updated);
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
+        KichThuoc kt = current.get();
+        kt.setTenKichThuoc(tenTrim);
+        return ResponseEntity.ok(kti.save(kt));
     }
 
     public ResponseEntity<?> delete(Integer id) {
@@ -64,7 +74,7 @@ public class KichThuocService {
     }
     public void khoiPhucKichThuoc(Integer id) {
         KichThuoc kt = kti.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy kích thước!"));
         kt.setTrangThai(1); // 1 = Đang hoạt động
         kti.save(kt);
     }

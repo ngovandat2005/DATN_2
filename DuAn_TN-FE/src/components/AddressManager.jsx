@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
     Dialog, DialogTitle, DialogContent, DialogActions,
-    Button, Radio, Checkbox, FormControlLabel, IconButton
+    Button, Radio, Checkbox, FormControlLabel
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { toast } from 'react-toastify';
 import AddressSelector from './AddressSelector';
-import config from '../config/config';
-import { getCustomerId } from '../utils/authUtils';
-
 const AddressManager = ({
     customerId,
     onSelect,
@@ -18,7 +15,6 @@ const AddressManager = ({
 }) => {
     const addressStorageKey = `savedAddresses_${customerId || 'guest'}`;
     const [savedAddresses, setSavedAddresses] = useState([]);
-    const [modalMode, setModalMode] = useState('list'); // 'list' | 'form'
     const [editingAddress, setEditingAddress] = useState(null);
     const [openForm, setOpenForm] = useState(false);
 

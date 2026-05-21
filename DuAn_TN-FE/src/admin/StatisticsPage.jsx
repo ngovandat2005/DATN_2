@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
-import { Card, Statistic, Row, Col, Typography, Space, Divider, Select, Table, Spin, Alert, Button, Progress, DatePicker, Segmented } from 'antd';
-import { ShoppingCartOutlined, DollarOutlined, UserOutlined, RiseOutlined, FallOutlined, ReloadOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Card, Statistic, Row, Col, Typography, Space, Divider, Table, Spin, Alert, DatePicker, Segmented } from 'antd';
+import { ShoppingCartOutlined, DollarOutlined, RiseOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import config from '../config/config';
 import SimpleChart from './components/SimpleChart';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
-
 
 function StatisticsPage() {
   const [dateRange, setDateRange] = useState([null, null]); // [startDate, endDate]
@@ -46,7 +44,7 @@ function StatisticsPage() {
 
 
   // Fetch dữ liệu biểu đồ số đơn hàng theo ngày
-  const fetchOrderChartData = async () => {
+  const fetchOrderChartData = useCallback(async () => {
     try {
       const data = [];
       const formatDateToLocalTime = (date) => {
@@ -85,10 +83,10 @@ function StatisticsPage() {
       console.error('Lỗi khi lấy dữ liệu biểu đồ số đơn hàng:', err);
       setRevenueChartData([]);
     }
-  };
+  }, [dateRange]);
 
   // Fetch dữ liệu thống kê
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -146,13 +144,13 @@ function StatisticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
 
   // Fetch dữ liệu khi component mount và khi dateRange/selectedPeriod thay đổi
   useEffect(() => {
     fetchStatistics();
     fetchOrderChartData();
-  }, [dateRange]);
+  }, [dateRange, fetchStatistics, fetchOrderChartData]);
 
   const handleRangeChange = (dates) => {
     setDateRange(dates || [null, null]);
@@ -187,14 +185,6 @@ function StatisticsPage() {
 
 
 
-
-  // Format số tiền
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
 
   // Hàm xử lý đường dẫn ảnh giống như SanPhamPage
   const getImageUrl = (img) => {

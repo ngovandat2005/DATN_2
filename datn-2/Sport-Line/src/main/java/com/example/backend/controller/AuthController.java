@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -18,14 +21,21 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/dang-nhap")
-    public ResponseEntity<AuthResponse> dangNhap(@RequestBody DangNhapRequest req) {
-        AuthResponse res = authService.dangNhap(req);
-        return ResponseEntity.ok(res);
+    public ResponseEntity<?> dangNhap(@RequestBody DangNhapRequest req) {
+        try {
+            AuthResponse res = authService.dangNhap(req);
+            return ResponseEntity.ok(res);
+        } catch (RuntimeException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     @PostMapping("/dang-ky")
     public ResponseEntity<?> dangKy(@RequestBody com.example.backend.dto.DangKyRequest req) {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         try {
             authService.dangKy(req);
             response.put("success", true);

@@ -66,7 +66,6 @@ const DetailSanPhamPage = () => {
       axios.get(`http://localhost:8080/api/san-pham/${id}`)
         .then(res => {
           setProduct(res.data);
-          fetchChiTietList(res.data.id, filterMauSac, filterKichThuoc, filterTrangThai);
         })
         .catch(err => {
           console.error("Lỗi khi lấy thông tin sản phẩm:", err);
@@ -110,6 +109,12 @@ const DetailSanPhamPage = () => {
       .catch(() => setChiTietList([]))
       .finally(() => setLoadingChiTiet(false));
   };
+
+  useEffect(() => {
+    if (product?.id) {
+      fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
+    }
+  }, [product?.id, filterMauSac, filterKichThuoc, filterTrangThai]);
 
   // Hàm thêm biến thể
   const handleAddSpct = async (e) => {
@@ -444,74 +449,6 @@ const DetailSanPhamPage = () => {
       });
     } catch (error) {
       Swal.fire('Lỗi', 'Không thể cập nhật trạng thái biến thể', 'error');
-    }
-  };
-
-  // 🪄 HÀM DỌN DẸP DỮ LIỆU RÁC (THẦN TỐC)
-  const handleCleanUpPrices = async () => {
-    // 1. Log ra những biến thể "bị lỗi" (không có KM nhưng lại có giá giảm rác trong DB)
-    const variantsToFix = chiTietList.filter(ct => {
-      const promo = ct.khuyenMai;
-      const isActivePromo = promo && promo.trangThai === 1 && promo.giaTri > 0;
-      // Lỗi là khi không có KM mà giá giảm vẫn khác (null/0/giá gốc)
-      return !isActivePromo && ct.giaBanGiamGia !== null && ct.giaBanGiamGia !== ct.giaBan;
-    });
-
-    if (variantsToFix.length === 0) {
-      Swal.fire({
-        icon: 'info',
-        title: 'Dữ liệu đã sạch!',
-        text: 'Toàn bộ biến thể của sản phẩm này hiện tại đã chuẩn dữ liệu SQL.',
-        timer: 1500,
-        showConfirmButton: false
-      });
-      return;
-    }
-
-    const confirm = await Swal.fire({
-      title: 'Xác nhận dọn dẹp?',
-      text: `Hệ thống đã tìm thấy ${variantsToFix.length} biến thể có dữ liệu giá ảo trong SQL. Bạn có muốn dọn dẹp ngay?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ff9800',
-      confirmButtonText: '🪄 Dọn dẹp ngay!',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    Swal.fire({
-      title: 'Đang thanh tẩy dữ liệu...',
-      allowOutsideClick: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-      // 2. Chạy dọn dẹp hàng loạt bằng Promise.all
-      await Promise.all(variantsToFix.map(ct => 
-        axios.put(`http://localhost:8080/api/san-pham-chi-tiet/sua/${ct.id}`, {
-          ma: ct.ma,
-          giaBan: ct.giaBan,
-          soLuong: ct.soLuong,
-          idMauSac: ct.mauSac?.id || ct.idMauSac,
-          idKichThuoc: ct.kichThuoc?.id || ct.idKichThuoc,
-          giaBanGiamGia: null // Đưa về null để SQL sạch bóng
-        })
-      ));
-
-      Swal.close();
-      Swal.fire({
-        icon: 'success',
-        title: 'Thanh tẩy thành công!',
-        text: `Đã dọn dẹp sạch ${variantsToFix.length} biến thể trong SQL.`,
-        timer: 1500,
-        showConfirmButton: false
-      });
-      
-      // Tải lại danh sách
-      fetchChiTietList(product.id, filterMauSac, filterKichThuoc, filterTrangThai);
-    } catch (err) {
-      Swal.fire('Lỗi dọn dẹp', 'Không thể cập nhật SQL hàng loạt!', 'error');
     }
   };
 

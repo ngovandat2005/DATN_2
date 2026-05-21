@@ -7,16 +7,12 @@ import {
   Space, 
   Divider, 
   Alert, 
-  Spin,
   Row,
   Col,
   Statistic,
-  Tag,
-  Tooltip,
   message
 } from 'antd';
 import { 
-  TruckOutlined, 
   CalculatorOutlined, 
   DollarOutlined, 
   GlobalOutlined,
@@ -27,7 +23,7 @@ import AddressSelector from './AddressSelector';
 import MapSelector from './MapSelector';
 import config from '../config/config';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 const ShippingCalculator = ({ 
   onShippingFeeCalculated,
@@ -49,7 +45,7 @@ const ShippingCalculator = ({
   const [actualDistance, setActualDistance] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [lastCalculation, setLastCalculation] = useState(null);
+  const [, setLastCalculation] = useState(null);
 
   // Reset shipping fee when address changes
   useEffect(() => {

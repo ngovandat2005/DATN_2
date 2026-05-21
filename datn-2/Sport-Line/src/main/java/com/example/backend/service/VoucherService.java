@@ -1,6 +1,7 @@
 
 package com.example.backend.service;
 
+import com.example.backend.KhongTimThay;
 import com.example.backend.dto.VoucherDTO;
 import com.example.backend.entity.DonHang;
 import com.example.backend.entity.Voucher;
@@ -59,12 +60,21 @@ public class VoucherService {
     public VoucherDTO findById(Integer id){
         return voucherRepository.findById(id)
                 .map(voucher -> convertDTO(voucher))
-                .orElse(null);
+                .orElseThrow(() -> new KhongTimThay("Không tìm thấy voucher!"));
     }
 
     // ham create voucher
     @Transactional
     public VoucherDTO create(VoucherDTO dto){
+        // Kiểm tra mã voucher không được trùng
+        if (dto.getMaVoucher() != null && voucherRepository.existsByMaVoucher(dto.getMaVoucher().trim())) {
+            throw new RuntimeException("Mã voucher \"" + dto.getMaVoucher() + "\" đã tồn tại!");
+        }
+        // Kiểm tra ngày kết thúc phải sau ngày bắt đầu
+        if (dto.getNgayBatDau() != null && dto.getNgayKetThuc() != null
+                && !dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
+            throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
+        }
         Voucher v = new Voucher();
         v.setMaVoucher(dto.getMaVoucher());
         v.setTenVoucher(dto.getTenVoucher());
@@ -99,6 +109,16 @@ public class VoucherService {
     public VoucherDTO update (int id, VoucherDTO dto){
         return voucherRepository.findById(id)
                 .map( v  -> {
+                    // Kiểm tra mã voucher không được trùng với voucher khác
+                    if (dto.getMaVoucher() != null
+                            && voucherRepository.existsByMaVoucherAndIdNot(dto.getMaVoucher().trim(), id)) {
+                        throw new RuntimeException("Mã voucher \"" + dto.getMaVoucher() + "\" đã tồn tại!");
+                    }
+                    // Kiểm tra ngày kết thúc phải sau ngày bắt đầu
+                    if (dto.getNgayBatDau() != null && dto.getNgayKetThuc() != null
+                            && !dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
+                        throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
+                    }
                     v.setMaVoucher(dto.getMaVoucher());
                     v.setTenVoucher(dto.getTenVoucher());
                     v.setLoaiVoucher(dto.getLoaiVoucher());
@@ -113,10 +133,10 @@ public class VoucherService {
 
                     return convertDTO(voucherRepository.save(v));
                 })
-                .orElse(null);
+                .orElseThrow(() -> new KhongTimThay("Không tìm thấy voucher!"));
     }
 
-    @Scheduled(fixedRate = 600000) // Cập nhật mỗi 10 phút
+    @Scheduled(fixedRate = 60000) // Cập nhật mỗi 60 giây
     public void updateActiveVoucher() {
         updateVoucherActive();
     }
@@ -175,7 +195,6 @@ public class VoucherService {
 
 
     public void updateVoucherForDonHang(DonHang dh, Integer idVoucher) {
-
         Voucher voucher = voucherRepository.findById(idVoucher)
                 .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
 
@@ -183,37 +202,82 @@ public class VoucherService {
 
         // Kiểm tra điều kiện áp dụng voucher
         if (voucher.getTrangThai() == null || voucher.getTrangThai() != 1) {
-            dh.setGiamGia(null);
             throw new RuntimeException("Voucher không hoạt động");
         }
 
         if (voucher.getSoLuong() == null || voucher.getSoLuong() <= 0) {
-            dh.setGiamGia(null);
             throw new RuntimeException("Voucher đã hết lượt sử dụng");
         }
 
         if (voucher.getNgayBatDau().isAfter(LocalDateTime.now()) || voucher.getNgayKetThuc().isBefore(LocalDateTime.now())) {
-            dh.setGiamGia(null);
             throw new RuntimeException("Voucher không còn hiệu lực theo thời gian");
         }
 
-        if (voucher.getDonToiThieu() != null && tongTien < voucher.getDonToiThieu()) {
-            dh.setGiamGia(null);
+        // Tính toán tổng tiền gốc trước chiết khấu để kiểm tra điều kiện đơn tối thiểu
+        double totalGoc = tongTien;
+        if (dh.getTongTienGiamGia() != null) {
+            totalGoc += dh.getTongTienGiamGia();
+        }
+        if (dh.getPhiVanChuyen() != null) {
+            totalGoc -= dh.getPhiVanChuyen();
+        }
+
+        if (voucher.getDonToiThieu() != null && totalGoc < voucher.getDonToiThieu()) {
             throw new RuntimeException("Đơn hàng không đủ điều kiện áp dụng voucher");
         }
 
+        // Hoàn trả voucher cũ nếu có
+        Voucher oldVoucher = dh.getGiamGia();
+        if (oldVoucher != null) {
+            oldVoucher.setSoLuong(oldVoucher.getSoLuong() + 1);
+            voucherRepository.save(oldVoucher);
+        }
+
         // Gán voucher và tính lại các giá trị tiền
-        double giam = tinhTienGiam(tongTien, voucher);
+        double giam = tinhTienGiam(totalGoc, voucher);
         dh.setGiamGia(voucher);
         dh.setTongTienGiamGia(giam);
-        dh.setTongTien(tongTien - giam + dh.getPhiVanChuyen()); // Bao gồm cả phí ship
+        dh.setTongTien(totalGoc - giam + (dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : 0));
 
-        // Trừ số lượng nếu đơn hàng đã hoàn tất (trạng thái 1 hoặc 4)
-        if (java.util.Objects.equals(dh.getTrangThai(), 1) || java.util.Objects.equals(dh.getTrangThai(), 4)) {
-            voucher.setSoLuong(voucher.getSoLuong() - 1);
-            voucherRepository.save(voucher);
-        }
+        // Giảm số lượng voucher mới áp dụng
+        voucher.setSoLuong(voucher.getSoLuong() - 1);
+        voucherRepository.save(voucher);
     }
+    /**
+     * Kiểm tra voucher với tổng tiền hàng (chưa gồm ship) và trả về số tiền giảm dự kiến.
+     */
+    public java.util.Map<String, Object> kiemTraVaTinhGiam(Integer idVoucher, double tongTienHang) {
+        Voucher voucher = voucherRepository.findById(idVoucher)
+                .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
+
+        if (voucher.getTrangThai() == null || voucher.getTrangThai() != 1) {
+            throw new RuntimeException("Voucher không hoạt động hoặc đã hết hạn");
+        }
+        if (voucher.getSoLuong() == null || voucher.getSoLuong() <= 0) {
+            throw new RuntimeException("Voucher đã hết lượt sử dụng");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (voucher.getNgayBatDau() != null && voucher.getNgayBatDau().isAfter(now)) {
+            throw new RuntimeException("Voucher chưa đến thời gian sử dụng");
+        }
+        if (voucher.getNgayKetThuc() != null && voucher.getNgayKetThuc().isBefore(now)) {
+            throw new RuntimeException("Voucher đã hết hạn");
+        }
+        if (voucher.getDonToiThieu() != null && tongTienHang < voucher.getDonToiThieu()) {
+            throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu "
+                    + String.format("%,.0f", voucher.getDonToiThieu()) + "đ để dùng voucher");
+        }
+
+        double giam = tinhTienGiam(tongTienHang, voucher);
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("valid", true);
+        result.put("discount", giam);
+        result.put("tenVoucher", voucher.getTenVoucher());
+        result.put("maVoucher", voucher.getMaVoucher());
+        result.put("donToiThieu", voucher.getDonToiThieu());
+        return result;
+    }
+
     public void kiemTraDieuKienVoucher(DonHang dh, Integer idVoucher) {
         Voucher voucher = voucherRepository.findById(idVoucher)
                 .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
@@ -223,7 +287,7 @@ public class VoucherService {
         if (voucher.getTrangThai() == null || voucher.getTrangThai() != 1) {
             throw new RuntimeException("Voucher không hoạt động");
         }
-        if (voucher.getSoLuong() == null || voucher.getSoLuong() < 0) {
+        if (voucher.getSoLuong() == null || voucher.getSoLuong() <= 0) {
             throw new RuntimeException("Voucher đã hết lượt sử dụng");
         }
         if (voucher.getNgayBatDau().isAfter(LocalDateTime.now()) || voucher.getNgayKetThuc().isBefore(LocalDateTime.now())) {

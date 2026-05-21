@@ -8,7 +8,6 @@ import {
   Typography,
   Tag,
   message,
-  Modal,
   Tabs,
   Badge,
   Rate,
@@ -27,8 +26,6 @@ import '../styles/ProductDetail.css';
 import { 
   FileTextOutlined, 
   CommentOutlined, 
-  StarFilled,
-  HomeOutlined,
   ShoppingOutlined,
   ThunderboltFilled,
   CheckCircleFilled
@@ -66,8 +63,6 @@ function ProductDetail() {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [cartItems, setCartItems] = useState([]); // ✅ THÊM: Theo dõi giỏ hàng để tính tồn kho thực tế
-  const [imageList, setImageList] = useState([]); // ✅ THÊM: Danh sách ảnh
-  const [mainImage, setMainImage] = useState(""); // ✅ THÊM: Ảnh chính
 
   // ✅ THÊM: Lấy ID khách hàng từ localStorage
   const customerId = getCustomerId();
@@ -95,12 +90,6 @@ function ProductDetail() {
         }
 
         // Gắn dữ liệu biến thể
-        if (productRes.data && productRes.data.images) {
-          const images = productRes.data.images.split(",").map((img) => img.trim());
-          setImageList(images);
-          setMainImage(`${config.baseUrl}images/${images[0]}`);
-        }
-
         if (Array.isArray(variantsRes.data)) {
           setVariants(variantsRes.data);
         } else {
@@ -519,23 +508,6 @@ function ProductDetail() {
       message.error("Gửi đánh giá thất bại: " + (err.response?.data || err.message));
     }
   };
-  // ✅ THÊM: Helper function để xác định giá hiển thị
-  const getDisplayPrice = (variant) => {
-    if (!variant) return { originalPrice: 0, discountedPrice: 0, finalPrice: 0, hasDiscount: false };
-
-    const originalPrice = variant.giaBan || 0;
-    const discountedPrice = variant.giaBanGiamGia || 0;
-    const hasDiscount = discountedPrice > 0 && discountedPrice < originalPrice;
-    const finalPrice = hasDiscount ? discountedPrice : originalPrice;
-
-    return {
-      originalPrice,
-      discountedPrice,
-      finalPrice,
-      hasDiscount
-    };
-  };
-
   // Hiển thị loading
   if (loading) {
     return (

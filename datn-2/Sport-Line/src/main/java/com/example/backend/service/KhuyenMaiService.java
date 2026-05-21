@@ -2,6 +2,7 @@
 package com.example.backend.service;
 
 
+import com.example.backend.KhongTimThay;
 import com.example.backend.dto.KhuyenMaiDTO;
 import com.example.backend.entity.KhuyenMai;
 
@@ -62,24 +63,47 @@ public class KhuyenMaiService {
                         khuyenMai.getNgayKetThuc(),
                         khuyenMai.getTrangThai()
                 ))
-                .orElse(null);
+                .orElseThrow(() -> new KhongTimThay("Không tìm thấy khuyến mãi!"));
     }
 
     // ham create khuyenmai
     public KhuyenMaiDTO create(KhuyenMaiDTO dto) {
+        if (dto.getTenKhuyenMai() == null || dto.getTenKhuyenMai().trim().isEmpty()) {
+            throw new RuntimeException("Tên khuyến mãi không được để trống!");
+        }
+        if (khuyenMaiRepository.existsByTenKhuyenMai(dto.getTenKhuyenMai().trim())) {
+            throw new RuntimeException("Tên khuyến mãi \"" + dto.getTenKhuyenMai() + "\" đã tồn tại!");
+        }
+        if (dto.getGiaTri() <= 0 || dto.getGiaTri() > 100) {
+            throw new RuntimeException("Giá trị khuyến mãi phải lớn hơn 0 và không vượt quá 100%!");
+        }
+        if (dto.getNgayBatDau() == null || dto.getNgayKetThuc() == null) {
+            throw new RuntimeException("Ngày bắt đầu và ngày kết thúc không được để trống!");
+        }
+        if (!dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
+            throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
+        }
+
         KhuyenMai km = new KhuyenMai();
-        km.setTenKhuyenMai(dto.getTenKhuyenMai());
+        km.setTenKhuyenMai(dto.getTenKhuyenMai().trim());
         km.setGiaTri(dto.getGiaTri());
         km.setNgayBatDau(dto.getNgayBatDau());
         km.setNgayKetThuc(dto.getNgayKetThuc());
         km.setTrangThai(dto.getTrangThai());
 
         return convertDTO(khuyenMaiRepository.save(km));
-
     }
 
+    @Transactional
     public boolean delete(Integer id) {
         if (khuyenMaiRepository.existsById(id)) {
+            // Cần gỡ khuyến mãi khỏi các sản phẩm chi tiết trước
+            List<SanPhamChiTiet> chiTietList = sanPhamChiTietRepository.findByKhuyenMai_Id(id);
+            for (SanPhamChiTiet ct : chiTietList) {
+                ct.setKhuyenMai(null);
+                ct.setGiaBanGiamGia(ct.getGiaBan());
+            }
+            sanPhamChiTietRepository.saveAll(chiTietList);
             khuyenMaiRepository.deleteById(id);
             return true;
         }
@@ -88,9 +112,25 @@ public class KhuyenMaiService {
 
     //ham update khuyen mai
     public KhuyenMaiDTO update(int id, KhuyenMaiDTO dto) {
+        if (dto.getTenKhuyenMai() == null || dto.getTenKhuyenMai().trim().isEmpty()) {
+            throw new RuntimeException("Tên khuyến mãi không được để trống!");
+        }
+        if (khuyenMaiRepository.existsByTenKhuyenMaiAndIdNot(dto.getTenKhuyenMai().trim(), id)) {
+            throw new RuntimeException("Tên khuyến mãi \"" + dto.getTenKhuyenMai() + "\" đã tồn tại!");
+        }
+        if (dto.getGiaTri() <= 0 || dto.getGiaTri() > 100) {
+            throw new RuntimeException("Giá trị khuyến mãi phải lớn hơn 0 và không vượt quá 100%!");
+        }
+        if (dto.getNgayBatDau() == null || dto.getNgayKetThuc() == null) {
+            throw new RuntimeException("Ngày bắt đầu và ngày kết thúc không được để trống!");
+        }
+        if (!dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
+            throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
+        }
+
         return khuyenMaiRepository.findById(id)
                 .map(km -> {
-                    km.setTenKhuyenMai(dto.getTenKhuyenMai());
+                    km.setTenKhuyenMai(dto.getTenKhuyenMai().trim());
                     km.setGiaTri(dto.getGiaTri());
                     km.setNgayBatDau(dto.getNgayBatDau());
                     km.setNgayKetThuc(dto.getNgayKetThuc());
@@ -98,18 +138,29 @@ public class KhuyenMaiService {
 
                     return convertDTO(khuyenMaiRepository.save(km));
                 })
-                .orElse(null);
+                .orElseThrow(() -> new KhongTimThay("Không tìm thấy khuyến mãi!"));
     }
 
+    @Transactional
     public KhuyenMai tatKhuyenMai(int id) {
         LocalDateTime now = LocalDateTime.now();
         Optional<KhuyenMai> khuyenMai = khuyenMaiRepository.findById(id);
-        khuyenMai.get().setTrangThai(0);
-        khuyenMai.get().setNgayKetThuc(now);
+        if (khuyenMai.isPresent()) {
+            KhuyenMai km = khuyenMai.get();
+            km.setTrangThai(0);
+            km.setNgayKetThuc(now);
 
-        KhuyenMai km = khuyenMai.get();
+            // Cập nhật lại giá cho các sản phẩm liên quan ngay lập tức
+            List<SanPhamChiTiet> chiTietList = sanPhamChiTietRepository.findByKhuyenMai_Id(id);
+            for (SanPhamChiTiet ct : chiTietList) {
+                ct.setKhuyenMai(null);
+                ct.setGiaBanGiamGia(ct.getGiaBan());
+            }
+            sanPhamChiTietRepository.saveAll(chiTietList);
 
-        return khuyenMaiRepository.save(km);
+            return khuyenMaiRepository.save(km);
+        }
+        throw new KhongTimThay("Không tìm thấy khuyến mãi!");
     }
 
     public void capNhatGiaKhuyenMaiChoDanhSach(List<SanPhamChiTiet> danhSachSanPham) {
@@ -135,7 +186,7 @@ public class KhuyenMaiService {
         }
     }
 
-    @Scheduled(fixedRate = 6000000) // Cập nhật mỗi 60 giây
+    @Scheduled(fixedRate = 60000) // Cập nhật mỗi 60 giây
     public void updateActiveKhuyenMai() {
         updateKhuyenMaiActive();
     }
@@ -143,7 +194,7 @@ public class KhuyenMaiService {
     /**
      * Cập nhật trạng thái khuyến mãi:
      * - Nếu đã hết hạn: gỡ khỏi sản phẩm, trạng thái = 0
-     * - Nếu đang hoạt động: trạng thái = 1
+     * - Nếu đang hoạt động: trạng thái = 1, tính giá giảm cho các sản phẩm
      * - Nếu chưa bắt đầu hoặc hết hạn: trạng thái = 0
      */
     @Transactional
@@ -178,6 +229,17 @@ public class KhuyenMaiService {
                 if (km.getTrangThai() != 1) {
                     km.setTrangThai(1);
                     khuyenMaiCapNhat.add(km);
+                }
+                // Đồng bộ giá giảm cho các sản phẩm
+                for (SanPhamChiTiet ct : chiTietList) {
+                    Float giaTri = km.getGiaTri();
+                    if (giaTri != null && giaTri > 0) {
+                        double newGiam = ct.getGiaBan() - (ct.getGiaBan() * giaTri / 100.0);
+                        if (ct.getGiaBanGiamGia() == null || Math.abs(ct.getGiaBanGiamGia() - newGiam) > 0.01) {
+                            ct.setGiaBanGiamGia(newGiam);
+                            sanPhamChiTietCapNhat.add(ct);
+                        }
+                    }
                 }
             } else {
                 // CHƯA ĐẾN hoặc KHÔNG HỢP LỆ

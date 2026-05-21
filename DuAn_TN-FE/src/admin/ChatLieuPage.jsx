@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Popconfirm } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space } from 'antd';
 import Swal from 'sweetalert2';
 import '../styles/AdminPanel.css';
 import { message } from 'antd';
@@ -14,8 +14,6 @@ export default function ChatLieuPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
   const [chatLieus, setChatLieus] = useState([]);
-  const [showTrashModal, setShowTrashModal] = useState(false);
-  const [trashList, setTrashList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearchọng] = useState(false);
 
@@ -24,12 +22,6 @@ export default function ChatLieuPage() {
       .then(response => response.json())
       .then(data => setChatLieus(data));
   };
-  const fetchTrash = () => {
-    fetch('http://localhost:8080/api/chat-lieu/getThungRac')
-      .then(res => res.json())
-      .then(data => setTrashList(data));
-  };
-
   const handleSearch = (value) => {
     if (!value.trim()) {
       fetchAll();
@@ -62,54 +54,6 @@ export default function ChatLieuPage() {
     setSearchTerm('');
     fetchAll();
   };
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: 'Bạn có chắc chắn muốn xóa mục này?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Có',
-      cancelButtonText: 'Không',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`http://localhost:8080/api/chat-lieu/del/${id}`, { method: 'DELETE' })
-          .then(res => { if (!res.ok) throw new Error(); })
-          .then(() => {
-            Swal.fire({ icon: 'success', title: 'Xóa thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            fetchAll();
-          })
-          .catch(() => {
-            Swal.fire({ icon: 'error', title: 'Xóa thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-          });
-      }
-    });
-  };
-  const handleRestore = async (id) => {
-    const result = await Swal.fire({
-      title: 'Xác nhận khôi phục chất liệu này?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Khôi phục',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
-    fetch(`http://localhost:8080/api/chat-lieu/khoi-phuc/${id}`, { method: 'PUT' })
-      .then(res => { if (!res.ok) throw new Error(); })
-      .then(() => {
-        Swal.fire({ icon: 'success', title: 'Khôi phục thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-        fetchTrash();
-        fetchAll();
-      })
-      .catch(() => {
-        Swal.fire({ icon: 'error', title: 'Khôi phục thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-      });
-  };
-
   useEffect(() => {
     fetchAll();
   }, []);

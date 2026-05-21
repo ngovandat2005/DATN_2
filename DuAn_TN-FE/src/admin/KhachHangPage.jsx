@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { Table, Button, Modal, Form, Input, DatePicker, Select, Space, message, Popconfirm } from 'antd';
-import { UserOutlined, MailOutlined, PhoneOutlined, HomeOutlined, KeyOutlined, CalendarOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, DatePicker, Space } from 'antd';
+import { UserOutlined, MailOutlined, PhoneOutlined, HomeOutlined, CalendarOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import '../styles/AdminPanel.css'; // Import the CSS file
-
-const { Option } = Select;
 
 export default function KhachHangPage() {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -21,40 +19,6 @@ export default function KhachHangPage() {
       .then(data => setKhachHangs(data))
       .catch(error => console.error('Lỗi khi gọi API kích thước:', error));
   }, []);
-
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: 'Bạn có chắc chắn muốn xóa khách hàng này?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Có',
-      cancelButtonText: 'Không',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`http://localhost:8080/api/khachhang/delete/${id}`, { method: 'DELETE' })
-          .then(res => {
-            if (res.ok) return true;
-            if (res.status === 404 || res.status === 410) return false;
-            throw new Error();
-          })
-          .then((found) => {
-            if (found === true) {
-              Swal.fire({ icon: 'success', title: 'Xóa thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            } else {
-              Swal.fire({ icon: 'info', title: 'Khách hàng đã bị xóa hoặc không tồn tại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            }
-            fetch('http://localhost:8080/api/khachhang')
-              .then(res => res.json())
-              .then(data => setKhachHangs(data));
-          })
-          .catch(() => {
-            Swal.fire({ icon: 'error', title: 'Xóa thất bại',text:'Khách Hàng Này Đang Có Liên Quan Đến Đơn Hàng K Thể Xóa', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-          });
-      }
-    });
-  };
 
   const columns = [
     { 

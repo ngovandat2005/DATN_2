@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import axios from "axios";
-import {
-  Input, Switch, message, Segmented, Alert, Row, Col, Select, Button, Table, Modal, Divider, Typography, Space, Tag
-} from "antd";
+import { Input, Switch } from "antd";
 
 import "../styles/AdminPanel.css";
 import "../styles/SalePage.css";
@@ -44,7 +42,7 @@ const SanPhamPage = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   // Fetch sản phẩm phân trang, chỉ truyền size khi người dùng chọn lại
-  const fetchProductsPage = async () => {
+  const fetchProductsPage = useCallback(async () => {
     try {
       const res = await axios.get("http://localhost:8080/api/san-pham/getAll");
 
@@ -85,13 +83,13 @@ const SanPhamPage = () => {
       console.error("Lỗi load sản phẩm:", error);
       setProducts([]);
     }
-  };
+  }, [size]);
 
 
   // Gọi lại khi page, size, filter, search thay đổi
   useEffect(() => {
     fetchProductsPage();
-  }, [size]);
+  }, [fetchProductsPage]);
 
 
   // Tạo mảng số trang
@@ -450,25 +448,6 @@ const SanPhamPage = () => {
 
 
 
-
-  const handleSoftDeleteProduct = async (id) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Bạn có chắc chắn muốn xóa sản phẩm này?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Xóa',
-        cancelButtonText: 'Hủy',
-      });
-      if (result.isConfirmed) {
-        await axios.delete(`http://localhost:8080/api/san-pham/${id}`);
-        Swal.fire('Thành công!', 'Sản phẩm đã được chuyển trạng thái.', 'success');
-        fetchProductsPage(page, size);
-      }
-    } catch (error) {
-      Swal.fire('Thất bại!', 'Không thể xóa sản phẩm. Vui lòng thử lại.', 'error');
-    }
-  };
 
   // Thêm lại hàm async handleMultiImageUpload cho upload nhiều ảnh
   const handleMultiImageUpload = async (e) => {

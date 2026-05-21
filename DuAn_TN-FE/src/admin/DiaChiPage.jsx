@@ -10,31 +10,30 @@ export default function DiaChiPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
 
-  // Dữ liệu giả định cho địa chỉ
-  // const [data, setData] = useState([
-  //   {
-  //     ID: '1',
-  //     MaDiaChi: 'DC001',
-  //     TenKhachHang: 'Nguyễn Văn C',
-  //     Sdt: '0901234567',
-  //     Tinh: 'TP. Hồ Chí Minh',
-  //     Quan: 'Quận 1',
-  //     Phuong: 'Bến Nghé',
-  //     DiaChiCuThe: 'Số 10, Ngõ 20, Ba Đình, Hà Nội',
-  //     TrangThai: 'Đang hoạt động',
-  //   },
-  //   {
-  //     ID: '2',
-  //     MaDiaChi: 'DC002',
-  //     TenKhachHang: 'Lê Thị D',
-  //     Sdt: '0908765432',
-  //     Tinh: 'Hà Nội',
-  //     Quan: 'Quận Ba Đình',
-  //     Phuong: 'Trúc Bạch',
-  //     DiaChiCuThe: '456 Đường Phan Đình Phùng',
-  //     TrangThai: 'Không hoạt động',
-  //   },
-  // ]);
+  const [data] = useState([
+    {
+      ID: '1',
+      MaDiaChi: 'DC001',
+      TenKhachHang: 'Nguyễn Văn C',
+      Sdt: '0901234567',
+      Tinh: 'TP. Hồ Chí Minh',
+      Quan: 'Quận 1',
+      Phuong: 'Bến Nghé',
+      DiaChiCuThe: 'Số 10, Ngõ 20, Ba Đình, Hà Nội',
+      TrangThai: 'Đang hoạt động',
+    },
+    {
+      ID: '2',
+      MaDiaChi: 'DC002',
+      TenKhachHang: 'Lê Thị D',
+      Sdt: '0908765432',
+      Tinh: 'Hà Nội',
+      Quan: 'Quận Ba Đình',
+      Phuong: 'Trúc Bạch',
+      DiaChiCuThe: '456 Đường Phan Đình Phùng',
+      TrangThai: 'Không hoạt động',
+    },
+  ]);
 
   const columns = [
     { title: 'Mã Địa Chỉ', dataIndex: 'MaDiaChi', key: 'MaDiaChi' },

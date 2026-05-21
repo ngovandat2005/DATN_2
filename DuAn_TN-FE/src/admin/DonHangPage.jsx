@@ -3,9 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { Table, Modal, Button, Typography, Input, Tabs, Tag, message } from 'antd';
-import mockOrdersOnline from './mockOrdersOnline';
-
 const TRANG_THAI = [
   { value: -1, label: 'Tất cả', color: '#1976d2' }, // ✅ Thêm tab Tất cả
   { value: 0, label: 'Chờ xác nhận', color: '#ff9800' },
@@ -43,9 +40,6 @@ const DonHangPage = () => {
   const [ordersOnline, setOrdersOnline] = useState([]);
   const [loadingOnline, setLoadingOnline] = useState(false);
   const [errorOnline, setErrorOnline] = useState('');
-  const [showDetailModalOnline, setShowDetailModalOnline] = useState(false);
-  const [selectedOrderOnline, setSelectedOrderOnline] = useState(null);
-
   // Thêm các state cho filter và search hóa đơn online
   const [filterStatus, setFilterStatus] = useState(-1); // ✅ Mặc định là Tất cả
   const [searchText, setSearchText] = useState('');
@@ -89,9 +83,9 @@ const DonHangPage = () => {
   const [showDetailModalPOS, setShowDetailModalPOS] = useState(false);
   const [selectedOrderPOS, setSelectedOrderPOS] = useState(null);
   const [chiTietSanPham, setChiTietSanPham] = useState([]);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [loadingDetail] = useState(false);
   const [errorDetail, setErrorDetail] = useState('');
-  const [products, setProducts] = useState([]);
+  const [, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
 
   // Fetch danh sách sản phẩm chi tiết khi mount (POS)
@@ -313,61 +307,6 @@ const DonHangPage = () => {
     }
   }, [activeTab, filterStatus]);
 
-  const fetchChiTietSanPham = async (orderId) => {
-    setLoadingDetail(true);
-    setErrorDetail('');
-    try {
-      const res = await fetch(`http://localhost:8080/api/donhangchitiet/don-hang/${orderId}`);
-      if (!res.ok) throw new Error('Lỗi khi lấy chi tiết hóa đơn');
-      let data = await res.json();
-      // Join thêm tên, màu, size từ products (KHÔNG thay đổi giá)
-      data = data.map(item => {
-        const prod = products.find(p => p.id === item.idSanPhamChiTiet);
-        return {
-          ...item,
-          tenSanPham: prod?.tenSanPham || '-',
-          mauSac: prod?.mauSac || '-',
-          kichThuoc: prod?.kichThuoc || '-',
-          ma: prod?.ma || '',
-          anh: prod?.images || '',
-          // Sử dụng giá tại thời điểm mua hàng, KHÔNG lấy giá hiện tại
-          giaBan: item.gia || 0,
-          giaBanGiamGia: null, // Không áp dụng khuyến mãi hiện tại cho đơn hàng cũ
-        };
-      });
-      setChiTietSanPham(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setErrorDetail(err.message || 'Lỗi khi lấy chi tiết hóa đơn');
-      setChiTietSanPham([]);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
-
-  const handleShowDetailPOS = (order) => {
-    setSelectedOrderPOS(order);
-    setShowDetailModalPOS(true);
-    if (Array.isArray(order.donHangChiTiets) && order.donHangChiTiets.length > 0) {
-      // Join với products nếu có (KHÔNG thay đổi giá)
-      const data = order.donHangChiTiets.map(item => {
-        const prod = products.find(p => p.id === item.idSanPhamChiTiet);
-        return {
-          ...item,
-          tenSanPham: prod?.tenSanPham || '-',
-          mauSac: prod?.mauSac || '-',
-          kichThuoc: prod?.kichThuoc || '-',
-          ma: prod?.ma || '',
-          // Sử dụng giá tại thời điểm mua hàng, KHÔNG lấy giá hiện tại
-          giaBan: item.gia || 0,
-          giaBanGiamGia: null, // Không áp dụng khuyến mãi hiện tại cho đơn hàng cũ
-        };
-      });
-      setChiTietSanPham(data);
-    } else {
-      fetchChiTietSanPham(order.id);
-    }
-  };
-
   const handleCloseDetailPOS = () => {
     setShowDetailModalPOS(false);
     setSelectedOrderPOS(null);
@@ -449,13 +388,6 @@ const DonHangPage = () => {
     } finally {
       setIsCancelling(false);
     }
-  };
-
-  // Hàm mở modal hủy đơn hàng
-  const openCancelModal = (order) => {
-    setSelectedOrderToCancel(order);
-    setCancelReason('');
-    setShowCancelModal(true);
   };
 
   // Hàm đóng modal hủy đơn hàng

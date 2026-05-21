@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm, Switch } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, Space, message, Switch } from 'antd';
 import {TagOutlined, SearchOutlined } from '@ant-design/icons';
 import '../styles/AdminPanel.css';
 
@@ -11,7 +11,6 @@ export default function XuatXuPage() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
-  const [kichThuocs, setKichThuocs] = useState([]);
   const [xuatXus, setXuatXus] = useState([]);
   const [showTrashModal, setShowTrashModal] = useState(false);
   const [trashList, setTrashList] = useState([]);
@@ -61,29 +60,6 @@ export default function XuatXuPage() {
     setSearchTerm('');
     fetchAll();
   };
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: 'Bạn có chắc chắn muốn xóa mục này?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Có',
-      cancelButtonText: 'Không',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`http://localhost:8080/api/xuat-xu/del/${id}`, { method: 'DELETE' })
-          .then(res => { if (!res.ok) throw new Error(); })
-          .then(() => {
-            Swal.fire({ icon: 'success', title: 'Xóa thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            fetchAll();
-          })
-          .catch(() => {
-            Swal.fire({ icon: 'error', title: 'Xóa thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-          });
-      }
-    });
-  };
   const handleRestore = async (id) => {
     const result = await Swal.fire({
       title: 'Xác nhận khôi phục xuất xứ này?',
@@ -108,16 +84,6 @@ export default function XuatXuPage() {
         Swal.fire({ icon: 'error', title: 'Khôi phục thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
       });
   };
-
-  useEffect(() => {
-    fetch('http://localhost:8080/api/kich-thuoc/getAllFull')
-      .then(response => response.json())
-      .then(data => {
-        console.log('DATA KICH THUOC:', data);
-        setKichThuocs(data);
-      })
-      .catch(error => console.error('Lỗi khi gọi API kích thước:', error));
-  }, []);
 
   useEffect(() => {
     fetch('http://localhost:8080/api/xuat-xu/getAllFull')

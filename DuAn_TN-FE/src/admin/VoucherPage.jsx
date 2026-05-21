@@ -213,13 +213,19 @@ export default function VoucherPage() {
       title: 'Trạng Thái', 
       dataIndex: 'trangThai', 
       key: 'trangThai', 
-      render: (value) => {
-        if (value === 1) {
+      render: (value, record) => {
+        const now = moment().startOf('day');
+        const endDate = record.ngayKetThuc ? moment(record.ngayKetThuc).startOf('day') : null;
+        const isExpired = endDate && endDate.isBefore(now);
+
+        if (value === 0 || isExpired) {
+          return <span style={{ color: "red", fontWeight: 500 }}>Hết Hạn / Vô hiệu</span>;
+        } else if (value === 1) {
           return <span style={{ color: "green", fontWeight: 500 }}>Đang hoạt động</span>;
         } else if (value === 2) {
           return <span style={{ color: "orange", fontWeight: 500 }}>Tạm ngưng</span>;
         } else {
-          return <span style={{ color: "red", fontWeight: 500 }}>Hết Hạn / Vô hiệu</span>;
+          return <span style={{ color: "gray", fontWeight: 500 }}>Không xác định</span>;
         }
       }
     },

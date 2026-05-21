@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Card, 
   Typography, 
@@ -14,8 +14,7 @@ import {
 import { 
   TruckOutlined, 
   CheckCircleOutlined,
-  ClockCircleOutlined,
-  DollarOutlined
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import CompactShippingCalculator from './CompactShippingCalculator';
 import useShippingFee from '../hooks/useShippingFee';
@@ -27,12 +26,10 @@ const CheckoutShippingSection = ({
   onShippingSelected,
   onNextStep 
 }) => {
-  const [selectedAddress, setSelectedAddress] = useState(null);
   const {
     shippingFee,
     loading,
     error,
-    calculateShippingFee,
     formatCurrency,
     formatDeliveryTime,
     getShippingFeeBreakdown
@@ -51,14 +48,10 @@ const CheckoutShippingSection = ({
     if (onShippingSelected) {
       onShippingSelected({
         fee,
-        address: selectedAddress,
+        address: null,
         weight: totalWeight
       });
     }
-  };
-
-  const handleAddressChange = (province, district, ward) => {
-    setSelectedAddress({ province, district, ward });
   };
 
   const handleNextStep = () => {
@@ -70,7 +63,7 @@ const CheckoutShippingSection = ({
     if (onNextStep) {
       onNextStep({
         shippingFee,
-        address: selectedAddress,
+        address: null,
         total
       });
     }

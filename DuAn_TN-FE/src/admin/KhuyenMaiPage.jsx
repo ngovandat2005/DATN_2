@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, InputNumber } from "antd";
+import { Table, Button, Modal, Form, Input, DatePicker, InputNumber } from "antd";
 import axios from "axios";
 import moment from "moment";
 import Swal from 'sweetalert2';
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminPanel.css";
-
-const { Option } = Select;
 
 const KhuyenMaiPage = () => {
   const navigate = useNavigate();

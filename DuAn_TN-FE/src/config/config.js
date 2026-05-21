@@ -21,6 +21,7 @@ const config = {
     CART_ITEMS: '/api/gio-hang-chi-tiet',
     ORDERS: '/api/don-hang',
     USERS: '/api/nguoi-dung',
+    ADMIN_CREATE_PASSWORD: '/api/nhanvien',
     ADMIN: {
       LOGIN: '/api/auth/dang-nhap',  // Sử dụng cùng endpoint với login thường
       DASHBOARD: '/api/admin/dashboard',

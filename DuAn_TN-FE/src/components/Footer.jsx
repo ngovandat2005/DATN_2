@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layout, Row, Col, Typography, Input, Button, Space, Divider, message } from 'antd';
+import React from 'react';
+import { Layout, Row, Col, Typography, Space, Divider } from 'antd';
 import { Link } from 'react-router-dom';
 import { MailOutlined, PhoneOutlined, EnvironmentOutlined, FacebookOutlined, InstagramOutlined, YoutubeOutlined } from '@ant-design/icons';
 
@@ -25,28 +25,6 @@ const footerLinks = {
 };
 
 function Footer() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubscribe = () => {
-    if (!email) {
-      message.warning('Vui lòng nhập email của bạn');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      message.error('Email không hợp lệ');
-      return;
-    }
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      message.success('Đăng ký nhận tin thành công!');
-      setEmail('');
-      setLoading(false);
-    }, 1000);
-  };
-
   return (
     <AntFooter style={{
       background: 'linear-gradient(180deg, #0a1628 0%, #001529 100%)',

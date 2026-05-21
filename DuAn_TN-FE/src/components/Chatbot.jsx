@@ -1,11 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Input, Spin, Typography, Space } from 'antd';
+import { Button, Input, Space } from 'antd';
 import { MessageOutlined, CloseOutlined, SendOutlined, RobotOutlined } from '@ant-design/icons';
 import '../styles/Chatbot.css';
-import axios from 'axios';
-
-const { Text } = Typography;
-
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([
@@ -69,25 +65,42 @@ const Chatbot = () => {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let accumulatedReply = "";
+            let eventBuffer = "";
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.trim().startsWith('data:')) {
-                        const content = line.trim().substring(5).trim();
-                        if (content) {
-                            accumulatedReply += content;
-                            setMessages(prev => {
-                                const newMessages = [...prev];
-                                newMessages[newMessages.length - 1].text = accumulatedReply;
-                                return newMessages;
-                            });
+                eventBuffer += chunk;
+
+                // Xử lý chuẩn định dạng Server-Sent Events (kết thúc bằng 2 dấu xuống dòng)
+                let eventEndIndex;
+                while ((eventEndIndex = eventBuffer.indexOf('\n\n')) >= 0) {
+                    const eventStr = eventBuffer.substring(0, eventEndIndex);
+                    eventBuffer = eventBuffer.substring(eventEndIndex + 2);
+
+                    const lines = eventStr.split('\n');
+                    let dataContent = [];
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            let text = line.substring(5);
+                            if (text.startsWith(' ')) text = text.substring(1); // Bỏ qua 1 dấu cách chuẩn của SSE
+                            dataContent.push(text);
                         }
+                    }
+
+                    if (dataContent.length > 0) {
+                        // Nếu có nhiều dòng data: trong 1 block, nối chúng bằng \n
+                        accumulatedReply += dataContent.join('\n');
+                        const replyText = accumulatedReply;
+                        
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            newMessages[newMessages.length - 1].text = replyText;
+                            return newMessages;
+                        });
                     }
                 }
             }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Typography, Spin, Badge, Empty, Button, Tag } from 'antd';
+import { Row, Col, Card, Typography, Spin, Badge, Empty, Button } from 'antd';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import config from '../config/config';
@@ -111,7 +111,6 @@ const SalePage = () => {
             {products.length > 0 ? (
                 <Row gutter={[32, 48]}>
                     {products.map(product => {
-                        const finalPrice = product.giaBanSauGiam || product.giaBanGoc;
                         const hasRealDiscount = product.giaBanSauGiam && product.giaBanSauGiam < product.giaBanGoc;
                         
                         return (

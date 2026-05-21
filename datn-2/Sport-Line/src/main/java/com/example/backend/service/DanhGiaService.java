@@ -30,11 +30,25 @@ public class DanhGiaService {
     }
 
     public DanhGia submitReview(DanhGiaRequest request) {
+        if (request.getSoSao() == null || request.getSoSao() < 1 || request.getSoSao() > 5) {
+            throw new RuntimeException("Số sao đánh giá phải từ 1 đến 5!");
+        }
+
         KhachHang khachHang = khachHangRepository.findById(request.getIdKhachHang())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng!"));
-        
+
         SanPham sanPham = sanPhamRepository.findById(request.getIdSanPham())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+
+        // Kiểm tra khách hàng đã mua sản phẩm này chưa (đơn hàng Hoàn thành - trạng thái 4)
+        if (!danhGiaRepository.hasCustomerPurchasedProduct(request.getIdKhachHang(), request.getIdSanPham())) {
+            throw new RuntimeException("Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công!");
+        }
+
+        // Kiểm tra đã đánh giá sản phẩm này chưa
+        if (danhGiaRepository.existsByKhachHang_IdAndSanPham_Id(request.getIdKhachHang(), request.getIdSanPham())) {
+            throw new RuntimeException("Bạn đã đánh giá sản phẩm này rồi!");
+        }
 
         DanhGia danhGia = new DanhGia();
         danhGia.setKhachHang(khachHang);

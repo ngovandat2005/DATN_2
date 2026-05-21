@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, Typography, Row, Col, Progress } from 'antd';
-import { RiseOutlined, FallOutlined } from '@ant-design/icons';
+import { Typography, Progress } from 'antd';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, Brush } from 'recharts';
 
 const { Text, Title } = Typography;
@@ -17,7 +16,6 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
   }
 
   const totalValue = data.reduce((sum, item) => sum + (item.value || 0), 0);
-  const maxValue = type === 'bar' ? Math.max(...data.map(item => item.value || 0)) : 0;
 
   if (type === 'bar') {
     return (

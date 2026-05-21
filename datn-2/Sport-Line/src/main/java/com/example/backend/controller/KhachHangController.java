@@ -7,6 +7,7 @@ import com.example.backend.dto.KhachHangResponseDTO;
 
 import com.example.backend.service.KhachHangService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,12 +55,27 @@ public class KhachHangController {
     }
 
     @DeleteMapping("/khachhang/delete/{id}")
-    public Boolean delete(@PathVariable int id) {
-        return khachHangService.deleteById(id);
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        boolean success = khachHangService.deleteById(id);
+        if (!success) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(java.util.Collections.singletonMap("message", "Không tìm thấy khách hàng với ID: " + id));
+        }
+        return ResponseEntity.ok(java.util.Collections.singletonMap("message", "Xóa khách hàng thành công!"));
     }
 
     @PutMapping("/khachhang/update/{id}")
-    public ResponseEntity<KhachHangResponseDTO> update(@PathVariable int id, @RequestBody KhachHangResponseDTO dto) {
-        return ResponseEntity.ok(khachHangService.update(id, dto));
+    public ResponseEntity<?> update(@PathVariable int id, @RequestBody KhachHangResponseDTO dto) {
+        try {
+            KhachHangResponseDTO updated = khachHangService.update(id, dto);
+            if (updated == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(java.util.Collections.singletonMap("message", "Không tìm thấy khách hàng với ID: " + id));
+            }
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
     }
 }

@@ -3,7 +3,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 const A4_WIDTH = 595; // pt
-const A4_HEIGHT = 842; // pt
 
 const InvoiceContent = React.forwardRef(({ order }, ref) => {
   // Lấy ngày hiện tại nếu không có order.date

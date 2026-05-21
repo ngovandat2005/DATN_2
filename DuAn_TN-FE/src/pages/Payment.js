@@ -67,7 +67,6 @@ const Payment = () => {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [customerNote, setCustomerNote] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
 
@@ -92,7 +91,7 @@ const Payment = () => {
   // ✅ THÊM: State cho voucher (giống BanHangTaiQuay)
   const [vouchers, setVouchers] = useState([]);
   const [selectedVoucherId, setSelectedVoucherId] = useState('');
-  const [orderTotal, setOrderTotal] = useState(0);        // Tổng tiền sau voucher (tạm thời giữ lại nếu cần dùng)
+  const [, setOrderTotal] = useState(0);
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMessage, setVoucherMessage] = useState('');
 
@@ -105,7 +104,7 @@ const Payment = () => {
   const [addressIsDefault, setAddressIsDefault] = useState(false);
 
   // ✅ THÊM: State cho khoảng cách thực tế (Map distance)
-  const [actualDistance, setActualDistance] = useState(null);
+  const [, setActualDistance] = useState(null);
   const [distanceLoading, setDistanceLoading] = useState(false);
 
   // Shop Location (Ba Đình, Hà Nội)
@@ -226,6 +225,7 @@ const Payment = () => {
     } catch (e) {
       console.error('Lỗi khởi tạo địa chỉ:', e);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi đổi key lưu địa chỉ
   }, [addressStorageKey]);
 
 
@@ -535,40 +535,6 @@ const Payment = () => {
     fetchVouchers();
   }, []);
 
-  // ✅ THÊM: Functions xử lý thay đổi địa chỉ
-  const handleProvinceChange = async (provinceId) => {
-    setSelectedProvince(provinceId);
-    setSelectedDistrict(null);
-    setSelectedWard(null);
-    setShippingFee(0); // Reset phí ship khi thay đổi tỉnh
-    setGhnServices([]);
-    setSelectedServiceId(null);
-    setEstimatedDate(null);
-
-    // Load districts cho province này
-    if (provinceId) {
-      await fetchDistrictsForProvince(provinceId);
-    }
-  };
-
-  const handleDistrictChange = async (districtId) => {
-    setSelectedDistrict(districtId);
-    setSelectedWard(null);
-    setShippingFee(0); // Reset phí ship khi thay đổi quận
-    setGhnServices([]);
-    setSelectedServiceId(null);
-    setEstimatedDate(null);
-
-    // Load wards cho district này
-    if (districtId) {
-      await fetchWardsForDistrict(districtId);
-    }
-  };
-
-  const handleWardChange = (wardId) => {
-    setSelectedWard(wardId);
-  };
-
   // ✅ THÊM: Fetch dịch vụ GHN
   const fetchGhnServices = async (districtId) => {
     if (!districtId) return;
@@ -723,6 +689,7 @@ const Payment = () => {
     };
 
     autoFillCustomerInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi mount
   }, []);
 
 
@@ -776,6 +743,7 @@ const Payment = () => {
 
       return () => clearTimeout(timer);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleAddressChange gọi theo timer khi địa chỉ đổi
   }, [selectedProvince, selectedDistrict, selectedWard, selectedServiceId]);
 
   // ✅ THÊM: Tự động fetch dịch vụ GHN khi Quận/Huyện thay đổi
@@ -808,8 +776,11 @@ const Payment = () => {
           // ✅ TÍNH TOÁN GIẢM GIÁ NGAY KHI CHỌN VOUCHER
           let discount = 0;
           const loai = voucher.loaiVoucher || '';
-          if (loai === 'Giảm giá %' || loai === 'PERCENT' || loai === 'PHAN_TRAM') {
+          if (loai === 'Giảm giá %' || loai === 'PERCENT' || loai === 'PHAN_TRAM' || loai.includes('%')) {
             discount = (effectiveTotal * voucher.giaTri) / 100;
+            if (voucher.giamGiaToiDa && voucher.giamGiaToiDa > 0) {
+              discount = Math.min(discount, voucher.giamGiaToiDa);
+            }
             console.log('🎯 Voucher %: giaTri=', voucher.giaTri, '%, discount=', discount);
           } else if (loai === 'Giảm giá số tiền' || loai === 'CASH' || loai === 'TIEN_MAT') {
             discount = voucher.giaTri;
@@ -859,6 +830,99 @@ const Payment = () => {
 
     // Tự động ẩn thông báo sau 2.5 giây
     setTimeout(() => setVoucherMessage(''), 2500);
+  };
+
+  /** Kiểm tra voucher với server trước khi thanh toán (giống BanHangTaiQuay) */
+  const validateVoucherBeforePayment = async () => {
+    const effectiveTotal = total - itemDiscountTotal;
+    if (!selectedVoucherId) {
+      return { ok: true };
+    }
+
+    try {
+      const res = await fetch(config.getApiUrl('api/voucher/kiem-tra'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idVoucher: parseInt(selectedVoucherId, 10),
+          tongTienHang: effectiveTotal
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.valid === false) {
+        const msg = data.message || 'Voucher không còn hợp lệ. Vui lòng chọn voucher khác.';
+        toast.error(msg);
+        setSelectedVoucherId('');
+        setOrderDiscount(0);
+        return { ok: false, message: msg };
+      }
+
+      const serverDiscount = Number(data.discount) || 0;
+      if (Math.abs(serverDiscount - orderDiscount) > 1) {
+        setOrderDiscount(serverDiscount);
+        const subAfterVoucher = effectiveTotal - serverDiscount;
+        const effectiveShippingFee = subAfterVoucher >= 2000000 ? 0 : shippingFee;
+        setFinalTotal(subAfterVoucher + effectiveShippingFee);
+
+        if (window.Swal) {
+          await window.Swal.fire({
+            icon: 'warning',
+            title: 'Voucher đã thay đổi!',
+            html: `Giá trị giảm trên hệ thống: <b>${serverDiscount.toLocaleString()}đ</b> (trước đó: ${orderDiscount.toLocaleString()}đ).<br/>Vui lòng kiểm tra lại tổng tiền và bấm thanh toán một lần nữa.`,
+            confirmButtonText: 'Đã hiểu',
+            confirmButtonColor: '#1976d2'
+          });
+        } else {
+          toast.warning('Voucher đã thay đổi giá trị. Vui lòng kiểm tra lại tổng tiền.');
+        }
+        return { ok: false, changed: true };
+      }
+
+      return { ok: true, discount: serverDiscount };
+    } catch (err) {
+      console.error('Lỗi kiểm tra voucher:', err);
+      toast.error('Không thể kiểm tra voucher. Vui lòng thử lại.');
+      return { ok: false };
+    }
+  };
+
+  /** Xác nhận tổng tiền cuối cùng trước khi đặt hàng */
+  const confirmOrderBeforePayment = async () => {
+    const effectiveTotal = total - itemDiscountTotal;
+    const subAfterVoucher = effectiveTotal - orderDiscount;
+    const effectiveShippingFee = subAfterVoucher >= 2000000 ? 0 : (Math.round(shippingFee) || 30000);
+    const payTotal = subAfterVoucher + effectiveShippingFee;
+    const methodLabel = paymentMethod === 'bank' ? 'VNPay (chuyển khoản)' : 'Thanh toán khi nhận hàng (COD)';
+
+    const voucherLine = selectedVoucherId && orderDiscount > 0
+      ? `<p>Giảm voucher: <b>-${orderDiscount.toLocaleString()}đ</b></p>`
+      : '';
+
+    const html = `
+      <div style="text-align:left;font-size:15px;line-height:1.6">
+        <p>Tạm tính hàng: <b>${effectiveTotal.toLocaleString()}đ</b></p>
+        ${voucherLine}
+        <p>Phí vận chuyển: <b>${effectiveShippingFee.toLocaleString()}đ</b></p>
+        <p style="margin-top:8px;font-size:17px">Tổng thanh toán: <b style="color:#d32f2f">${payTotal.toLocaleString()}đ</b></p>
+        <p style="color:#666;margin-top:8px">Hình thức: ${methodLabel}</p>
+      </div>
+    `;
+
+    if (window.Swal) {
+      const result = await window.Swal.fire({
+        title: 'Xác nhận đặt hàng',
+        html,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Xác nhận thanh toán',
+        cancelButtonText: 'Hủy',
+        confirmButtonColor: '#1976d2',
+        cancelButtonColor: '#9e9e9e'
+      });
+      return result.isConfirmed;
+    }
+    return window.confirm(`Xác nhận đặt hàng với tổng ${payTotal.toLocaleString()}đ?`);
   };
 
   // ✅ THÊM: Function tính phí ship từ GHN API với retry mechanism
@@ -944,7 +1008,7 @@ const Payment = () => {
           console.warn('⚠️ Backend returned 0 fee, using initial zone fallback.');
         }
       } else {
-        const errorText = await response.text();
+        await response.text();
 
         // ✅ THÊM: Retry mechanism cho lỗi 403
         if (response.status === 403 && retryCount < 2) {
@@ -1448,112 +1512,6 @@ const Payment = () => {
     calculateShippingFee(1484, selectedDistrict, selectedProvince, selectedWard, totalWeight, insuranceValue, 0, calculatedDistance);
   };
 
-  // ✅ THÊM: Function fetch thông tin đơn hàng (giống BanHangTaiQuay)
-  const fetchOrderInfo = async (orderId) => {
-    if (!orderId) return null;
-
-    try {
-      console.log('🔄 Đang fetch thông tin đơn hàng...');
-      const response = await fetch(config.getApiUrl(`api/donhang/${orderId}`));
-
-      if (response.ok) {
-        const orderData = await response.json();
-
-        // Cập nhật state với thông tin từ backend
-        if (orderData.tongTienGiamGia) {
-          setOrderDiscount(orderData.tongTienGiamGia);
-          setOrderTotal(orderData.tongTien);
-        }
-
-        return orderData;
-      } else {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // ✅ THÊM: Function áp dụng voucher qua API mới (giống BanHangTaiQuay)
-  const applyVoucherToOrder = async (orderId, voucherId) => {
-    if (!orderId || !voucherId) return false;
-
-    try {
-      const response = await fetch(config.getApiUrl(`api/don-hang-chi-tiet/${orderId}/apply-voucher/${voucherId}`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        const updatedOrder = await response.json();
-
-        // ✅ THÊM: Trừ số lượng voucher đi 1 sau khi áp dụng thành công
-        try {
-          console.log('🎫 Đang trừ số lượng voucher...');
-
-          // ✅ SỬA: Sử dụng API update có sẵn thay vì tạo API mới
-          // Tìm voucher hiện tại để lấy thông tin cập nhật
-          const currentVoucher = vouchers.find(v => v.id === Number(voucherId));
-          if (currentVoucher) {
-            const newQuantity = Math.max(0, currentVoucher.soLuong - 1);
-
-            const decreaseVoucherResponse = await fetch(config.getApiUrl(`api/voucher/update/${voucherId}`), {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ...currentVoucher,
-                soLuong: newQuantity
-              })
-            });
-
-            if (decreaseVoucherResponse.ok) {
-              console.log('✅ Đã trừ số lượng voucher thành công');
-
-              // ✅ Cập nhật state vouchers để giảm số lượng hiển thị
-              setVouchers(prevVouchers =>
-                prevVouchers.map(v =>
-                  v.id === Number(voucherId)
-                    ? { ...v, soLuong: newQuantity }
-                    : v
-                )
-              );
-
-              // ✅ THÊM: Thông báo nếu voucher hết số lượng
-              if (newQuantity === 0) {
-                toast.info('🎫 Voucher đã hết số lượng!');
-
-                // ✅ Tự động bỏ chọn voucher nếu hết số lượng
-                setSelectedVoucherId('');
-                setOrderDiscount(0);
-                setOrderTotal(total - itemDiscountTotal);
-                setFinalTotal(total - itemDiscountTotal + shippingFee);
-              }
-            } else {
-              console.warn('⚠️ Không thể trừ số lượng voucher, nhưng voucher đã được áp dụng');
-            }
-          } else {
-            console.warn('⚠️ Không tìm thấy voucher để cập nhật số lượng');
-          }
-        } catch (decreaseError) {
-          console.warn('⚠️ Lỗi khi trừ số lượng voucher:', decreaseError);
-        }
-
-        // ✅ Fetch lại thông tin đơn hàng để lấy tổng tiền mới (giống BanHangTaiQuay)
-        await fetchOrderInfo(orderId);
-
-        return true;
-      } else {
-        const errorMessage = await response.text();
-        toast.error(`Không thể áp dụng voucher: ${errorMessage}`);
-        return false;
-      }
-    } catch (error) {
-      toast.error('Lỗi kết nối khi áp dụng voucher');
-      return false;
-    }
-  };
-
-
   const handlePayment = async () => {
     // ✅ SỬA: Validation chi tiết hơn
     if (!customerName.trim()) {
@@ -1676,30 +1634,16 @@ const Payment = () => {
       return;
     }
 
-    // ✅ THÊM: Xác nhận đặt hàng cho COD
-    if (paymentMethod === 'cod') {
-      const isConfirmed = await new Promise((resolve) => {
-        if (window.Swal) {
-          window.Swal.fire({
-            title: 'Xác nhận đặt hàng',
-            text: 'Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Xác nhận đặt hàng',
-            cancelButtonText: 'Hủy'
-          }).then((result) => {
-            resolve(result.isConfirmed);
-          });
-        } else {
-          resolve(window.confirm('Bạn có chắc chắn muốn đặt hàng với hình thức Thanh toán khi nhận hàng (COD)?'));
-        }
-      });
+    // Kiểm tra voucher với server trước khi tạo đơn
+    const voucherCheck = await validateVoucherBeforePayment();
+    if (!voucherCheck.ok) {
+      return;
+    }
 
-      if (!isConfirmed) {
-        return;
-      }
+    // Xác nhận tổng tiền (COD và VNPay)
+    const orderConfirmed = await confirmOrderBeforePayment();
+    if (!orderConfirmed) {
+      return;
     }
 
     setLoading(true);
@@ -1752,6 +1696,30 @@ const Payment = () => {
       const createdOrder = await orderRes.json();
       const newOrderId = createdOrder.id;
       console.log('✅ Đã tạo đơn hàng online thành công, ID:', newOrderId);
+
+      // Đối chiếu voucher đã áp dụng trên đơn vừa tạo
+      if (selectedVoucherId) {
+        const appliedDiscount = Number(createdOrder.tongTienGiamGia) || 0;
+        if (appliedDiscount <= 0) {
+          setLoading(false);
+          if (window.Swal) {
+            await window.Swal.fire({
+              icon: 'error',
+              title: 'Voucher không được áp dụng',
+              text: 'Đơn hàng đã tạo nhưng voucher không hợp lệ lúc xử lý. Vui lòng vào Lịch sử đơn hàng để thanh toán lại hoặc liên hệ hỗ trợ.',
+              confirmButtonText: 'Xem đơn hàng'
+            });
+          } else {
+            toast.error('Voucher không được áp dụng cho đơn hàng.');
+          }
+          navigate('/orders');
+          return;
+        }
+        if (Math.abs(appliedDiscount - orderDiscount) > 1) {
+          setOrderDiscount(appliedDiscount);
+          toast.warning(`Tổng giảm voucher trên đơn: ${appliedDiscount.toLocaleString()}đ`);
+        }
+      }
 
       // ✅ BƯỚC 2 (nếu là VNPay): cập nhật trạng thái sang CHỜ THANH TOÁN (8)
       if (paymentMethod === 'bank') {
@@ -1827,13 +1795,35 @@ const Payment = () => {
           navigate('/orders');
         }, 2000);
       } else if (paymentMethod === 'bank') {
-        // ✅ VNPAY: Gọi API lấy URL thanh toán VNPAY
+        // ✅ VNPAY: Đồng bộ lại tổng tiền (voucher có thể hết hạn sau khi tạo đơn)
         console.log('💰 Đang tạo yêu cầu thanh toán VNPAY cho đơn hàng:', newOrderId);
         
         try {
-          // Làm tròn tổng tiền cho VNPAY
-          const vnpAmount = Math.round(finalTotal);
-          const paymentRes = await fetch(config.getApiUrl(`api/payment/create?amount=${vnpAmount}&orderId=${newOrderId}`));
+          const recalcRes = await fetch(config.getApiUrl(`api/donhang/${newOrderId}/cap-nhat-tong-tien`), {
+            method: 'PUT'
+          });
+          let orderForPay = createdOrder;
+          if (recalcRes.ok) {
+            orderForPay = await recalcRes.json();
+            const expectedPay = finalTotal;
+            if (Math.abs((orderForPay.tongTien || 0) - expectedPay) > 1000) {
+              if (window.Swal) {
+                await window.Swal.fire({
+                  icon: 'warning',
+                  title: 'Tổng tiền đã thay đổi',
+                  html: `Tổng thanh toán mới: <b>${(orderForPay.tongTien || 0).toLocaleString()}đ</b><br/>
+                    ${!orderForPay.idgiamGia && selectedVoucherId ? 'Voucher không còn hiệu lực và đã được gỡ khỏi đơn.<br/>' : ''}
+                    Đơn hàng vẫn được lưu. Bạn có thể thanh toán lại trong Lịch sử đơn hàng.`,
+                  confirmButtonText: 'Đến lịch sử đơn hàng',
+                  confirmButtonColor: '#1976d2'
+                });
+              }
+              navigate('/orders');
+              return;
+            }
+          }
+
+          const paymentRes = await fetch(config.getApiUrl(`api/payment/create?orderId=${newOrderId}`));
           
           if (!paymentRes.ok) throw new Error('Không thể khởi tạo thanh toán VNPAY');
           

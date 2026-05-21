@@ -13,6 +13,8 @@ public class NhanVienDTO {
     private Boolean vaiTro;
     private String cccd;
     private Boolean trangThai;
+    /** Chỉ dùng khi tạo/cập nhật — không trả về trong response. */
+    private String matKhau;
 
     public NhanVienDTO() {
     }
@@ -99,5 +101,13 @@ public class NhanVienDTO {
 
     public void setTrangThai(Boolean trangThai) {
         this.trangThai = trangThai;
+    }
+
+    public String getMatKhau() {
+        return matKhau;
+    }
+
+    public void setMatKhau(String matKhau) {
+        this.matKhau = matKhau;
     }
 }

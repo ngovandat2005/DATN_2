@@ -13,9 +13,9 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @GetMapping("/create")
-    public String createPayment(@RequestParam int amount, @RequestParam(required = false) String orderId, HttpServletRequest request) throws Exception {
+    public String createPayment(@RequestParam(required = false) String orderId, HttpServletRequest request) throws Exception {
         String ipAddress = request.getRemoteAddr();
-        return paymentService.createPaymentUrl(amount, ipAddress, orderId);
+        return paymentService.createPaymentUrl(ipAddress, orderId);
     }
 
     @GetMapping("/vnpay-return")

@@ -36,8 +36,13 @@ public class ThongKeService {
         Integer onlineProducts = donHangChiTietRepository.sumProductsSoldByChannelAndDateRange("ONLINE", start, end);
         Integer offlineProducts = donHangChiTietRepository.sumProductsSoldByChannelAndDateRange("Bán hàng tại quầy", start, end);
 
+        if (totalRevenue == null) totalRevenue = 0.0;
+        if (totalProductsSold == null) totalProductsSold = 0;
+        if (ordersCompleted == null) ordersCompleted = 0;
         if (onlineRevenue == null) onlineRevenue = 0.0;
         if (offlineRevenue == null) offlineRevenue = 0.0;
+        if (onlineProducts == null) onlineProducts = 0;
+        if (offlineProducts == null) offlineProducts = 0;
         double total = onlineRevenue + offlineRevenue;
 
         Map<String, Object> stats = new HashMap<>();

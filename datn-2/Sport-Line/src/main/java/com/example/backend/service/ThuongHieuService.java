@@ -19,6 +19,7 @@ public class ThuongHieuService {
     public List<ThuongHieu> getAll() {
         return thi.findAllByTrangThai(1);
     }
+
     public List<ThuongHieu> getAllFull() {
         return thi.findAll();
     }
@@ -28,28 +29,38 @@ public class ThuongHieuService {
     }
 
     public ResponseEntity<?> create(ThuongHieu thuongHieu) {
-        Optional<ThuongHieu> existing = thi.findByTenThuongHieuIgnoreCase(thuongHieu.getTenThuongHieu());
+        if (thuongHieu.getTenThuongHieu() == null || thuongHieu.getTenThuongHieu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên thương hiệu không được để trống!");
+        }
+        String tenTrim = thuongHieu.getTenThuongHieu().trim();
+        Optional<ThuongHieu> existing = thi.findByTenThuongHieuIgnoreCase(tenTrim);
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Thương hiệu đã tồn tại!");
         }
+        thuongHieu.setTenThuongHieu(tenTrim);
         ThuongHieu saved = thi.save(thuongHieu);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     public ResponseEntity<?> update(Integer id, ThuongHieu thuongHieu) {
+        if (thuongHieu.getTenThuongHieu() == null || thuongHieu.getTenThuongHieu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên thương hiệu không được để trống!");
+        }
+        String tenTrim = thuongHieu.getTenThuongHieu().trim();
         Optional<ThuongHieu> current = thi.findById(id);
         if (current.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Thương hiệu với ID: " + id);
         }
 
-        Optional<ThuongHieu> existing = thi.findByTenThuongHieuIgnoreCase(thuongHieu.getTenThuongHieu());
+        Optional<ThuongHieu> existing = thi.findByTenThuongHieuIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên thương hiệu đã tồn tại!");
         }
 
-        thuongHieu.setId(id);
-        ThuongHieu updated = thi.save(thuongHieu);
-        return ResponseEntity.ok(updated);
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
+        ThuongHieu th = current.get();
+        th.setTenThuongHieu(tenTrim);
+        return ResponseEntity.ok(thi.save(th));
     }
 
     public ResponseEntity<?> delete(Integer id) {
@@ -61,6 +72,7 @@ public class ThuongHieuService {
         thuongHieu.setTrangThai(0);
         return ResponseEntity.ok(thi.save(thuongHieu));
     }
+
     public void khoiPhucThuongHieu(Integer id) {
         ThuongHieu th = thi.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));

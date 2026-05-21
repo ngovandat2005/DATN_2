@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Divider, Select } from 'antd';
+import { Form, Input, Button, Typography, Divider } from 'antd';
 import { UserOutlined, MailOutlined, LockOutlined, PhoneOutlined, HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';

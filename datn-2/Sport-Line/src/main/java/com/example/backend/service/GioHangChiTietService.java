@@ -28,6 +28,10 @@ public class GioHangChiTietService {
 
 
     public GioHangChiTiet themVaoGio(ThemGioHangDTO req) {
+        if (req.getSoLuong() <= 0) {
+            throw new RuntimeException("Số lượng thêm vào giỏ hàng phải lớn hơn 0");
+        }
+
         SanPhamChiTiet spct = spctRepo.findById(req.getIdSanPhamChiTiet())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -43,7 +47,7 @@ public class GioHangChiTietService {
                 throw new ThongBao("Số lượng vượt quá tồn kho. Còn lại: " + spct.getSoLuong());
             }
             tonTai.setSoLuong(soLuongMoi);
-            tonTai.setGia(spct.getGiaBan());
+            tonTai.setGia(spct.getGiaBanGiamGia());
             return repo.save(tonTai);
         }
 
@@ -55,7 +59,7 @@ public class GioHangChiTietService {
         moi.setSanPhamChiTiet(spct);
         moi.setKhachHang(kh);
         moi.setSoLuong(req.getSoLuong());
-        moi.setGia(spct.getGiaBan());
+        moi.setGia(spct.getGiaBanGiamGia());
         return repo.save(moi);
     }
 
@@ -65,6 +69,10 @@ public class GioHangChiTietService {
     }
     // 3. Cập nhật số lượng
     public GioHangChiTiet capNhatSoLuong(Integer id, int soLuongMoi) {
+        if (soLuongMoi <= 0) {
+            throw new RuntimeException("Số lượng sản phẩm phải lớn hơn 0");
+        }
+
         GioHangChiTiet chiTiet = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy chi tiết giỏ hàng"));
         

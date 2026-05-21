@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Typography, Divider, Button, Spin, Carousel, message } from 'antd';
-import { Link, useNavigate } from 'react-router-dom';
+import { Row, Col, Typography, Button, Spin, Carousel } from 'antd';
+import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
 import ErrorBoundary from '../components/ErrorBoundary';
 import config from '../config/config';
@@ -9,7 +9,6 @@ import '../styles/Home.css';
 const { Title, Text } = Typography;
 
 function ProductCard({ product, index }) {
-  const navigate = useNavigate();
   if (!product) return null;
 
   const productName = product.tenSanPham || product.ten || 'SẢN PHẨM MỚI';
@@ -69,9 +68,7 @@ function ProductCard({ product, index }) {
 
 function Home() {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [onSaleProducts, setOnSaleProducts] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,17 +80,9 @@ function Home() {
           // Log sản phẩm nổi bật - CHỈ LẤY GIÀY NAM / UNISEX
           const featured = allProducts.filter(p => p.trangThai === 1).slice(0, 8);
           setFeaturedProducts(featured);
-          
-          // Log sản phẩm giảm giá
-          const sales = allProducts.filter(p => 
-            p.trangThai === 1 && 
-            ((p.giaBanGoc && p.giaBan && p.giaBanGoc > p.giaBan) || p.phanTramGiam > 0)
-          ).slice(0, 4);
-          setOnSaleProducts(sales);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
-        setError('Không thể tải sản phẩm');
       } finally {
         setLoading(false);
       }

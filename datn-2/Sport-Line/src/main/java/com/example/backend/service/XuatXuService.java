@@ -30,40 +30,38 @@ public class XuatXuService {
     }
 
     public ResponseEntity<?> create(XuatXu xuatXu) {
-        Optional<XuatXu> existing = xuatXuRepo.findByTenXuatXuIgnoreCase(xuatXu.getTenXuatXu());
-        if (existing.isPresent()) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body("Xuất xứ đã tồn tại!");
+        if (xuatXu.getTenXuatXu() == null || xuatXu.getTenXuatXu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên xuất xứ không được để trống!");
         }
+        String tenTrim = xuatXu.getTenXuatXu().trim();
+        Optional<XuatXu> existing = xuatXuRepo.findByTenXuatXuIgnoreCase(tenTrim);
+        if (existing.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Xuất xứ đã tồn tại!");
+        }
+        xuatXu.setTenXuatXu(tenTrim);
         XuatXu newXuatXu = xuatXuRepo.save(xuatXu);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(newXuatXu);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newXuatXu);
     }
 
     public ResponseEntity<?> update(Integer id, XuatXu xuatXu) {
+        if (xuatXu.getTenXuatXu() == null || xuatXu.getTenXuatXu().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên xuất xứ không được để trống!");
+        }
+        String tenTrim = xuatXu.getTenXuatXu().trim();
         Optional<XuatXu> current = xuatXuRepo.findById(id);
         if (current.isEmpty()) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body("Không tìm thấy Xuất xứ với ID: " + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Xuất xứ với ID: " + id);
         }
 
-        Optional<XuatXu> existing = xuatXuRepo.findByTenXuatXuIgnoreCase(xuatXu.getTenXuatXu());
+        Optional<XuatXu> existing = xuatXuRepo.findByTenXuatXuIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body("Tên xuất xứ đã tồn tại!");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên xuất xứ đã tồn tại!");
         }
 
-        // Cập nhật thông tin
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
         XuatXu xuatXuToUpdate = current.get();
-        xuatXuToUpdate.setTenXuatXu(xuatXu.getTenXuatXu());
-        xuatXuToUpdate.setTrangThai(xuatXu.getTrangThai());
-
-        XuatXu updated = xuatXuRepo.save(xuatXuToUpdate);
-        return ResponseEntity.ok(updated);
+        xuatXuToUpdate.setTenXuatXu(tenTrim);
+        return ResponseEntity.ok(xuatXuRepo.save(xuatXuToUpdate));
     }
 
 
@@ -82,7 +80,7 @@ public class XuatXuService {
     }
     public void khoiPhucXuatXu(Integer id) {
         XuatXu xx = xuatXuRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy xuất xứ!"));
         xx.setTrangThai(1); // 1 = Đang hoạt động
         xuatXuRepo.save(xx);
     }

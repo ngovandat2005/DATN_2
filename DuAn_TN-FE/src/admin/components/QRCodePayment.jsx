@@ -20,13 +20,6 @@ const QRCodePayment = ({
   // Lấy thông tin ngân hàng từ config
   const bankInfo = getBankDisplayInfo(orderId, orderTotal);
 
-  // Tạo QR Code data theo chuẩn VietQR
-  const generateQRData = () => {
-    // Format theo chuẩn QR Code cho ngân hàng Việt Nam
-    const content = 'Thanh Toan Hoa Don Mua Hang';
-    return `https://api.vietqr.io/image/${bankInfo.bankCode}/${bankInfo.accountNumber}/${orderTotal}/${encodeURIComponent(content)}`;
-  };
-
   // Xác nhận thanh toán thủ công
   const confirmPaymentManually = async () => {
     setIsConfirming(true);

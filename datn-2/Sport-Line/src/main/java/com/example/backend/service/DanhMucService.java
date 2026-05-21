@@ -27,29 +27,39 @@ public class DanhMucService {
     }
 
     public ResponseEntity<?> create(DanhMuc danhMuc) {
-        Optional<DanhMuc> existing = dmi.findByTenDanhMucIgnoreCase(danhMuc.getTenDanhMuc());
+        if (danhMuc.getTenDanhMuc() == null || danhMuc.getTenDanhMuc().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên danh mục không được để trống!");
+        }
+        String tenTrim = danhMuc.getTenDanhMuc().trim();
+        Optional<DanhMuc> existing = dmi.findByTenDanhMucIgnoreCase(tenTrim);
         if (existing.isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Danh mục đã tồn tại!");
         }
 
+        danhMuc.setTenDanhMuc(tenTrim);
         DanhMuc newDanhMuc = dmi.save(danhMuc);
         return ResponseEntity.status(HttpStatus.CREATED).body(newDanhMuc);
     }
 
     public ResponseEntity<?> update(Integer id, DanhMuc danhMuc) {
+        if (danhMuc.getTenDanhMuc() == null || danhMuc.getTenDanhMuc().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Tên danh mục không được để trống!");
+        }
+        String tenTrim = danhMuc.getTenDanhMuc().trim();
         Optional<DanhMuc> current = dmi.findById(id);
         if (current.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy Danh mục với ID: " + id);
         }
 
-        Optional<DanhMuc> existing = dmi.findByTenDanhMucIgnoreCase(danhMuc.getTenDanhMuc());
+        Optional<DanhMuc> existing = dmi.findByTenDanhMucIgnoreCase(tenTrim);
         if (existing.isPresent() && !existing.get().getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Tên danh mục đã tồn tại!");
         }
 
-        danhMuc.setId(id); // Cập nhật lại ID
-        DanhMuc updated = dmi.save(danhMuc);
-        return ResponseEntity.ok(updated);
+        // Chỉ cập nhật tên, giữ nguyên trangThai để tránh vô tình xoá mềm
+        DanhMuc dm = current.get();
+        dm.setTenDanhMuc(tenTrim);
+        return ResponseEntity.ok(dmi.save(dm));
     }
 
     public ResponseEntity<?> delete(Integer id) {
@@ -65,7 +75,7 @@ public class DanhMucService {
     }
     public void khoiPhucDanhMuc(Integer id) {
         DanhMuc dm = dmi.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu!"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
         dm.setTrangThai(1); // 1 = Đang hoạt động
         dmi.save(dm);
     }

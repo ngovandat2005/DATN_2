@@ -1,5 +1,5 @@
 import React from 'react';
-import { Carousel, Typography } from 'antd';
+import { Carousel } from 'antd';
 import { Link } from 'react-router-dom';
 import './HeroSection.css';
 

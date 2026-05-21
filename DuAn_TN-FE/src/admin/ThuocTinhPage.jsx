@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Menu, Layout } from 'antd';
-import { PartitionOutlined, BorderOutlined, BgColorsOutlined, GlobalOutlined, DeploymentUnitOutlined, TagsOutlined, CameraOutlined } from '@ant-design/icons';
+import { PartitionOutlined, BorderOutlined, BgColorsOutlined, GlobalOutlined, DeploymentUnitOutlined, TagsOutlined } from '@ant-design/icons';
 
 import KichThuocPage from './KichThuocPage';
 import MauSacPage from './MauSacPage';

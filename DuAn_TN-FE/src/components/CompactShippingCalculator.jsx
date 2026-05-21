@@ -17,14 +17,13 @@ import {
 import { 
   TruckOutlined, 
   CalculatorOutlined, 
-  DollarOutlined, 
   ClockCircleOutlined,
   DownOutlined
 } from '@ant-design/icons';
 import AddressSelector from './AddressSelector';
 import config from '../config/config';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Panel } = Collapse;
 
 const CompactShippingCalculator = ({ 

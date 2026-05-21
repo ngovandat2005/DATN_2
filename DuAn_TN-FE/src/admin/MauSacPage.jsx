@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd';
-import { TagOutlined, DeleteOutlined, RollbackOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Select, Space, message } from 'antd';
+import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import Swal from 'sweetalert2';
 import Switch from "antd/lib/switch";
 import '../styles/AdminPanel.css';
-import useMauSacStore from './stores/mauSacStore';
 
 const { Option } = Select;
 const { Search } = Input;
@@ -14,25 +13,14 @@ export default function MauSacPage() {
   const [editingItem, setEditingItem] = useState(null);
   const [form] = Form.useForm();
   const [mauSacs, setMauSacs] = useState([]);
-  const [thungRac, setThungRac] = useState([]);
-  const [showThungRac, setShowThungRac] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearchọng] = useState(false);
-
-  const { mauSacData, addMauSac, updateMauSac, deleteMauSac } = useMauSacStore();
 
   const fetchAll = () => {
     fetch('http://localhost:8080/api/mau-sac/getAllFull')
       .then(response => response.json())
       .then(data => setMauSacs(data))
       .catch(error => console.error('Lỗi khi gọi API màu sắc:', error));
-  };
-
-  const fetchTrash = () => {
-    fetch('http://localhost:8080/api/mau-sac/getThungRac')
-      .then(response => response.json())
-      .then(data => setThungRac(data))
-      .catch(error => console.error('Lỗi khi gọi API thùng rác màu sắc:', error));
   };
 
   const handleSearch = (value) => {
@@ -69,12 +57,8 @@ export default function MauSacPage() {
   };
 
   useEffect(() => {
-    if (showThungRac) {
-      fetchTrash();
-    } else {
-      fetchAll();
-    }
-  }, [showThungRac]);
+    fetchAll();
+  }, []);
 
   const columns = [
     { 
@@ -106,24 +90,6 @@ export default function MauSacPage() {
           <Button style={{ background: '#e6f4ff', color: '#1677ff', border: 'none', borderRadius: 6, fontWeight: 500 }} onClick={() => handleEdit(record)}>Sửa</Button>
           {/* <Button style={{ background: '#fff1f0', color: '#ff4d4f', border: 'none', borderRadius: 6, fontWeight: 500 }} onClick={() => handleDelete(record.id)}>Xóa</Button> */}
         </Space>
-      ),
-    },
-  ];
-
-  const columnsThungRac = [
-    { 
-      title: 'STT', 
-      key: 'stt',
-      render: (text, record, index) => index + 1 
-    },
-    { title: 'Tên Màu Sắc', dataIndex: 'tenMauSac', key: 'tenMauSac', sorter: (a, b) => a.tenMauSac.localeCompare(b.tenMauSac) },
-    {
-      title: 'Hành Động',
-      key: 'actions',
-      render: (_, record) => (
-        <Button style={{ background: '#e6f4ff', color: '#1677ff', border: 'none', borderRadius: 6, fontWeight: 500 }} icon={<RollbackOutlined />} onClick={() => handleRestore(record.id)}>
-          Khôi phục
-        </Button>
       ),
     },
   ];
@@ -259,59 +225,6 @@ export default function MauSacPage() {
         });
     }
     handleCancel();
-  };
-
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: 'Bạn có chắc chắn muốn chuyển màu sắc này vào thùng rác?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Có',
-      cancelButtonText: 'Không',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        fetch(`http://localhost:8080/api/mau-sac/del/${id}`, { method: 'DELETE' })
-          .then(res => {
-            if (!res.ok) throw new Error('Lỗi khi chuyển vào thùng rác!');
-            Swal.fire({ icon: 'success', title: 'Đã chuyển vào thùng rác', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            if (showThungRac) {
-              fetch('http://localhost:8080/api/mau-sac/getThungRac')
-                .then(response => response.json())
-                .then(data => setThungRac(data));
-            } else {
-              fetch('http://localhost:8080/api/mau-sac/getAllFull')
-                .then(response => response.json())
-                .then(data => setMauSacs(data));
-            }
-          })
-          .catch(() => Swal.fire({ icon: 'error', title: 'Xóa thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 }));
-      }
-    });
-  };
-
-  const handleRestore = async (id) => {
-    const result = await Swal.fire({
-      title: 'Xác nhận khôi phục màu sắc này?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#1677ff',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Khôi phục',
-      cancelButtonText: 'Hủy'
-    });
-
-    if (!result.isConfirmed) return;
-
-    fetch(`http://localhost:8080/api/mau-sac/khoi-phuc/${id}`, { method: 'PUT' })
-      .then(res => {
-        Swal.fire({ icon: 'success', title: 'Khôi phục thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-        fetch('http://localhost:8080/api/mau-sac/getThungRac')
-          .then(response => response.json())
-          .then(data => setThungRac(data));
-      })
-      .catch(() => Swal.fire({ icon: 'error', title: 'Khôi phục thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 }));
   };
 
   // Thêm hàm xử lý đổi trạng thái

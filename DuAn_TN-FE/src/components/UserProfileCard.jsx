@@ -5,14 +5,12 @@ import {
   Input,
   Button,
   Typography,
-  Row,
-  Col,
   Select,
   DatePicker,
 } from "antd";
 import { getUserInfo, getCustomerId, isLoggedIn } from "../utils/authUtils";
 import config from "../config/config";
-import { parseGHNResponse, logGHNResponse } from "../utils/ghnUtils";
+import { parseGHNResponse } from "../utils/ghnUtils";
 import moment from "moment";
 import Swal from 'sweetalert2';
 import AddressManager from "./AddressManager";

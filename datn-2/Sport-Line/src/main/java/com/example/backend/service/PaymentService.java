@@ -24,15 +24,26 @@ public class PaymentService {
     @Autowired
     private DonHangService donHangService;
 
-    public String createPaymentUrl(int amount, String ipAddress) throws Exception {
-        return createPaymentUrl(amount, ipAddress, null);
-    }
-
-    public String createPaymentUrl(int amount, String ipAddress, String orderId) throws Exception {
+    public String createPaymentUrl(String ipAddress, String orderId) throws Exception {
         if (ipAddress == null || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("localhost")) {
             ipAddress = "127.0.0.1";
         }
         System.out.println("DEBUG VNPAY - Client IP: " + ipAddress + ", Order ID: " + orderId);
+
+        int amount = 0;
+        if (orderId != null && !orderId.trim().isEmpty()) {
+            com.example.backend.entity.DonHang donHang = donHangService.layChiTietDon(Integer.parseInt(orderId));
+            if (donHang != null && donHang.getTongTien() != null) {
+                if (donHang.getTrangThai() != null && donHang.getTrangThai() >= 1 && donHang.getTrangThai() != 8) {
+                    throw new Exception("Đơn hàng này đã được thanh toán hoặc xác nhận trước đó!");
+                }
+                amount = donHang.getTongTien().intValue();
+            } else {
+                throw new Exception("Không tìm thấy đơn hàng hoặc tổng tiền không hợp lệ.");
+            }
+        } else {
+            throw new Exception("Cần có mã đơn hàng để thanh toán.");
+        }
 
         Map<String, String> vnpParams = vnpayConfig.createVNPayParams(amount, ipAddress, orderId);
 
@@ -131,8 +142,14 @@ public class PaymentService {
             try {
                 int orderId = Integer.parseInt(vnp_TxnRef);
                 if ("00".equals(vnp_ResponseCode)) {
+                    com.example.backend.entity.DonHang donHang = donHangService.layChiTietDon(orderId);
+                    if (donHang != null && donHang.getTrangThai() != null && donHang.getTrangThai() >= 1 && donHang.getTrangThai() != 8) {
+                        System.out.println("ℹ️ Đơn hàng #" + orderId + " đã được xác nhận thanh toán trước đó.");
+                        return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
+                    }
                     donHangService.capNhatTrangThai(orderId, com.example.backend.enums.TrangThaiDonHang.XAC_NHAN);
-                    sendSuccessEmail(vnp_TxnRef, amount);
+                    String customerEmail = (donHang != null && donHang.getEmailGiaoHang() != null) ? donHang.getEmailGiaoHang() : "ngovandat10a5@gmail.com";
+                    sendSuccessEmail(vnp_TxnRef, amount, customerEmail);
                     return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
                 } else {
                     // Thanh toán thất bại hoặc người dùng hủy giao dịch
@@ -145,15 +162,16 @@ public class PaymentService {
         }
 
         if ("00".equals(vnp_ResponseCode)) {
-            sendSuccessEmail(vnp_TxnRef, amount);
+            sendSuccessEmail(vnp_TxnRef, amount, "ngovandat10a5@gmail.com");
             return "Thanh toán thành công. Mã giao dịch: " + vnp_TxnRef;
         }
         return "Thanh toán thất bại. Mã: " + vnp_ResponseCode;
     }
 
-    private void sendSuccessEmail(String txnRef, String amount) {
+    private void sendSuccessEmail(String txnRef, String amount, String toEmail) {
+        if (toEmail == null || toEmail.trim().isEmpty()) return;
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo("ngovandat10a5@gmail.com"); // bạn có thể cho động luôn
+        message.setTo(toEmail); 
         message.setSubject("Giao dịch thành công với VNPay");
         message.setText("Giao dịch mã: " + txnRef + "\nSố tiền: " + (Integer.parseInt(amount) / 100) + " VNĐ\nCảm ơn bạn đã sử dụng dịch vụ!");
         mailSender.send(message);

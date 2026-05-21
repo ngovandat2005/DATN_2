@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, message, Space, Tag } from 'antd';
-import { EyeOutlined, LockOutlined, UserOutlined } from '@ant-design/icons';
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import config from '../../config/config';
 
 const EmployeePasswordManager = () => {
@@ -36,7 +36,7 @@ const EmployeePasswordManager = () => {
   // Tạo mật khẩu cho nhân viên
   const createPassword = async (values) => {
     try {
-      const response = await fetch(`${config.API_BASE_URL}${config.ENDPOINTS.ADMIN_CREATE_PASSWORD}/${selectedEmployee.id}`, {
+      const response = await fetch(`${config.API_BASE_URL}${config.ENDPOINTS.ADMIN_CREATE_PASSWORD}/${selectedEmployee.id}/mat-khau`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -95,13 +95,6 @@ const OrderDetailPage = () => {
     p.tenSanPham.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Memoize các giá trị tính toán để tránh re-render
-  const isOrderEditable = useMemo(() => orderInfo && orderInfo.trangThai === 0, [orderInfo]);
-  const totalAmount = useMemo(() => {
-    if (!selectedProduct) return 0;
-    return ((selectedProduct.giaBanGiamGia || selectedProduct.giaBan) * addProductQty);
-  }, [selectedProduct, addProductQty]);
-
   // Memoize bảng sản phẩm để tránh re-render không cần thiết
   const productsTable = useMemo(() => {
     if (productsLoading) {
@@ -655,15 +648,75 @@ const OrderDetailPage = () => {
   const handleThanhToanLai = async () => {
     try {
       Swal.fire({
+        title: 'Đang kiểm tra đơn hàng...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const oldTotal = orderInfo.tongTien || 0;
+      const oldDiscount = orderInfo.tongTienGiamGia || 0;
+
+      const recalcRes = await fetch(config.getApiUrl(`api/donhang/${id}/cap-nhat-tong-tien`), {
+        method: 'PUT'
+      });
+      if (!recalcRes.ok) {
+        const errText = await recalcRes.text();
+        throw new Error(errText || 'Không thể cập nhật tổng tiền đơn hàng');
+      }
+
+      const updatedOrder = await recalcRes.json();
+      setOrderInfo(updatedOrder);
+
+      const newTotal = updatedOrder.tongTien || 0;
+      const newDiscount = updatedOrder.tongTienGiamGia || 0;
+      const totalChanged = Math.abs(newTotal - oldTotal) > 1;
+      const voucherRemoved = oldDiscount > 0 && newDiscount <= 0;
+
+      if (totalChanged || voucherRemoved) {
+        const confirm = await Swal.fire({
+          icon: 'warning',
+          title: voucherRemoved ? 'Voucher không còn hiệu lực' : 'Tổng tiền đã thay đổi',
+          html: `
+            <div style="text-align:left">
+              ${voucherRemoved ? '<p>Voucher trên đơn đã hết hạn hoặc không còn áp dụng được.</p>' : ''}
+              <p>Tổng cũ: <b>${oldTotal.toLocaleString()}đ</b></p>
+              <p>Tổng mới: <b style="color:#d32f2f">${newTotal.toLocaleString()}đ</b></p>
+              <p>Bạn có muốn tiếp tục thanh toán với số tiền mới?</p>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Tiếp tục thanh toán',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#1976d2'
+        });
+        if (!confirm.isConfirmed) {
+          return;
+        }
+      } else {
+        const confirm = await Swal.fire({
+          icon: 'question',
+          title: 'Xác nhận thanh toán lại',
+          html: `<p>Tổng thanh toán: <b>${newTotal.toLocaleString()}đ</b></p>`,
+          showCancelButton: true,
+          confirmButtonText: 'Thanh toán VNPay',
+          cancelButtonText: 'Hủy',
+          confirmButtonColor: '#1976d2'
+        });
+        if (!confirm.isConfirmed) {
+          return;
+        }
+      }
+
+      Swal.fire({
         title: 'Đang tạo liên kết thanh toán...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
-      const amount = orderInfo.tongTien || 0;
-      const res = await fetch(`http://localhost:8080/api/payment/create?amount=${amount}&orderId=${id}`);
+
+      const res = await fetch(config.getApiUrl(`api/payment/create?orderId=${id}`));
       if (!res.ok) throw new Error('Không thể tạo liên kết thanh toán');
       const url = await res.text();
-      
+
       Swal.close();
       window.location.href = url;
     } catch (err) {
@@ -671,7 +724,7 @@ const OrderDetailPage = () => {
       Swal.fire({
         icon: 'error',
         title: 'Lỗi',
-        text: 'Không thể tạo liên kết thanh toán VNPay. Vui lòng thử lại sau.'
+        text: err.message || 'Không thể tạo liên kết thanh toán VNPay. Vui lòng thử lại sau.'
       });
     }
   };
@@ -762,9 +815,9 @@ const OrderDetailPage = () => {
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [wards, setWards] = useState([]);
-  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedProvince] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedWard, setSelectedWard] = useState('');
+  const [, setSelectedWard] = useState('');
 
   // ✅ THÊM: Fetch danh sách tỉnh/thành
   useEffect(() => {
@@ -981,7 +1034,7 @@ const OrderDetailPage = () => {
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1976d2; font-size: 13px;">Tỉnh/Thành phố:</label>
             <select id="swal-province" class="swal2-select" style="width: 100%; margin-bottom: 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
               <option value="">Chọn tỉnh/thành phố</option>
-              ${provinces.map(province => `<option value="${province.ProvinceID}" ${province.ProvinceID == currentProvinceId ? 'selected' : ''}>${province.ProvinceName}</option>`).join('')}
+              ${provinces.map(province => `<option value="${province.ProvinceID}" ${String(province.ProvinceID) === String(currentProvinceId) ? 'selected' : ''}>${province.ProvinceName}</option>`).join('')}
             </select>
           </div>
           
@@ -989,7 +1042,7 @@ const OrderDetailPage = () => {
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1976d2; font-size: 13px;">Quận/Huyện:</label>
             <select id="swal-district" class="swal2-select" style="width: 100%; margin-bottom: 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" ${tempDistricts.length > 0 ? '' : 'disabled'}>
               <option value="">Chọn quận/huyện</option>
-              ${tempDistricts.map(district => `<option value="${district.DistrictID}" ${district.DistrictID == currentDistrictId ? 'selected' : ''}>${district.DistrictName}</option>`).join('')}
+              ${tempDistricts.map(district => `<option value="${district.DistrictID}" ${String(district.DistrictID) === String(currentDistrictId) ? 'selected' : ''}>${district.DistrictName}</option>`).join('')}
             </select>
           </div>
           
@@ -997,7 +1050,7 @@ const OrderDetailPage = () => {
             <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1976d2; font-size: 13px;">Phường/Xã:</label>
             <select id="swal-ward" class="swal2-select" style="width: 100%; margin-bottom: 0; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;" ${tempWards.length > 0 ? '' : 'disabled'}>
               <option value="">Chọn phường/xã</option>
-              ${tempWards.map(ward => `<option value="${ward.WardCode}" ${ward.WardCode == currentWardCode ? 'selected' : ''}>${ward.WardName}</option>`).join('')}
+              ${tempWards.map(ward => `<option value="${ward.WardCode}" ${String(ward.WardCode) === String(currentWardCode) ? 'selected' : ''}>${ward.WardName}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -1068,7 +1121,7 @@ const OrderDetailPage = () => {
 
                 // ✅ SỬA: Giữ nguyên giá trị đã chọn nếu có
                 if (currentDistrictId) {
-                  const existingDistrict = districtOptions.find(d => d.DistrictID == currentDistrictId);
+                  const existingDistrict = districtOptions.find(d => String(d.DistrictID) === String(currentDistrictId));
                   if (existingDistrict) {
                     districtSelect.value = currentDistrictId;
                   } else {
@@ -1121,7 +1174,7 @@ const OrderDetailPage = () => {
 
                 // ✅ SỬA: Giữ nguyên giá trị đã chọn nếu có
                 if (currentWardCode) {
-                  const existingWard = wardOptions.find(w => w.WardCode == currentWardCode);
+                  const existingWard = wardOptions.find(w => String(w.WardCode) === String(currentWardCode));
                   if (existingWard) {
                     wardSelect.value = currentWardCode;
                   } else {
@@ -1250,21 +1303,21 @@ const OrderDetailPage = () => {
         if (provinceSelect.selectedIndex > 0) {
           provinceName = provinceSelect.options[provinceSelect.selectedIndex].text;
         } else {
-          const province = provinces.find(p => p.ProvinceID == provinceId);
+          const province = provinces.find(p => String(p.ProvinceID) === String(provinceId));
           provinceName = province?.ProvinceName || '';
         }
 
         if (districtSelect.selectedIndex > 0) {
           districtName = districtSelect.options[districtSelect.selectedIndex].text;
         } else {
-          const district = districts.find(d => d.DistrictID == districtId);
+          const district = districts.find(d => String(d.DistrictID) === String(districtId));
           districtName = district?.DistrictName || '';
         }
 
         if (wardSelect.selectedIndex > 0) {
           wardName = wardSelect.options[wardSelect.selectedIndex].text;
         } else {
-          const ward = wards.find(w => w.WardCode == wardCode);
+          const ward = wards.find(w => String(w.WardCode) === String(wardCode));
           wardName = ward?.WardName || '';
         }
 
@@ -1721,7 +1774,7 @@ const OrderDetailPage = () => {
   console.log('🔍 === END DEBUG ===');
 
   // 🔄 Refresh lại dữ liệu đơn hàng
-  const refreshOrderData = async () => {
+  const refreshOrderData = useCallback(async () => {
     try {
       // Refresh thông tin đơn hàng
       const orderRes = await fetch(`http://localhost:8080/api/donhang/chi-tiet/${id}`);
@@ -1755,7 +1808,7 @@ const OrderDetailPage = () => {
     } catch (err) {
       console.error('Lỗi khi refresh dữ liệu:', err);
     }
-  };
+  }, [id]);
 
   // ➕ Thêm sản phẩm vào đơn hàng
   const handleAddProduct = useCallback(async () => {
@@ -1823,7 +1876,7 @@ const OrderDetailPage = () => {
     } finally {
       setAddProductLoading(false);
     }
-  }, [orderInfo, selectedProduct, addProductQty, id, refreshOrderData]);
+  }, [orderInfo, selectedProduct, addProductQty, id, refreshOrderData, fetchAvailableProducts]);
 
   // 🔄 Cập nhật số lượng sản phẩm (tự động gọi API khi thay đổi)
   const handleUpdateQuantity = async (productId, newQty) => {

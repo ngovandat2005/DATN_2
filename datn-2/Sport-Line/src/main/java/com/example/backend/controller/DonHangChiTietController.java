@@ -12,6 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import com.example.backend.repository.VoucherRepository;
+import com.example.backend.service.DonHangService;
+import com.example.backend.entity.Voucher;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @RestController
@@ -25,6 +29,12 @@ public class DonHangChiTietController {
 
     @Autowired
     private VoucherService voucherService;
+
+    @Autowired
+    private VoucherRepository voucherRepository;
+
+    @Autowired
+    private DonHangService donHangService;
 
     @GetMapping("/donhangchitiet")
     public ResponseEntity<List<DonHangChiTietDTO>> getAll() {
@@ -80,15 +90,25 @@ public class DonHangChiTietController {
     }
 
     @DeleteMapping("/don-hang-chi-tiet/{idDonHang}/remove-voucher")
+    @Transactional
     public ResponseEntity<?> removeVoucherFromDonHang(@PathVariable Integer idDonHang) {
         DonHang dh = donHangRepository.findById(idDonHang)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
 
-        dh.setGiamGia(null);
-        dh.setTongTienGiamGia(dh.getTongTien());
+        if (dh.getGiamGia() != null) {
+            Voucher v = dh.getGiamGia();
+            v.setSoLuong(v.getSoLuong() + 1);
+            voucherRepository.save(v);
+        }
 
+        dh.setGiamGia(null);
+        dh.setTongTienGiamGia(0.0);
         donHangRepository.save(dh);
 
-        return ResponseEntity.ok("Đã gỡ voucher khỏi đơn hàng");
+        // Cập nhật lại tổng tiền đơn hàng sau khi gỡ voucher
+        donHangService.capNhatTongTienDonHang(idDonHang);
+
+        DonHang updatedDh = donHangRepository.findById(idDonHang).orElse(dh);
+        return ResponseEntity.ok(updatedDh);
     }
 }
