@@ -11,6 +11,7 @@ import com.example.backend.repository.DonHangRepository;
 import com.example.backend.repository.SanPhamChiTietRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.List;
@@ -53,9 +54,11 @@ public class DonHangChiTietService {
 //        DonHangChiTiet chiTiet = convertToEntity(dto);
 //        return convertToDTO(chiTietRepository.save(chiTiet));
 //    }
-public List<DonHangChiTietDTO> getDonHangById(Integer id) {
-    return chiTietRepository.findByDonHangId(id);
-}
+    public List<DonHangChiTietDTO> getDonHangById(Integer id) {
+        return chiTietRepository.findByDonHangId(id);
+    }
+    
+    @Transactional
     public DonHangChiTietDTO create(DonHangChiTietDTO dto) {
         // 1. Lấy sản phẩm chi tiết từ DB
         SanPhamChiTiet spct = sanPhamChiTietRepository.findById(dto.getIdSanPhamChiTiet())
@@ -95,6 +98,7 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
 
 
 
+    @Transactional
     public DonHangChiTietDTO update(int id, DonHangChiTietDTO dto) {
         Optional<DonHangChiTiet> optional = chiTietRepository.findById(id);
         if (optional.isPresent()) {
@@ -128,6 +132,7 @@ public List<DonHangChiTietDTO> getDonHangById(Integer id) {
     }
 
 
+    @Transactional
     public void delete(int id) {
         Optional<DonHangChiTiet> optional = chiTietRepository.findById(id);
         if (optional.isPresent()) {

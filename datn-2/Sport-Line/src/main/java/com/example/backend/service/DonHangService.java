@@ -168,8 +168,8 @@ public class DonHangService {
                     }
                 }
                 
-                // ✅ BỔ SUNG: Hoàn trả số lượng voucher khi xóa đơn hàng (nếu có)
-                if (donHang.getGiamGia() != null) {
+                // ✅ BỔ SUNG: Hoàn trả số lượng voucher khi xóa đơn hàng (nếu có và đơn chưa huỷ)
+                if (isStockDeducted(donHang) && donHang.getGiamGia() != null) {
                     Voucher v = donHang.getGiamGia();
                     v.setSoLuong(v.getSoLuong() + 1);
                     voucherRepository.save(v);
