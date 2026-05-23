@@ -41,12 +41,28 @@ function Cart() {
       message.warning(`Trong kho chỉ còn ${stock} sản phẩm.`);
       return;
     }
+    if (newQuantity < 1) return;
 
     try {
       await axios.put(config.getApiUrl(`api/gio-hang-chi-tiet/cap-nhat`), null, {
         params: { id: item.id, soLuongMoi: newQuantity }
       });
-      setCart(prev => prev.map(i => i.id === item.id ? { ...i, soLuong: newQuantity } : i));
+      // ✅ SỬA: Cập nhật số lượng và lấy lại giá mới nhất từ server
+      setCart(prev => prev.map(i => {
+        if (i.id !== item.id) return i;
+        const spct = i.sanPhamChiTiet;
+        // Cập nhật giá theo logic ưu tiên: KhuyenMai > giaBanGiamGia > giaBan
+        const originalPrice = spct?.giaBan || 0;
+        const promo = spct?.khuyenMai;
+        let currentPrice = originalPrice;
+        if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+          const promoPrice = Math.round(originalPrice * (1 - promo.giaTri / 100));
+          if (promoPrice > 1000 && promoPrice < originalPrice) currentPrice = promoPrice;
+        } else if (spct?.giaBanGiamGia > 1000 && spct?.giaBanGiamGia < originalPrice) {
+          currentPrice = spct.giaBanGiamGia;
+        }
+        return { ...i, soLuong: newQuantity, gia: currentPrice };
+      }));
     } catch (error) {
       message.error('Cập nhật số lượng thất bại.');
     }
@@ -147,6 +163,7 @@ function Cart() {
                       <Link to={`/products/${sp?.id || '#'}`} className="gx-cart-name">
                         <b>{sp?.tenSanPham || 'Đang tải...'}</b>
                       </Link>
+                      {spct?.ma && <div style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>Mã: {spct.ma}</div>}
                     </div>
                   </td>
                   <td className="gx-cart-variant">

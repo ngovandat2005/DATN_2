@@ -9,7 +9,14 @@
 export const getCurrentAdminUser = () => {
   try {
     const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
-    return adminUser.id ? adminUser : null;
+    if (adminUser.id) {
+      // Tự động chuyển đổi vai trò cho tài khoản quản trị hệ thống nếu phiên đăng nhập cũ lưu sai role
+      if (adminUser.id === 1 || adminUser.name === 'Quản Lý KingStep') {
+        adminUser.role = 'QUANLY';
+      }
+      return adminUser;
+    }
+    return null;
   } catch (error) {
     console.error('Lỗi khi lấy thông tin admin user:', error);
     return null;

@@ -211,8 +211,9 @@ public class KhuyenMaiService {
         List<SanPhamChiTiet> sanPhamChiTietCapNhat = new ArrayList<>();
 
         for (KhuyenMai km : khuyenMaiList) {
-            boolean isExpired = km.getNgayKetThuc().isBefore(now);
-            boolean isActive = km.getNgayBatDau().isBefore(now) && km.getNgayKetThuc().isAfter(now);
+            boolean isExpired = km.getNgayKetThuc() != null && km.getNgayKetThuc().isBefore(now);
+            boolean isActive = km.getNgayBatDau() != null && km.getNgayBatDau().isBefore(now)
+                    && km.getNgayKetThuc() != null && km.getNgayKetThuc().isAfter(now);
 
             List<SanPhamChiTiet> chiTietList = sanPhamChiTietRepository.findByKhuyenMai_Id((km.getId()));
 

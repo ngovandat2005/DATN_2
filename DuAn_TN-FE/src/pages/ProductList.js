@@ -677,11 +677,14 @@ function ProductList() {
                               WebkitBoxOrient: "vertical",
                               overflow: "hidden",
                               color: "#1a1a1a",
-                              marginBottom: 12,
+                              marginBottom: 2,
                             }}
                           >
                             {product.tenSanPham || product.name}
                           </Text>
+                          {product.ma && (
+                            <div style={{ color: '#888', fontSize: '13px', marginBottom: 12 }}>Mã: {product.ma}</div>
+                          )}
                         </div>
                         <div style={{ marginTop: "auto", width: "100%" }}>
                           {renderPrice(product)}

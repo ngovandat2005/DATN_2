@@ -20,7 +20,7 @@ public class KhachHang {
 
     @Column(name = "TenKhachHang")
     @NotEmpty(message = "Tên khách hàng không được để trống!")
-    @Size(min = 5, max= 30, message = "Tên khách hàng phải từ 5 đên 30 ký tự!")
+    @Size(min = 2, max= 50, message = "Tên khách hàng phải từ 2 đến 50 ký tự!")
     private String tenKhachHang;
 
     @Column(name = "Email")

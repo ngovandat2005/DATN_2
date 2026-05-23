@@ -14,51 +14,54 @@ export default function NhanVienPage() {
   const [form] = Form.useForm();
 
   const [nhanViens, setNhanViens] = useState([]);
+  const [allNhanViens, setAllNhanViens] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearchọng] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchNhanViens();
   }, []);
 
-  const fetchNhanViens = () => {
+  const fetchNhanViens = (currentSearchTerm = '') => {
+    setIsSearching(true);
     fetch('http://localhost:8080/api/nhanvien')
       .then(response => response.json())
-      .then(data => setNhanViens(data))
-      .catch(error => console.error('Lỗi khi gọi API nhân viên:', error));
+      .then(data => {
+        setAllNhanViens(data);
+        if (currentSearchTerm) {
+          const filtered = data.filter(emp => 
+            (emp.tenNhanVien && emp.tenNhanVien.toLowerCase().includes(currentSearchTerm.toLowerCase())) ||
+            (emp.email && emp.email.toLowerCase().includes(currentSearchTerm.toLowerCase())) ||
+            (emp.soDienThoai && emp.soDienThoai.includes(currentSearchTerm))
+          );
+          setNhanViens(filtered);
+        } else {
+          setNhanViens(data);
+        }
+      })
+      .catch(error => console.error('Lỗi khi gọi API nhân viên:', error))
+      .finally(() => setIsSearching(false));
   };
 
   const handleSearch = (value) => {
     if (!value.trim()) {
-      fetchNhanViens();
+      setNhanViens(allNhanViens);
       setSearchTerm('');
       return;
     }
 
-    setIsSearchọng(true);
     setSearchTerm(value);
-
-    fetch(`http://localhost:8080/api/nhanvien/search?keyword=${encodeURIComponent(value)}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Lỗi tìm kiếm');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setNhanViens(data);
-        setIsSearchọng(false);
-      })
-      .catch(error => {
-        console.error('Lỗi khi tìm kiếm:', error);
-        message.error('Có lỗi xảy ra khi tìm kiếm');
-        setIsSearchọng(false);
-      });
+    const filtered = allNhanViens.filter(emp => 
+      (emp.tenNhanVien && emp.tenNhanVien.toLowerCase().includes(value.toLowerCase())) ||
+      (emp.email && emp.email.toLowerCase().includes(value.toLowerCase())) ||
+      (emp.soDienThoai && emp.soDienThoai.includes(value))
+    );
+    setNhanViens(filtered);
   };
 
   const handleClearSearch = () => {
     setSearchTerm('');
-    fetchNhanViens();
+    setNhanViens(allNhanViens);
   };
 
   const handleExportExcel = () => {
@@ -88,13 +91,7 @@ export default function NhanVienPage() {
           .then(res => { if (!res.ok) throw new Error(); })
           .then(() => {
             Swal.fire({ icon: 'success', title: 'Xóa thành công', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
-            if (searchTerm) {
-              // Nếu đang tìm kiếm, refresh kết quả tìm kiếm
-              handleSearch(searchTerm);
-            } else {
-              // Nếu không tìm kiếm, refresh toàn bộ danh sách
-              fetchNhanViens();
-            }
+            fetchNhanViens(searchTerm);
           })
           .catch(() => {
             Swal.fire({ icon: 'error', title: 'Xóa thất bại', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, width: 250 });
@@ -261,13 +258,7 @@ export default function NhanVienPage() {
             position: 'top-end',
             width: 300
           });
-          if (searchTerm) {
-            // Nếu đang tìm kiếm, refresh kết quả tìm kiếm
-            handleSearch(searchTerm);
-          } else {
-            // Nếu không tìm kiếm, refresh toàn bộ danh sách
-            fetchNhanViens();
-          }
+          fetchNhanViens(searchTerm);
         })
         .catch(error => {
           Swal.fire({
@@ -307,13 +298,7 @@ export default function NhanVienPage() {
             position: 'top-end',
             width: 300
           });
-          if (searchTerm) {
-            // Nếu đang tìm kiếm, refresh kết quả tìm kiếm
-            handleSearch(searchTerm);
-          } else {
-            // Nếu không tìm kiếm, refresh toàn bộ danh sách
-            fetchNhanViens();
-          }
+          fetchNhanViens(searchTerm);
         })
         .catch(error => {
           Swal.fire({

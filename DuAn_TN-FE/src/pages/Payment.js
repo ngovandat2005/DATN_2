@@ -303,11 +303,17 @@ const Payment = () => {
     if (item.hinhAnh) {
       const qty = item.soLuong || 1;
       const originalUnitPrice = Number(item.giaBan || 0);
-      const discounted = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice;
-      const unitPrice = discounted ? Number(item.giaBanGiamGia) : originalUnitPrice;
+      const promo = item.khuyenMai;
+      let calculatedPromoPrice = originalUnitPrice;
+      if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+        calculatedPromoPrice = Math.round(originalUnitPrice * (1 - promo.giaTri / 100));
+      }
+      const discounted = (item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice) || (calculatedPromoPrice < originalUnitPrice);
+      const unitPrice = discounted ? Math.min(item.giaBanGiamGia || originalUnitPrice, calculatedPromoPrice) : originalUnitPrice;
       return {
         imageUrl: buildImageUrl(item.hinhAnh),
         name: item.tenSanPham || 'Sản phẩm',
+        ma: item.ma || item.maSanPhamChiTiet || item.sanPhamChiTiet?.ma || '',
         variant: [item.mauSac ? `Màu: ${item.mauSac}` : null, item.kichThuoc ? `Size: ${item.kichThuoc}` : null].filter(Boolean).join(' • '),
         qty,
         unitPrice,
@@ -319,11 +325,17 @@ const Payment = () => {
     if (item.giaBan !== undefined && item.idSanPhamChiTiet) {
       const qty = item.soLuong || 1;
       const originalUnitPrice = Number(item.giaBan || 0);
-      const discounted = item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice;
-      const unitPrice = discounted ? Number(item.giaBanGiamGia) : originalUnitPrice;
+      const promo = item.khuyenMai;
+      let calculatedPromoPrice = originalUnitPrice;
+      if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+        calculatedPromoPrice = Math.round(originalUnitPrice * (1 - promo.giaTri / 100));
+      }
+      const discounted = (item.giaBanGiamGia && item.giaBanGiamGia > 0 && item.giaBanGiamGia < originalUnitPrice) || (calculatedPromoPrice < originalUnitPrice);
+      const unitPrice = discounted ? Math.min(item.giaBanGiamGia || originalUnitPrice, calculatedPromoPrice) : originalUnitPrice;
       return {
         imageUrl: buildImageUrl(item.images),
         name: item.tenSanPham || 'Sản phẩm',
+        ma: item.ma || item.maSanPhamChiTiet || item.sanPhamChiTiet?.ma || '',
         variant: [item.tenMauSac ? `Màu: ${item.tenMauSac}` : null, item.tenKichThuoc ? `Size: ${item.tenKichThuoc}` : null].filter(Boolean).join(' • '),
         qty,
         unitPrice,
@@ -335,13 +347,19 @@ const Payment = () => {
     if (item.sanPhamChiTiet) {
       const qty = item.soLuong || 1;
       const originalUnitPrice = Number(item.sanPhamChiTiet.giaBan || item.giaBan || 0);
+      const promo = item.sanPhamChiTiet.khuyenMai || item.khuyenMai;
+      let calculatedPromoPrice = originalUnitPrice;
+      if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+        calculatedPromoPrice = Math.round(originalUnitPrice * (1 - promo.giaTri / 100));
+      }
       const discountCandidate = item.giaBanGiamGia ?? item.sanPhamChiTiet.giaBanGiamGia;
-      const discounted = discountCandidate && discountCandidate > 0 && discountCandidate < originalUnitPrice;
-      const unitPrice = discounted ? Number(discountCandidate) : originalUnitPrice;
+      const discounted = (discountCandidate && discountCandidate > 0 && discountCandidate < originalUnitPrice) || (calculatedPromoPrice < originalUnitPrice);
+      const unitPrice = discounted ? Math.min(discountCandidate || originalUnitPrice, calculatedPromoPrice) : originalUnitPrice;
       const rawImg = item.sanPhamChiTiet?.sanPham?.images;
       return {
         imageUrl: buildImageUrl(rawImg),
         name: item.sanPhamChiTiet?.sanPham?.tenSanPham || item.tenSanPham || 'Sản phẩm',
+        ma: item.sanPhamChiTiet?.ma || item.ma || item.maSanPhamChiTiet || '',
         variant: [
           item.sanPhamChiTiet?.mauSac?.tenMauSac ? `Màu: ${item.sanPhamChiTiet.mauSac.tenMauSac}` : null,
           item.sanPhamChiTiet?.kichThuoc?.tenKichThuoc ? `Size: ${item.sanPhamChiTiet.kichThuoc.tenKichThuoc}` : null
@@ -355,14 +373,21 @@ const Payment = () => {
     // 🔍 Item có trường gia trực tiếp
     if (item.gia !== undefined && item.idSanPhamChiTiet) {
       const qty = item.soLuong || 1;
-      const unitPrice = Number(item.gia || 0);
+      const originalUnitPrice = Number(item.giaBan || item.gia || 0);
+      const promo = item.khuyenMai;
+      let calculatedPromoPrice = originalUnitPrice;
+      if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+        calculatedPromoPrice = Math.round(originalUnitPrice * (1 - promo.giaTri / 100));
+      }
+      const unitPrice = calculatedPromoPrice < originalUnitPrice ? calculatedPromoPrice : originalUnitPrice;
       return {
         imageUrl: buildImageUrl(item.images),
         name: item.tenSanPham || 'Sản phẩm',
+        ma: item.ma || item.maSanPhamChiTiet || item.sanPhamChiTiet?.ma || '',
         variant: [item.tenMauSac ? `Màu: ${item.tenMauSac}` : null, item.tenKichThuoc ? `Size: ${item.tenKichThuoc}` : null].filter(Boolean).join(' • '),
         qty,
         unitPrice,
-        originalUnitPrice: unitPrice
+        originalUnitPrice
       };
     }
 
@@ -389,22 +414,73 @@ const Payment = () => {
       return;
     }
 
-    // Debug: Kiểm tra data từ giỏ hàng
-    console.log('=== DEBUG PAYMENT PAGE ===');
-    console.log('Location state:', location.state);
-    console.log('Cart from state:', location.state?.cart);
-    console.log('Cart length:', location.state?.cart?.length);
+    // Khởi tạo cart từ location state
+    setCart(location.state.cart);
+  }, [location, navigate]);
 
-    // Xử lý data từ giỏ hàng
-    const cartData = location.state.cart;
-    setCart(cartData);
+  // ✅ THÊM: Cập nhật lại giá từ API
+  const refreshPrices = async () => {
+    try {
+      const newCart = await Promise.all(cart.map(async (item) => {
+        const idSpct = item.sanPhamChiTiet?.id || item.idSanPhamChiTiet || item.id;
+        if (!idSpct) return item;
+        const res = await fetch(config.getApiUrl(`api/san-pham-chi-tiet/spct/${idSpct}`));
+        if (res.ok) {
+          const spct = await res.json();
+          // Map DTO properties to match the frontend expected structure
+          if (spct.giaBanSauGiam !== undefined && spct.giaBanSauGiam !== null) {
+            spct.giaBanGiamGia = spct.giaBanSauGiam;
+          } else {
+            spct.giaBanGiamGia = null;
+          }
 
-    // Tính tổng tiền dựa trên loại data
+          if (spct.idKhuyenMai) {
+            spct.khuyenMai = {
+              id: spct.idKhuyenMai,
+              tenKhuyenMai: spct.tenKhuyenMai,
+              trangThai: 1,
+              // Calculate rough percentage from price for display purposes
+              giaTri: (spct.giaBanSauGiam && spct.giaBan) 
+                ? Math.round((1 - spct.giaBanSauGiam / spct.giaBan) * 100) 
+                : 0
+            };
+          } else {
+            spct.khuyenMai = null;
+            spct.giaBanGiamGia = null;
+          }
+
+          if (item.sanPhamChiTiet) {
+            // Merge into sanPhamChiTiet AND expose key fields at top level for all render paths
+            const mergedSpct = { ...item.sanPhamChiTiet, ...spct };
+            return { 
+              ...item, 
+              sanPhamChiTiet: mergedSpct,
+              // Also update top-level fields for render paths that read directly from item
+              giaBan: spct.giaBan || item.giaBan,
+              giaBanGiamGia: spct.giaBanGiamGia,
+              khuyenMai: spct.khuyenMai
+            };
+          } else {
+            // Giữ lại quantity/soLuong
+            return { ...item, ...spct, soLuong: item.soLuong || item.quantity || 1, quantity: item.soLuong || item.quantity || 1 };
+          }
+        }
+        return item;
+      }));
+      setCart(newCart);
+      toast.info('Hệ thống đã tự động cập nhật giá và khuyến mãi mới nhất!');
+    } catch (e) {
+      console.error('Lỗi tự cập nhật giá:', e);
+    }
+  };
+
+  // ✅ THÊM: Tách logic tính toán tổng tiền để phản hồi lại khi cart thay đổi
+  useEffect(() => {
     let originalSubtotal = 0;
     let savingsTotal = 0;
 
-    if (cartData.length > 0) {
-      cartData.forEach(item => {
+    if (cart.length > 0) {
+      cart.forEach(item => {
         let originalPrice = 0;
         let finalPrice = 0;
         let qty = item.soLuong || item.quantity || 1;
@@ -454,6 +530,15 @@ const Payment = () => {
         } else if (item.gia !== undefined) {
           originalPrice = item.gia;
           finalPrice = item.gia;
+        } else if (item.giaBan !== undefined) {
+          // Fallback cho cấu trúc SPCT trực tiếp
+          originalPrice = item.giaBan;
+          const promo = item.khuyenMai;
+          let calculatedPromoPrice = originalPrice;
+          if (promo && promo.trangThai === 1 && promo.giaTri > 0) {
+            calculatedPromoPrice = Math.round(originalPrice * (1 - promo.giaTri / 100));
+          }
+          finalPrice = calculatedPromoPrice < originalPrice ? calculatedPromoPrice : originalPrice;
         }
 
         originalSubtotal += (originalPrice * qty);
@@ -463,7 +548,7 @@ const Payment = () => {
 
     setTotal(originalSubtotal);
     setItemDiscountTotal(savingsTotal);
-  }, [location, navigate]);
+  }, [cart]);
 
   // ✅ THÊM: Tự động đồng bộ finalTotal khi các thành phần thay đổi
   useEffect(() => {
@@ -794,11 +879,13 @@ const Payment = () => {
           setOrderDiscount(finalDiscount);
           setOrderTotal(total - finalDiscount);
 
-          // ✅ QUAN TRỌNG: Cập nhật finalTotal để hiển thị đúng
-          const newFinalTotal = (total - itemDiscountTotal - finalDiscount) + shippingFee;
+          // ✅ SỬA: Áp dụng đúng logic miễn phí ship >= 2tr
+          const subAfterVoucher = effectiveTotal - finalDiscount;
+          const effectiveShip = subAfterVoucher >= 2000000 ? 0 : shippingFee;
+          const newFinalTotal = subAfterVoucher + effectiveShip;
           setFinalTotal(newFinalTotal);
 
-          console.log('💰 Sau khi áp dụng voucher: orderDiscount=', finalDiscount, 'orderTotal=', total - finalDiscount, 'finalTotal=', newFinalTotal);
+          console.log('💰 Sau khi áp dụng voucher: orderDiscount=', finalDiscount, 'effectiveShip=', effectiveShip, 'finalTotal=', newFinalTotal);
 
           toast.success(`Đã chọn voucher: ${voucher.tenVoucher}`);
           setVoucherMessage(`Voucher đã được áp dụng! Giảm ${finalDiscount.toLocaleString()}₫`);
@@ -818,11 +905,13 @@ const Payment = () => {
       setOrderDiscount(0);
       setOrderTotal(total);
 
-      // ✅ QUAN TRỌNG: Cập nhật finalTotal về giá trị ban đầu
-      const newFinalTotal = (total - itemDiscountTotal) + shippingFee;
+      // ✅ SỬA: Áp dụng đúng logic miễn phí ship >= 2tr khi bỏ voucher
+      const subNoVoucher = total - itemDiscountTotal;
+      const effectiveShipNoVoucher = subNoVoucher >= 2000000 ? 0 : shippingFee;
+      const newFinalTotal = subNoVoucher + effectiveShipNoVoucher;
       setFinalTotal(newFinalTotal);
 
-      console.log('💰 Sau khi bỏ voucher: orderDiscount=0, orderTotal=', total, 'finalTotal=', newFinalTotal);
+      console.log('💰 Sau khi bỏ voucher: orderDiscount=0, effectiveShip=', effectiveShipNoVoucher, 'finalTotal=', newFinalTotal);
 
       toast.info('Đã bỏ chọn voucher');
       setVoucherMessage('Đã bỏ chọn voucher!');
@@ -1026,7 +1115,7 @@ const Payment = () => {
       // ✅ THÊM: Retry mechanism cho lỗi network
       if (retryCount < 2) {
         setTimeout(() => {
-          calculateShippingFee(fromDistrict, toDistrict, toWardCode, weight, insuranceValue, retryCount + 1, distance);
+          calculateShippingFee(fromDistrict, toDistrict, toProvinceId, toWardCode, weight, insuranceValue, retryCount + 1, distance);
         }, 2000);
         return;
       }
@@ -1666,6 +1755,9 @@ const Payment = () => {
         return { idSanPhamChiTiet: idSpct, soLuong };
       });
 
+      const subTotalVal = total - itemDiscountTotal - orderDiscount;
+      const effectiveShippingFee = subTotalVal >= 2000000 ? 0 : shippingFee;
+
       // ✅ BƯỚC 1: Tạo đơn hàng online (1 API duy nhất - xử lý cả chi tiết + trừ kho)
       const onlineRequest = {
         idKhachHang: customerId ? parseInt(customerId) : null,
@@ -1674,9 +1766,11 @@ const Payment = () => {
         soDienThoaiGiaoHang: customerPhone,
         emailGiaoHang: customerEmail,
         idVoucher: selectedVoucherId ? parseInt(selectedVoucherId) : null,
-        phiVanChuyen: Math.round(shippingFee) || 30000,
+        phiVanChuyen: Math.round(effectiveShippingFee),
         idService: selectedServiceId || null,
-        sanPhamDat: sanPhamDatList
+        tongTien: finalTotal,
+        sanPhamDat: sanPhamDatList,
+        paymentMethod: paymentMethod
       };
 
       console.log('📦 Tạo đơn hàng online (1-shot):', onlineRequest);
@@ -1689,7 +1783,17 @@ const Payment = () => {
 
       if (!orderRes.ok) {
         let errMsg = 'Lỗi khi tạo đơn hàng.';
-        try { const e = await orderRes.json(); errMsg = e.message || errMsg; } catch { errMsg = await orderRes.text() || errMsg; }
+        try { 
+          const textData = await orderRes.text();
+          try {
+            const e = JSON.parse(textData);
+            errMsg = e.message || textData;
+          } catch {
+            errMsg = textData || errMsg;
+          }
+        } catch (e) { 
+          console.error('Không thể đọc lỗi từ server', e);
+        }
         throw new Error(errMsg);
       }
 
@@ -1841,11 +1945,12 @@ const Payment = () => {
 
     } catch (error) {
       console.error('Lỗi trong quá trình đặt hàng:', error);
-      // Fallback khi lỗi kết nối: Giả định liên tỉnh 50km (250k)
-      setShippingFee(250000); // Assuming this is a state setter for shipping fee
-      setShippingFeeLoading(false); // Assuming this is a state setter for shipping fee loading
       setLoading(false);
       toast.error(`Đặt hàng thất bại: ${error.message}`);
+      
+      if (error.message && error.message.includes('Giá sản phẩm hoặc khuyến mãi đã thay đổi')) {
+        refreshPrices();
+      }
     }
   };
 
@@ -2101,7 +2206,10 @@ const Payment = () => {
                           />
                         </div>
                         <div className="gx-payment-product-detail">
-                          <div className="gx-payment-product-name">{item.name}</div>
+                          <div className="gx-payment-product-name">
+                            {item.name}
+                            {item.ma && <span style={{ color: '#888', fontSize: '13px', marginLeft: '6px', fontWeight: 'normal' }}>({item.ma})</span>}
+                          </div>
                           {item.variant && (
                             <div className="gx-payment-product-variants">
                               {item.variant.split(' • ').map((v, i) => (

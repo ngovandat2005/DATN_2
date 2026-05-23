@@ -47,7 +47,10 @@ public class GioHangChiTietService {
                 throw new ThongBao("Số lượng vượt quá tồn kho. Còn lại: " + spct.getSoLuong());
             }
             tonTai.setSoLuong(soLuongMoi);
-            tonTai.setGia(spct.getGiaBanGiamGia());
+            Double giaHienTai = (spct.getGiaBanGiamGia() != null && spct.getGiaBanGiamGia() > 0
+                    && spct.getGiaBanGiamGia() < spct.getGiaBan())
+                    ? spct.getGiaBanGiamGia() : spct.getGiaBan();
+            tonTai.setGia(giaHienTai);
             return repo.save(tonTai);
         }
 
@@ -59,7 +62,10 @@ public class GioHangChiTietService {
         moi.setSanPhamChiTiet(spct);
         moi.setKhachHang(kh);
         moi.setSoLuong(req.getSoLuong());
-        moi.setGia(spct.getGiaBanGiamGia());
+        Double gia = (spct.getGiaBanGiamGia() != null && spct.getGiaBanGiamGia() > 0
+                && spct.getGiaBanGiamGia() < spct.getGiaBan())
+                ? spct.getGiaBanGiamGia() : spct.getGiaBan();
+        moi.setGia(gia);
         return repo.save(moi);
     }
 

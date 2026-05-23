@@ -268,6 +268,8 @@ export default function VoucherPage() {
       ngayBatDau: voucher.ngayBatDau ? moment(voucher.ngayBatDau) : null,
       ngayKetThuc: voucher.ngayKetThuc ? moment(voucher.ngayKetThuc) : null,
       ngayTao: voucher.ngayTao ? moment(voucher.ngayTao) : null,
+      giamGiaToiDa: voucher.giamGiaToiDa || null,
+      trangThai: voucher.trangThai,
     });
     showModal();
   };
@@ -524,7 +526,7 @@ export default function VoucherPage() {
 
       <Modal
         title={editingVoucher ? "Sửa Voucher" : "Thêm Voucher"}
-        visible={isModalVisible}
+        open={isModalVisible}
         onCancel={handleCancel}
         footer={null} // Ẩn footer mặc định của Modal
       >
@@ -649,13 +651,16 @@ export default function VoucherPage() {
           {selectedVoucherType === 'Giảm giá %' && (
             <Form.Item
               name="giamGiaToiDa"
-              label="Giảm Giá Tối Đa"
-              rules={[{ required: false }]}
+              label="Giảm Giá Tối Đa (bắt buộc với voucher %)"
+              rules={[
+                { required: true, message: 'Voucher loại % bắt buộc nhập giảm giá tối đa!' },
+                { type: 'number', min: 1, message: 'Giảm giá tối đa phải lớn hơn 0!' }
+              ]}
             >
               <InputNumber
-                min={0}
+                min={1}
                 style={{ width: '100%' }}
-                placeholder="Giảm tối đa (để trống nếu không giới hạn)"
+                placeholder="Nhập số tiền giảm tối đa (VNĐ) - bắt buộc"
                 formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 parser={value => value.replace(/\s|,/g, '')}
               />

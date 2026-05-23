@@ -158,14 +158,7 @@ public class DonHangChiTietService {
         }
     }
     private DonHangChiTietDTO convertToDTO(DonHangChiTiet ct) {
-        DonHangChiTietDTO dto = new DonHangChiTietDTO();
-        dto.setId(ct.getId());
-        dto.setIdDonHang(ct.getDonHang() != null ? ct.getDonHang().getId() : null);
-        dto.setIdSanPhamChiTiet(ct.getSanPhamChiTiet() != null ? ct.getSanPhamChiTiet().getId() : null);
-        dto.setSoLuong(ct.getSoLuong());
-        dto.setGia(ct.getGia());
-        dto.setThanhTien(ct.getThanhTien());
-        return dto;
+        return new DonHangChiTietDTO(ct);
     }
 
     private DonHangChiTiet convertToEntity(DonHangChiTietDTO dto) {

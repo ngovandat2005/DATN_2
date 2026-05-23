@@ -1743,27 +1743,13 @@ const OrderDetailPage = () => {
     );
   };
 
-  // ✅ SỬA: Tính tổng kết đơn hàng chính xác (giống OrderDetail)
-  const tongTienHang = orderProducts.reduce((sum, sp) => {
-    // ✅ SỬA: Sử dụng giá từ DonHangChiTiet (gia) nếu có, nếu không thì dùng giá gốc
-    const finalPrice = sp.gia || sp.giaBan;
-    return sum + (finalPrice * sp.soLuong);
-  }, 0);
-
+  // ✅ SỬA: Tính tổng kết đơn hàng chính xác từ dữ liệu đã lưu trong CSDL để đảm bảo tính toàn vẹn dữ liệu lịch sử
   const tienShip = orderInfo && orderInfo.phiVanChuyen ? orderInfo.phiVanChuyen : 0;
-  let tongGiamGiaVal = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
-
-  // ✅ BẢO VỆ: Nếu dữ liệu DB sai (giảm giá > tiền hàng), hoặc không khớp với tổng thanh toán thực tế
-  // Ta sẽ tính lại Giảm giá dựa trên thanh toán thực tế của đơn hàng đó
-  if (orderInfo && orderInfo.tongTien) {
-    const checkValue = tongTienHang + tienShip - tongGiamGiaVal;
-    if (Math.abs(checkValue - orderInfo.tongTien) > 1000 || tongGiamGiaVal > tongTienHang) {
-      tongGiamGiaVal = Math.max(0, (tongTienHang + tienShip) - orderInfo.tongTien);
-    }
-  }
-
-  // ✅ KẾT QUẢ CUỐI CÙNG: Tổng cộng = Tiền hàng + Ship - Giảm giá
-  const tongTienHienThi = tongTienHang + tienShip - tongGiamGiaVal;
+  const tongGiamGiaVal = orderInfo && orderInfo.tongTienGiamGia ? orderInfo.tongTienGiamGia : 0;
+  const tongTienHienThi = orderInfo && orderInfo.tongTien ? orderInfo.tongTien : 0;
+  
+  // Tiền hàng ban đầu = Tổng thanh toán - Phí ship + Giảm giá
+  const tongTienHang = tongTienHienThi - tienShip + tongGiamGiaVal;
 
   // ✅ DEBUG: Log để kiểm tra tính toán
   console.log('🔍 === HỆ THỐNG TÍNH TOÁN (USER SIDE) ===');
@@ -2216,6 +2202,7 @@ const OrderDetailPage = () => {
               </div>
               <div style={{ flex: 2, fontWeight: 600, fontSize: 16 }}>
                 <div>{sp.tenSanPham}</div>
+                {sp.ma && <div style={{ color: '#888', fontSize: '13px', marginTop: '4px' }}>Mã: {sp.ma}</div>}
               </div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Màu: {sp.mauSac}</div>
               <div style={{ flex: 1, color: '#555', fontSize: 15 }}>Size: {sp.kichThuoc}</div>

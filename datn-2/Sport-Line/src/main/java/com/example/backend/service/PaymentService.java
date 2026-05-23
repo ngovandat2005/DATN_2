@@ -175,10 +175,18 @@ public class PaymentService {
 
     private void sendSuccessEmail(String txnRef, String amount, String toEmail) {
         if (toEmail == null || toEmail.trim().isEmpty()) return;
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail); 
-        message.setSubject("Giao dịch thành công với VNPay");
-        message.setText("Giao dịch mã: " + txnRef + "\nSố tiền: " + (Integer.parseInt(amount) / 100) + " VNĐ\nCảm ơn bạn đã sử dụng dịch vụ!");
-        mailSender.send(message);
+        try {
+            int parsedAmount = 0;
+            if (amount != null && !amount.trim().isEmpty()) {
+                parsedAmount = Integer.parseInt(amount.trim()) / 100;
+            }
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail); 
+            message.setSubject("Giao dịch thành công với VNPay");
+            message.setText("Giao dịch mã: " + txnRef + "\nSố tiền: " + parsedAmount + " VNĐ\nCảm ơn bạn đã sử dụng dịch vụ!");
+            mailSender.send(message);
+        } catch (Exception e) {
+            logger.error("Lỗi gửi mail: {}", e.getMessage());
+        }
     }
 }

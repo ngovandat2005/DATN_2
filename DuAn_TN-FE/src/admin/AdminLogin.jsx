@@ -55,7 +55,7 @@ const AdminLogin = () => {
 
                if (response.ok) {
           // Kiểm tra loại để đảm bảo chỉ nhân viên mới được đăng nhập admin
-          if (data.loai === 'NHANVIEN') {
+          if (data.loai === 'NHANVIEN' || data.loai === 'QUANLY') {
             setErrorMessage(''); // Clear error
             
             // Lưu thông tin đăng nhập vào localStorage

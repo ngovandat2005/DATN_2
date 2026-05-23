@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Button, theme } from 'antd';
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { getCurrentAdminUser } from './utils/adminUtils';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -36,6 +37,9 @@ function AdminPanel() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const adminUser = getCurrentAdminUser();
+  const isQuanLy = adminUser && adminUser.role === 'QUANLY';
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -157,7 +161,12 @@ function AdminPanel() {
           theme="dark"
           mode="inline"
           selectedKeys={[getSelectedKey()]}
-          items={menuItems}
+          items={menuItems.filter(item => {
+            if (item.key === 'staff' || item.key === 'statistics') {
+              return isQuanLy;
+            }
+            return true;
+          })}
         />
 
         {/* Nút đăng xuất ở cuối sidebar */}
@@ -214,7 +223,20 @@ function AdminPanel() {
             <Route index element={<SanPhamPage />} />
             <Route path="products" element={<SanPhamPage />} />
             <Route path="products/:id" element={<DetailSanPhamPage />} />
-            <Route path="staff" element={<NhanVienPage />} />
+            
+            {/* Phân quyền bảo vệ route staff và statistics */}
+            {isQuanLy ? (
+              <>
+                <Route path="staff" element={<NhanVienPage />} />
+                <Route path="statistics" element={<StatisticsPage />} />
+              </>
+            ) : (
+              <>
+                <Route path="staff" element={<Navigate to="/admin-panel/products" replace />} />
+                <Route path="statistics" element={<Navigate to="/admin-panel/products" replace />} />
+              </>
+            )}
+
             <Route path="vouchers" element={<VoucherPage />} />
             <Route path="promotions" element={<KhuyenMaiPage />} />
             <Route path="ap-dung-khuyen-mai/:khuyenMaiId" element={<ApDungKhuyenMaiPage />} />
@@ -223,8 +245,10 @@ function AdminPanel() {
             <Route path="orders" element={<DonHangPage />} />
             <Route path="orders/:orderId" element={<OrderDetailPage />} />
             <Route path="pos-orders/:id" element={<OrderDetailPOSPage />} />
-            <Route path="statistics" element={<StatisticsPage />} />
             <Route path="banhang" element={<BanHangTaiQuayPage />} />
+            
+            {/* Catch-all route redirect */}
+            <Route path="*" element={<Navigate to="/admin-panel/products" replace />} />
           </Routes>
         </Content>
       </Layout>

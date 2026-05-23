@@ -27,7 +27,9 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet,I
         dhct.sanPhamChiTiet.id,
         dhct.soLuong,
         dhct.gia,
-        dhct.thanhTien
+        dhct.thanhTien,
+        spct.ma,
+        sp.tenSanPham
     )
     FROM DonHangChiTiet dhct
     JOIN dhct.sanPhamChiTiet spct

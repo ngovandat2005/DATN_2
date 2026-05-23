@@ -135,7 +135,8 @@ const BanHangTaiQuayPage = () => {
   const [selectedWard, setSelectedWard] = useState('');
   const [shippingDetail, setShippingDetail] = useState('');
 
-  const GHN_TOKEN = '7600bb91-7667-11ef-8e53-0a00184fe694'; // Token giả định hoặc hằng số
+  const GHN_TOKEN = '55bb4252-5665-11f0-9b81-222185cb68c8'; // Token từ backend
+  const GHN_SHOP_ID = '196987';
 
   // Load danh sách voucher khi mount
   useEffect(() => {
@@ -167,7 +168,7 @@ const BanHangTaiQuayPage = () => {
 
   // Fetch tỉnh thành từ GHN
   useEffect(() => {
-    fetch('https://online-gateway.ghn.vn/shiip/publog-api/master-data/province', {
+    fetch('https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/province', {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
@@ -184,7 +185,7 @@ const BanHangTaiQuayPage = () => {
       setDistricts([]);
       return;
     }
-    fetch(`https://online-gateway.ghn.vn/shiip/publog-api/master-data/district?province_id=${selectedProvince}`, {
+    fetch(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/district?province_id=${selectedProvince}`, {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
@@ -201,7 +202,7 @@ const BanHangTaiQuayPage = () => {
       setWards([]);
       return;
     }
-    fetch(`https://online-gateway.ghn.vn/shiip/publog-api/master-data/ward?district_id=${selectedDistrict}`, {
+    fetch(`https://dev-online-gateway.ghn.vn/shiip/public-api/master-data/ward?district_id=${selectedDistrict}`, {
       headers: { Token: GHN_TOKEN }
     })
       .then(res => res.json())
@@ -216,12 +217,12 @@ const BanHangTaiQuayPage = () => {
   const calculateShippingFee = async (districtId, wardCode) => {
     if (!districtId || !wardCode) return;
     try {
-      const res = await fetch('https://online-gateway.ghn.vn/shiip/publog-api/v2/shipping-order/fee', {
+      const res = await fetch('https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Token: GHN_TOKEN,
-          ShopId: '194726' // ShopId giả định
+          ShopId: GHN_SHOP_ID
         },
         body: JSON.stringify({
           from_district_id: 1442,
@@ -265,7 +266,7 @@ const BanHangTaiQuayPage = () => {
         const productsWithPromo = data.map((product) => ({
           ...product,
           giaBanGiamGia: product.giaBanSauGiam // Map từ giaBanSauGiam sang giaBanGiamGia để tương thích với code hiện tại
-        }));
+        })).sort((a, b) => b.id - a.id);
         console.log('Dữ liệu sản phẩm từ API:', productsWithPromo[0]);
         setProducts(Array.isArray(productsWithPromo) ? productsWithPromo : []);
       } catch (err) {
@@ -289,12 +290,13 @@ const BanHangTaiQuayPage = () => {
         const prod = products.find(p => p.id === item.idSanPhamChiTiet);
         return {
           ...item,
-          tenSanPham: prod?.tenSanPham || '',
+          tenSanPham: prod?.tenSanPham || item.tenSanPham || '',
           mauSac: prod?.mauSac || '',
           kichThuoc: prod?.kichThuoc || '',
           giaBan: prod?.giaBan || item.gia, // Lấy giá gốc từ sản phẩm
           giaBanGiamGia: prod?.giaBanSauGiam || null, // Lấy giá khuyến mãi từ sản phẩm
           quantity: item.soLuong,
+          maSanPhamChiTiet: item.maSanPhamChiTiet || prod?.ma || '',
         };
       });
       setCart(cartWithInfo);
@@ -321,7 +323,7 @@ const BanHangTaiQuayPage = () => {
       const productsWithPromo = data.map((product) => ({
         ...product,
         giaBanGiamGia: product.giaBanSauGiam // Map từ giaBanSauGiam sang giaBanGiamGia để tương thích với code hiện tại
-      }));
+      })).sort((a, b) => b.id - a.id);
       setProducts(Array.isArray(productsWithPromo) ? productsWithPromo : []);
     } catch (err) {
       setError(err.message || 'Lỗi không xác định');
@@ -600,6 +602,37 @@ const BanHangTaiQuayPage = () => {
     }
   };
 
+  const handleRemoveVoucher = async () => {
+    const confirm = await Swal.fire({
+      title: 'Xác nhận bỏ voucher',
+      text: 'Bạn có chắc chắn muốn bỏ voucher đang áp dụng cho hóa đơn này không?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53935',
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy bỏ'
+    });
+    if (!confirm.isConfirmed) return;
+
+    setShowVoucherModal(false);
+    setSelectedVoucherId(null);
+    if (orderId) {
+      try {
+        const res = await fetch(`http://localhost:8080/api/update-voucher/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idgiamGia: null })
+        });
+        if (!res.ok) throw new Error('Lỗi khi bỏ voucher');
+        setVoucherMessage('Đã bỏ voucher!');
+        await fetchOrderInfo(orderId);
+        await fetchCartFromBE(orderId);
+      } catch (err) {
+        setVoucherMessage(err.message || 'Lỗi khi bỏ voucher!');
+      }
+    }
+  };
+
   // Lấy giá trị duy nhất cho màu sắc và size
   const colorOptions = [...new Set(products.map(p => p.mauSac).filter(Boolean))];
   const sizeOptions = [...new Set(products.map(p => p.kichThuoc).filter(Boolean))];
@@ -746,7 +779,7 @@ const BanHangTaiQuayPage = () => {
       return;
     }
 
-    setPaymentAmount(String(orderTotal || 0));
+    setPaymentAmount(String((orderTotal || 0) + (isShipping ? shippingFee : 0)));
     setPaymentMethod('TIEN_MAT');
     setShowPaymentModal(true);
   };
@@ -756,7 +789,7 @@ const BanHangTaiQuayPage = () => {
     setOrderLoading(true);
     try {
       const payload = {
-        tongTien: orderTotal,
+        tongTien: orderTotal + (isShipping ? shippingFee : 0),
         idgiamGia: selectedVoucherId,
         idkhachHang: selectedCustomerId || null,
         tenKhachHang: !selectedCustomerId && customerName ? customerName : null,
@@ -813,9 +846,12 @@ const BanHangTaiQuayPage = () => {
   };
 
   const showPaymentConfirmDialog = async () => {
-    const payTotal = orderTotal;
+    const payTotal = orderTotal + (isShipping ? shippingFee : 0);
     const voucherLine = orderDiscount > 0
       ? `<p>Giảm voucher: <b>-${orderDiscount.toLocaleString()}đ</b></p>`
+      : '';
+    const shippingLine = isShipping && shippingFee > 0
+      ? `<p>Phí vận chuyển: <b>+${shippingFee.toLocaleString()}đ</b></p>`
       : '';
     const confirmResult = await Swal.fire({
       title: 'Xác nhận thanh toán?',
@@ -823,6 +859,7 @@ const BanHangTaiQuayPage = () => {
         <div style="text-align:left;font-size:15px">
           <p>Tạm tính hàng: <b>${totalHang.toLocaleString()}đ</b></p>
           ${voucherLine}
+          ${shippingLine}
           <p style="margin-top:8px">Tổng thanh toán: <b style="color:#d32f2f">${payTotal.toLocaleString()}đ</b></p>
           <p style="color:#666;margin-top:8px">Khách đưa đủ tiền?</p>
         </div>
@@ -863,7 +900,8 @@ const BanHangTaiQuayPage = () => {
   // Hàm xác nhận thanh toán từ modal (khi cần tính tiền thừa)
   const handleConfirmPayment = async () => {
     if (!orderId) return;
-    if (Number(paymentAmount) < orderTotal) return;
+    const payTotal = orderTotal + (isShipping ? shippingFee : 0);
+    if (Number(paymentAmount) < payTotal) return;
 
     const voucherCheck = await validateVoucherBeforePayment();
     if (!voucherCheck.ok) return;
@@ -894,6 +932,9 @@ const BanHangTaiQuayPage = () => {
     const voucherLine = orderDiscount > 0
       ? `<p>Giảm voucher: <b>-${orderDiscount.toLocaleString()}đ</b></p>`
       : '';
+    const shippingLine = isShipping && shippingFee > 0
+      ? `<p>Phí vận chuyển: <b>+${shippingFee.toLocaleString()}đ</b></p>`
+      : '';
 
     const confirmResult = await Swal.fire({
       title: 'Đã nhận được tiền chuyển khoản?',
@@ -901,7 +942,8 @@ const BanHangTaiQuayPage = () => {
         <div style="text-align:left;font-size:15px">
           <p>Tạm tính hàng: <b>${totalHang.toLocaleString()}đ</b></p>
           ${voucherLine}
-          <p style="margin-top:8px">Tổng thanh toán: <b style="color:#d32f2f">${orderTotal.toLocaleString()}đ</b></p>
+          ${shippingLine}
+          <p style="margin-top:8px">Tổng thanh toán: <b style="color:#d32f2f">${(orderTotal + (isShipping ? shippingFee : 0)).toLocaleString()}đ</b></p>
           <p style="color:#666;margin-top:8px">Xác nhận đã nhận đủ tiền vào tài khoản?</p>
         </div>
       `,
@@ -918,7 +960,7 @@ const BanHangTaiQuayPage = () => {
     setOrderLoading(true);
     try {
       const payload = {
-        tongTien: orderTotal,
+        tongTien: orderTotal + (isShipping ? shippingFee : 0),
         idgiamGia: selectedVoucherId, // Thêm thông tin voucher để BE không reset
         idkhachHang: selectedCustomerId || null,
         tenKhachHang: !selectedCustomerId && customerName ? customerName : null,
@@ -1001,8 +1043,8 @@ const BanHangTaiQuayPage = () => {
     // Kiểm tra số điện thoại
     if (!newCustomerForm.soDienThoai.trim()) {
       errors.soDienThoai = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10,11}$/.test(newCustomerForm.soDienThoai.trim())) {
-      errors.soDienThoai = 'Số điện thoại phải có 10-11 chữ số';
+    } else if (!/^[0-9]{10}$/.test(newCustomerForm.soDienThoai.trim())) {
+      errors.soDienThoai = 'Số điện thoại phải có đúng 10 chữ số';
     }
 
     // Kiểm tra email
@@ -1027,8 +1069,7 @@ const BanHangTaiQuayPage = () => {
   const isFormValid = () => {
     return (
       newCustomerForm.tenKhachHang.trim().length >= 2 &&
-      newCustomerForm.soDienThoai.trim().length >= 10 &&
-      /^[0-9]{10,11}$/.test(newCustomerForm.soDienThoai.trim()) &&
+      /^[0-9]{10}$/.test(newCustomerForm.soDienThoai.trim()) &&
       newCustomerForm.email.trim().length > 0 &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCustomerForm.email.trim()) &&
       newCustomerForm.diaChi.trim().length >= 5
@@ -1161,8 +1202,8 @@ const BanHangTaiQuayPage = () => {
       }
 
       // Kiểm tra số điện thoại
-      if (newCustomerForm.soDienThoai.trim() && !/^[0-9]{10,11}$/.test(newCustomerForm.soDienThoai.trim())) {
-        errors.soDienThoai = 'Số điện thoại phải có 10-11 chữ số';
+      if (newCustomerForm.soDienThoai.trim() && !/^[0-9]{10}$/.test(newCustomerForm.soDienThoai.trim())) {
+        errors.soDienThoai = 'Số điện thoại phải có đúng 10 chữ số';
       }
 
       // Kiểm tra email
@@ -1494,7 +1535,7 @@ const BanHangTaiQuayPage = () => {
                         <TableCell>
                           <div style={{ fontWeight: 500 }}>
                             {item.tenSanPham}
-                            {item.sanPhamChiTiet?.ma && <span style={{ color: '#888', marginLeft: 8 }}>({item.sanPhamChiTiet.ma})</span>}
+                            {item.maSanPhamChiTiet && <span style={{ color: '#888', marginLeft: 8 }}>({item.maSanPhamChiTiet})</span>}
                           </div>
                           <div style={{ fontSize: 13, color: '#666', marginTop: 4 }}></div>
                         </TableCell>
@@ -1783,14 +1824,25 @@ const BanHangTaiQuayPage = () => {
             Chọn voucher
           </Button>
           {selectedVoucherId && (
-            <span style={{ marginLeft: 12, color: '#1976d2', fontWeight: 600 }}>
-              Đã chọn: {vouchers.find(v => v.id === Number(selectedVoucherId))?.tenVoucher}
-              {orderDiscount > 0 && (
-                <span style={{ color: '#388e3c', marginLeft: 6 }}>
-                  (-{orderDiscount.toLocaleString()} đ)
-                </span>
-              )}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ marginLeft: 12, color: '#1976d2', fontWeight: 600 }}>
+                Đã chọn: {vouchers.find(v => v.id === Number(selectedVoucherId))?.tenVoucher}
+                {orderDiscount > 0 && (
+                  <span style={{ color: '#388e3c', marginLeft: 6 }}>
+                    (-{orderDiscount.toLocaleString()} đ)
+                  </span>
+                )}
+              </span>
+              <Button
+                variant="contained"
+                color="error"
+                size="small"
+                onClick={handleRemoveVoucher}
+                style={{ marginLeft: 16, fontWeight: 'bold' }}
+              >
+                HỦY VOUCHER
+              </Button>
+            </div>
           )}
           {voucherMessage && (
             <span className={`bhtq-customer-message ${voucherMessage.includes('thành công') ? 'success' : 'error'}`}>{voucherMessage}</span>
@@ -1906,37 +1958,7 @@ const BanHangTaiQuayPage = () => {
         </DialogContent>
         <DialogActions>
           <Button
-            onClick={async () => {
-              // Hiển thị thông báo xác nhận trước khi bỏ voucher
-              const confirm = await Swal.fire({
-                title: 'Xác nhận bỏ voucher',
-                text: 'Bạn có chắc chắn muốn bỏ voucher đang áp dụng cho hóa đơn này không?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e53935',
-                confirmButtonText: 'Đồng ý',
-                cancelButtonText: 'Hủy bỏ'
-              });
-              if (!confirm.isConfirmed) return;
-
-              setShowVoucherModal(false);
-              setSelectedVoucherId(null); // Sử dụng null thay vì chuỗi rỗng
-              if (orderId) {
-                try {
-                  const res = await fetch(`http://localhost:8080/api/update-voucher/${orderId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idgiamGia: null })
-                  });
-                  if (!res.ok) throw new Error('Lỗi khi bỏ voucher');
-                  setVoucherMessage('Đã bỏ voucher!');
-                  await fetchOrderInfo(orderId);
-                  await fetchCartFromBE(orderId);
-                } catch (err) {
-                  setVoucherMessage(err.message || 'Lỗi khi bỏ voucher!');
-                }
-              }
-            }}
+            onClick={handleRemoveVoucher}
             color="error"
             variant="outlined"
             disabled={!orderId}
@@ -1969,11 +1991,16 @@ const BanHangTaiQuayPage = () => {
               Giảm giá: -{orderDiscount.toLocaleString()} đ
             </div>
           )}
+          {isShipping && shippingFee > 0 && (
+            <div style={{ color: '#f39c12', fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
+              Phí vận chuyển: +{shippingFee.toLocaleString()} đ
+            </div>
+          )}
           <div
             className="bhtq-cart-total"
             style={{ fontSize: 22, fontWeight: 'bold', color: '#2c3e50' }}
           >
-            Tổng tiền: <span style={{ color: '#e74c3c' }}>{orderTotal.toLocaleString()} đ</span>
+            Tổng tiền: <span style={{ color: '#e74c3c' }}>{(orderTotal + (isShipping ? shippingFee : 0)).toLocaleString()} đ</span>
           </div>
         </div>
 
@@ -2186,7 +2213,7 @@ const BanHangTaiQuayPage = () => {
         <DialogTitle>Tính tiền thừa / thanh toán</DialogTitle>
         <DialogContent>
           <div style={{ marginBottom: 8, width: '100%' }}>
-            <b>Số tiền cần thanh toán:</b> <span style={{ color: '#1976d2', fontSize: 18, fontWeight: 700 }}>{orderTotal.toLocaleString()} đ</span>
+            <b>Số tiền cần thanh toán:</b> <span style={{ color: '#1976d2', fontSize: 18, fontWeight: 700 }}>{(orderTotal + (isShipping ? shippingFee : 0)).toLocaleString()} đ</span>
           </div>
           <Button
             variant="contained"
@@ -2234,12 +2261,12 @@ const BanHangTaiQuayPage = () => {
             </div>
           </div>
           <div style={{ marginBottom: 8, width: '100%' }}>
-            {Number(paymentAmount) < orderTotal ? (
-              <Alert severity="warning">Khách thanh toán thiếu: {(orderTotal - Number(paymentAmount)).toLocaleString()} đ</Alert>
-            ) : Number(paymentAmount) === orderTotal ? (
+            {Number(paymentAmount) < (orderTotal + (isShipping ? shippingFee : 0)) ? (
+              <Alert severity="warning">Khách thanh toán thiếu: {((orderTotal + (isShipping ? shippingFee : 0)) - Number(paymentAmount)).toLocaleString()} đ</Alert>
+            ) : Number(paymentAmount) === (orderTotal + (isShipping ? shippingFee : 0)) ? (
               <Alert severity="info">Khách đưa đủ tiền — có thể bấm Thanh toán & In hóa đơn ngay</Alert>
             ) : (
-              <Alert severity="success">Tiền thừa trả khách: {(Number(paymentAmount) - orderTotal).toLocaleString()} đ</Alert>
+              <Alert severity="success">Tiền thừa trả khách: {(Number(paymentAmount) - (orderTotal + (isShipping ? shippingFee : 0))).toLocaleString()} đ</Alert>
             )}
           </div>
         </DialogContent>
@@ -2248,7 +2275,7 @@ const BanHangTaiQuayPage = () => {
             onClick={handleConfirmPayment}
             variant="contained"
             color="success"
-            disabled={Number(paymentAmount) < orderTotal}
+            disabled={Number(paymentAmount) < (orderTotal + (isShipping ? shippingFee : 0))}
           >
             Thanh toán&In hđ
           </Button>
@@ -2266,7 +2293,7 @@ const BanHangTaiQuayPage = () => {
       <QRCodePayment
         open={showQRPaymentModal}
         onClose={() => setShowQRPaymentModal(false)}
-        orderTotal={orderTotal}
+        orderTotal={orderTotal + (isShipping ? shippingFee : 0)}
         orderId={orderId}
         onPaymentConfirmed={handleQRPaymentConfirmed}
       />

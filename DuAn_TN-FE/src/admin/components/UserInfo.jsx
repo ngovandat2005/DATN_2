@@ -20,7 +20,7 @@ const UserInfo = () => {
           {adminUser ? adminUser.name : 'Admin'}
         </Text>
         <Text className="user-info-role">
-          {adminUser && adminUser.role === 'NHANVIEN' ? 'Nhân viên' : (adminUser ? adminUser.role : 'Admin')}
+          {adminUser && adminUser.role === 'QUANLY' ? 'Quản lý' : (adminUser && adminUser.role === 'NHANVIEN' ? 'Nhân viên' : (adminUser ? adminUser.role : 'Admin'))}
         </Text>
       </div>
     </Space>

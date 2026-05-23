@@ -22,7 +22,8 @@ public class VoucherController {
     }
 
     @GetMapping("/voucher/available")
-    public ResponseEntity<List<VoucherDTO>> getAvailableVouchers(@RequestParam Integer orderId) {
+    public ResponseEntity<List<VoucherDTO>> getAvailableVouchers(
+            @RequestParam(required = false) Integer orderId) {
         return ResponseEntity.ok(voucherService.getAvailableVouchers(orderId));
     }
 

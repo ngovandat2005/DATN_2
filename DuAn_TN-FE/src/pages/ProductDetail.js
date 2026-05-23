@@ -551,9 +551,12 @@ function ProductDetail() {
           </Col>
           <Col xs={24} lg={13} className="product-detail-info">
             {/* 1. Tên Sản Phẩm */}
-            <Title level={1} className="product-title">
+            <Title level={1} className="product-title" style={{ marginBottom: 4 }}>
               {product?.tenSanPham || product?.name || variants[0]?.sanPham?.tenSanPham || "Hệ thống đang tải tên..."}
             </Title>
+            {product?.ma && (
+              <div style={{ color: '#888', fontSize: '15px', marginBottom: '16px', fontWeight: 500 }}>Mã: {product.ma}</div>
+            )}
 
             {/* 2. Giá Tiền */}
             <div className="price-container">

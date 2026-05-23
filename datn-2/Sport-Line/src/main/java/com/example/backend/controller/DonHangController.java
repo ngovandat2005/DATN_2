@@ -223,15 +223,8 @@ public class DonHangController {
         return ResponseEntity.ok(stats);
     }
 
-    @PutMapping("/don-hang/{id}/trang-thai")
+    @PutMapping({"/don-hang/{id}/trang-thai", "/donhang/{id}/trang-thai"})
     public ResponseEntity<?> doiTrangThai(
-            @PathVariable Integer id,
-            @RequestParam("value") int value) {
-        return capNhatTrangThaiInternal(id, value);
-    }
-
-    @PutMapping("/donhang/{id}/trang-thai")
-    public ResponseEntity<?> doiTrangThaiAlias(
             @PathVariable Integer id,
             @RequestParam("value") int value) {
         return capNhatTrangThaiInternal(id, value);

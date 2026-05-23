@@ -14,8 +14,17 @@ public class HoaDonOnlineRequest {
     private Integer phiVanChuyen;
     private Integer idService;
     private List<SanPhamDatDTO> sanPhamDat;
+    private String paymentMethod;
 
     public HoaDonOnlineRequest() {
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
     public Integer getIdKhachHang() {

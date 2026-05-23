@@ -75,6 +75,10 @@ public class VoucherService {
                 && !dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
             throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
         }
+        if (("PERCENT".equalsIgnoreCase(dto.getLoaiVoucher()) || "PHAN_TRAM".equalsIgnoreCase(dto.getLoaiVoucher())) 
+                && (dto.getGiamGiaToiDa() == null || dto.getGiamGiaToiDa() <= 0)) {
+            throw new RuntimeException("Voucher loại % phải có giảm giá tối đa lớn hơn 0!");
+        }
         Voucher v = new Voucher();
         v.setMaVoucher(dto.getMaVoucher());
         v.setTenVoucher(dto.getTenVoucher());
@@ -122,6 +126,13 @@ public class VoucherService {
                             && !dto.getNgayKetThuc().isAfter(dto.getNgayBatDau())) {
                         throw new RuntimeException("Ngày kết thúc phải sau ngày bắt đầu!");
                     }
+                    // Nếu giamGiaToiDa không được gửi lên (null), giữ nguyên giá trị cũ từ DB
+                    Double giamGiaToiDaFinal = dto.getGiamGiaToiDa() != null ? dto.getGiamGiaToiDa() : v.getGiamGiaToiDa();
+                    // Với voucher loại %, giamGiaToiDa phải > 0
+                    if (("PERCENT".equalsIgnoreCase(dto.getLoaiVoucher()) || "PHAN_TRAM".equalsIgnoreCase(dto.getLoaiVoucher())) 
+                            && (giamGiaToiDaFinal == null || giamGiaToiDaFinal <= 0)) {
+                        throw new RuntimeException("Voucher loại % phải có giảm giá tối đa lớn hơn 0! Vui lòng nhập giá trị giảm tối đa.");
+                    }
                     v.setMaVoucher(dto.getMaVoucher());
                     v.setTenVoucher(dto.getTenVoucher());
                     v.setLoaiVoucher(dto.getLoaiVoucher());
@@ -131,7 +142,7 @@ public class VoucherService {
                     v.setDonToiThieu(dto.getDonToiThieu());
                     v.setNgayBatDau(dto.getNgayBatDau());
                     v.setNgayKetThuc(dto.getNgayKetThuc());
-                    v.setGiamGiaToiDa(dto.getGiamGiaToiDa());
+                    v.setGiamGiaToiDa(giamGiaToiDaFinal);
                     v.setTrangThai(dto.getTrangThai());
 
                     return convertDTO(voucherRepository.save(v));
@@ -161,7 +172,7 @@ public class VoucherService {
             // Nếu voucher bị tạm ngưng thủ công (trangThai == 2), ta giữ nguyên trạng thái tạm ngưng
             // trừ khi voucher đó đã hết hạn (ngayKetThuc trước now) thì ta cho hết hạn hẳn (setTrangThai(0))
             if (v.getTrangThai() != null && v.getTrangThai() == 2) {
-                boolean isExpired = v.getNgayKetThuc().isBefore(now);
+                boolean isExpired = v.getNgayKetThuc() != null && v.getNgayKetThuc().isBefore(now);
                 if (isExpired) {
                     v.setTrangThai(0);
                     vouchersToUpdate.add(v);
@@ -169,8 +180,8 @@ public class VoucherService {
                 continue;
             }
 
-            boolean isExpired = v.getNgayKetThuc().isBefore(now);
-            boolean isNotStarted = v.getNgayBatDau().isAfter(now);
+            boolean isExpired = v.getNgayKetThuc() != null && v.getNgayKetThuc().isBefore(now);
+            boolean isNotStarted = v.getNgayBatDau() != null && v.getNgayBatDau().isAfter(now);
             boolean isOutOfStock = v.getSoLuong() != null && v.getSoLuong() == 0;
 
             boolean isInvalid = isExpired || isNotStarted || isOutOfStock;
@@ -194,6 +205,7 @@ public class VoucherService {
             voucherRepository.saveAll(vouchersToUpdate);
         }
     }
+
 
 
 
@@ -286,17 +298,31 @@ public class VoucherService {
                 .orElseThrow(() -> new RuntimeException("Voucher không tồn tại"));
 
         double tongTien = dh.getTongTien() != null ? dh.getTongTien() : 0d;
+        
+        // Tính toán tổng tiền gốc trước chiết khấu để kiểm tra điều kiện đơn tối thiểu
+        double totalGoc = tongTien;
+        if (dh.getTongTienGiamGia() != null) {
+            totalGoc += dh.getTongTienGiamGia();
+        }
+        if (dh.getPhiVanChuyen() != null) {
+            totalGoc -= dh.getPhiVanChuyen();
+        }
 
         if (voucher.getTrangThai() == null || voucher.getTrangThai() != 1) {
             throw new RuntimeException("Voucher không hoạt động");
         }
-        if (voucher.getSoLuong() == null || voucher.getSoLuong() <= 0) {
-            throw new RuntimeException("Voucher đã hết lượt sử dụng");
+        
+        // Nếu voucher chính là voucher đang được áp dụng cho đơn này, ta bỏ qua kiểm tra số lượng tồn
+        boolean isCurrentlyApplied = dh.getGiamGia() != null && dh.getGiamGia().getId().equals(voucher.getId());
+        if (!isCurrentlyApplied) {
+            if (voucher.getSoLuong() == null || voucher.getSoLuong() <= 0) {
+                throw new RuntimeException("Voucher đã hết lượt sử dụng");
+            }
         }
         if (voucher.getNgayBatDau().isAfter(LocalDateTime.now()) || voucher.getNgayKetThuc().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Voucher không còn hiệu lực theo thời gian");
         }
-        if (voucher.getDonToiThieu() != null && tongTien < voucher.getDonToiThieu()) {
+        if (voucher.getDonToiThieu() != null && totalGoc < voucher.getDonToiThieu()) {
             throw new RuntimeException("Đơn hàng không đủ điều kiện áp dụng voucher");
         }
     }
@@ -317,25 +343,51 @@ public class VoucherService {
 
         return Math.min(giam, tongTien);
     }
-    //Kiểm tra xem voucher nào đủ điều kiện áp dụng cho đơn hàng
+    /**
+     * Lấy danh sách voucher khả dụng.
+     * - Nếu orderId = null (thanh toán online): trả về tất cả voucher đang hoạt động (trangThai=1).
+     * - Nếu orderId != null (bán hàng tại quầy): validate thêm theo điều kiện đơn hàng cụ thể.
+     */
     public List<VoucherDTO> getAvailableVouchers(Integer orderId) {
-        DonHang donHang = donHangRepository.findById(orderId).orElse(null);
         List<Voucher> allVouchers = voucherRepository.findAll();
         List<VoucherDTO> result = new ArrayList<>();
-        for (Voucher v : allVouchers) {
-            boolean isAvailable = true;
-            try {
-                if (donHang != null) {
-                    kiemTraDieuKienVoucher(donHang, v.getId());
-                }
-            } catch (Exception e) {
-                isAvailable = false;
+
+        if (orderId == null) {
+            // Online checkout: chỉ trả về voucher đang active (không cần validate theo đơn cụ thể)
+            LocalDateTime now = LocalDateTime.now();
+            for (Voucher v : allVouchers) {
+                boolean isActive = v.getTrangThai() != null && v.getTrangThai() == 1
+                        && (v.getSoLuong() != null && v.getSoLuong() > 0)
+                        && (v.getNgayBatDau() == null || !v.getNgayBatDau().isAfter(now))
+                        && (v.getNgayKetThuc() == null || !v.getNgayKetThuc().isBefore(now));
+                VoucherDTO dto = convertDTO(v);
+                dto.setIsAvailable(isActive);
+                result.add(dto);
             }
-            VoucherDTO dto = convertDTO(v);
-            dto.setIsAvailable(isAvailable);
-            result.add(dto);
+        } else {
+            // POS (bán hàng tại quầy): validate theo điều kiện đơn hàng cụ thể
+            DonHang donHang = donHangRepository.findById(orderId).orElse(null);
+            for (Voucher v : allVouchers) {
+                boolean isAvailable = true;
+                try {
+                    if (donHang != null) {
+                        // Nếu voucher này đang được áp dụng cho đơn hàng hiện tại, nó mặc định là khả dụng
+                        if (donHang.getGiamGia() != null && donHang.getGiamGia().getId().equals(v.getId())) {
+                            isAvailable = true;
+                        } else {
+                            kiemTraDieuKienVoucher(donHang, v.getId());
+                        }
+                    }
+                } catch (Exception e) {
+                    isAvailable = false;
+                }
+                VoucherDTO dto = convertDTO(v);
+                dto.setIsAvailable(isAvailable);
+                result.add(dto);
+            }
         }
-        // Sắp xếp voucher đủ điều kiện lên đầu (nếu muốn)
+
+        // Voucher đủ điều kiện lên đầu
         result.sort((a, b) -> Boolean.compare(Boolean.TRUE.equals(b.getIsAvailable()), Boolean.TRUE.equals(a.getIsAvailable())));
         return result;
     }

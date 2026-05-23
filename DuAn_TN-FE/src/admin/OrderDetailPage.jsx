@@ -433,28 +433,13 @@ const OrderDetail = () => {
     );
   };
 
-  // Tính tổng kết đơn hàng
-  const tongTienHang = orderProducts.reduce((sum, sp) => {
-    const finalPrice = sp.giaBanGiamGia && sp.giaBanGiamGia < sp.giaBan 
-                      ? sp.giaBanGiamGia 
-                      : sp.giaBan;
-    return sum + (finalPrice * sp.soLuong);
-  }, 0);
-  
+  // Tính tổng kết đơn hàng từ dữ liệu đã lưu trong CSDL để đảm bảo tính toàn vẹn dữ liệu lịch sử
   const tienShip = order && order.phiVanChuyen ? order.phiVanChuyen : 0;
-  let tongGiamGiaVal = order && order.tongTienGiamGia ? order.tongTienGiamGia : 0;
+  const tongGiamGiaVal = order && order.tongTienGiamGia ? order.tongTienGiamGia : 0;
+  const tongTienHienThi = order && order.tongTien ? order.tongTien : 0;
   
-  // ✅ BẢO VỆ: Nếu dữ liệu DB sai (giảm giá > tiền hàng), hoặc không khớp với tổng thanh toán thực tế
-  // Ta sẽ tính lại Giảm giá dựa trên thanh toán thực tế của đơn hàng đó
-  if (order && order.tongTien) {
-    const checkValue = tongTienHang + (tienShip || 0) - tongGiamGiaVal;
-    if (Math.abs(checkValue - order.tongTien) > 1000 || tongGiamGiaVal > tongTienHang) {
-      tongGiamGiaVal = Math.max(0, (tongTienHang + (tienShip || 0)) - order.tongTien);
-    }
-  }
-
-  // ✅ KẾT QUẢ CUỐI CÙNG: Tổng cộng = Tiền hàng + Ship - Giảm giá
-  const tongTienHienThi = tongTienHang + (tienShip || 0) - tongGiamGiaVal;
+  // Tiền hàng ban đầu = Tổng thanh toán - Phí ship + Giảm giá
+  const tongTienHang = tongTienHienThi - tienShip + tongGiamGiaVal;
 
   // ✅ DEBUG: Log để kiểm tra tính toán
   console.log('🔍 === HỆ THỐNG TÍNH TOÁN (ADMIN SIDE) ===');

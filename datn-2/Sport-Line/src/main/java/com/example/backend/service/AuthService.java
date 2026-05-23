@@ -55,7 +55,8 @@ public class AuthService {
             }
 
             upgradePasswordIfPlain(nv, password);
-            return new AuthResponse(nv.getId(), nv.getTenNhanVien(), "NHANVIEN", "/admin/ban-hang");
+            String role = (nv.getVaiTro() != null && nv.getVaiTro()) ? "QUANLY" : "NHANVIEN";
+            return new AuthResponse(nv.getId(), nv.getTenNhanVien(), role, "/admin/ban-hang");
         }
         throw new RuntimeException("Email không tồn tại trong hệ thống");
     }

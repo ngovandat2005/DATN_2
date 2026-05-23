@@ -49,8 +49,8 @@ public class ChatbotService {
             return Flux.just("Tính năng Chatbot AI chưa được cấu hình.");
         }
 
-        // Đổi sang model gemini-3.5-flash mới nhất
-        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?key="
+        // Đổi sang model gemini-1.5-flash ổn định và được hỗ trợ
+        String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key="
                 + geminiApiKey.trim();
 
         Map<String, Object> requestBody = createRequestBody(history, contextInfo);

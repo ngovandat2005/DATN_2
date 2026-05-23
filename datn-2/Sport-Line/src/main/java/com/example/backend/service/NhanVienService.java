@@ -35,9 +35,10 @@ public class NhanVienService {
         );
     }
     
-    // ham lay all nhan vien
+    // ham lay all nhan vien (chi lay nhan vien thuong, khong lay admin/quan ly)
     public List<NhanVienDTO> findall(){
         return nhanVienRepository.findAll().stream()
+                .filter(nhanVien -> nhanVien.getVaiTro() == null || !nhanVien.getVaiTro())
                 .map(nhanVien -> new NhanVienDTO(
                         nhanVien.getId(),
                         nhanVien.getTenNhanVien(),

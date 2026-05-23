@@ -13,8 +13,12 @@ const InvoiceContent = React.forwardRef(({ order }, ref) => {
   // Tên khách hàng fallback
   const customerName = (order.customerName && order.customerName.trim()) ? order.customerName : 'Khách vãng lai';
   // SĐT và địa chỉ cố định theo yêu cầu
-  const phone = '0984184412';
-  const address = 'Mỹ Đình - Nam Từ Liêm - Hà Nội';
+  const phone = '0987.654.321';
+  const address = 'Số 10, Ngõ 20, Ba Đình, Hà Nội';
+  
+  // SĐT và địa chỉ khách hàng
+  const customerPhone = order.soDienThoaiGiaoHang || order.soDienThoai || '';
+  const customerAddress = order.diaChiGiaoHang || '';
 
   return (
     <div ref={ref} id="invoice-content" style={{ width: 595, margin: '0 auto', fontFamily: 'Arial', background: '#fff', padding: 16 }}>
@@ -38,9 +42,11 @@ const InvoiceContent = React.forwardRef(({ order }, ref) => {
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
-          <b>Tên khách hàng:</b> {customerName}
+          <div style={{ marginBottom: 4 }}><b>Tên khách hàng:</b> {customerName}</div>
+          {customerPhone && <div style={{ marginBottom: 4 }}><b>Số điện thoại:</b> {customerPhone}</div>}
+          {customerAddress && <div><b>Địa chỉ giao hàng:</b> {customerAddress}</div>}
         </div>
-        <div>
+        <div style={{ textAlign: 'right' }}>
           <b>Nhân viên bán hàng:</b> {order.employeeName || 'Admin'}
         </div>
       </div>
@@ -94,6 +100,11 @@ const InvoiceContent = React.forwardRef(({ order }, ref) => {
       <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
         Tổng tiền hàng: {order.totalHang ? order.totalHang.toLocaleString() : order.total?.toLocaleString()} VND
       </div>
+      {order.phiVanChuyen > 0 && (
+        <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+          Phí vận chuyển: {order.phiVanChuyen.toLocaleString()} VND
+        </div>
+      )}
       <div style={{ fontWeight: 'bold', marginBottom: 4, color: '#388e3c' }}>
         Tổng tiền giảm giá: -{order.totalGiamGia ? order.totalGiamGia.toLocaleString() : '0'} VND
       </div>
