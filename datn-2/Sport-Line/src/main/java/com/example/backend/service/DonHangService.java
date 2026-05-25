@@ -295,6 +295,47 @@ public class DonHangService {
         List<DonHangChiTiet> chiTiets = new ArrayList<>();
         for (SanPhamDatDTO dto : req.getSanPhamDat()) {
             SanPhamChiTiet sp = sanPhamChiTietRepository.findByIdWithLock(dto.getIdSanPhamChiTiet()).orElseThrow();
+            
+            // ✅ Kiểm tra trạng thái của sản phẩm chi tiết (biến thể)
+            if (sp.getTrangThai() == null || sp.getTrangThai() == 0) {
+                throw new RuntimeException("Sản phẩm " + sp.getSanPham().getTenSanPham() + " hiện đã ngừng kinh doanh!");
+            }
+            
+            // ✅ Kiểm tra trạng thái sản phẩm cha
+            if (sp.getSanPham() == null || sp.getSanPham().getTrangThai() == null || sp.getSanPham().getTrangThai() == 0) {
+                throw new RuntimeException("Sản phẩm " + (sp.getSanPham() != null ? sp.getSanPham().getTenSanPham() : "") + " hiện đã ngừng kinh doanh!");
+            }
+
+            // ✅ Kiểm tra trạng thái kích thước
+            if (sp.getKichThuoc() != null && (sp.getKichThuoc().getTrangThai() == null || sp.getKichThuoc().getTrangThai() == 0)) {
+                throw new RuntimeException("Kích thước " + sp.getKichThuoc().getTenKichThuoc() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
+            // ✅ Kiểm tra trạng thái màu sắc
+            if (sp.getMauSac() != null && (sp.getMauSac().getTrangThai() == null || sp.getMauSac().getTrangThai() == 0)) {
+                throw new RuntimeException("Màu sắc " + sp.getMauSac().getTenMauSac() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
+            // ✅ Kiểm tra trạng thái thương hiệu
+            if (sp.getSanPham().getThuongHieu() != null && (sp.getSanPham().getThuongHieu().getTrangThai() == null || sp.getSanPham().getThuongHieu().getTrangThai() == 0)) {
+                throw new RuntimeException("Thương hiệu " + sp.getSanPham().getThuongHieu().getTenThuongHieu() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
+            // ✅ Kiểm tra trạng thái danh mục
+            if (sp.getSanPham().getDanhMuc() != null && (sp.getSanPham().getDanhMuc().getTrangThai() == null || sp.getSanPham().getDanhMuc().getTrangThai() == 0)) {
+                throw new RuntimeException("Danh mục " + sp.getSanPham().getDanhMuc().getTenDanhMuc() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
+            // ✅ Kiểm tra trạng thái chất liệu
+            if (sp.getSanPham().getChatLieu() != null && (sp.getSanPham().getChatLieu().getTrangThai() == null || sp.getSanPham().getChatLieu().getTrangThai() == 0)) {
+                throw new RuntimeException("Chất liệu " + sp.getSanPham().getChatLieu().getTenChatLieu() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
+            // ✅ Kiểm tra trạng thái xuất xứ
+            if (sp.getSanPham().getXuatXu() != null && (sp.getSanPham().getXuatXu().getTrangThai() == null || sp.getSanPham().getXuatXu().getTrangThai() == 0)) {
+                throw new RuntimeException("Xuất xứ " + sp.getSanPham().getXuatXu().getTenXuatXu() + " của sản phẩm hiện đã ngừng hỗ trợ!");
+            }
+
             if (sp.getSoLuong() < dto.getSoLuong()) throw new RuntimeException("Sản phẩm hết hàng");
             
             // ✅ BỔ SUNG: Chỉ trừ tồn kho ngay khi tạo đơn nếu không phải COD
