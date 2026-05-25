@@ -275,7 +275,6 @@ public class DonHangService {
         DonHang don = new DonHang();
         don.setNgayTao(LocalDateTime.now());
         don.setLoaiDonHang("ONLINE");
-        don.setTrangThai(TrangThaiDonHang.CHO_XAC_NHAN.getValue());
         don.setDiaChiGiaoHang(req.getDiaChiGiaoHang());
         don.setSoDienThoaiGiaoHang(req.getSoDienThoaiGiaoHang());
         don.setEmailGiaoHang(req.getEmailGiaoHang());
@@ -286,8 +285,10 @@ public class DonHangService {
         boolean isCOD = req.getPaymentMethod() != null && "cod".equalsIgnoreCase(req.getPaymentMethod());
         if (isCOD) {
             don.setGhiChu("COD");
+            don.setTrangThai(TrangThaiDonHang.CHO_XAC_NHAN.getValue());
         } else {
             don.setGhiChu("VNPay");
+            don.setTrangThai(TrangThaiDonHang.CHO_THANH_TOAN.getValue());
         }
 
         double tongTien = 0;
@@ -476,7 +477,8 @@ public class DonHangService {
             }
         }
 
-        if (hienTai != TrangThaiDonHang.DA_HUY && moi == TrangThaiDonHang.DA_HUY) {
+        if ((hienTai != TrangThaiDonHang.DA_HUY && moi == TrangThaiDonHang.DA_HUY)
+                || (hienTai != TrangThaiDonHang.TRA_HANG_HOAN_TIEN && moi == TrangThaiDonHang.TRA_HANG_HOAN_TIEN)) {
             boolean shouldRestoreStock = isStockDeducted(don);
             
             if (shouldRestoreStock) {
@@ -491,7 +493,7 @@ public class DonHangService {
             }
             
             // BỔ SUNG: Hoàn trả số lượng voucher khi huỷ đơn hàng qua đổi trạng thái
-            if (don.getGiamGia() != null) {
+            if (moi == TrangThaiDonHang.DA_HUY && don.getGiamGia() != null) {
                 Voucher v = voucherRepository.findByIdWithLock(don.getGiamGia().getId()).orElse(don.getGiamGia());
                 v.setSoLuong(v.getSoLuong() + 1);
                 voucherRepository.save(v);
@@ -506,6 +508,19 @@ public class DonHangService {
 
         don.setTrangThai(moi.getValue());
         donHangRepository.save(don);
+    }
+
+    @Transactional
+    public DonHang giaoKhongThanhCong(Integer id, String ghiChu) {
+        DonHang don = donHangRepository.findById(id).orElseThrow();
+        if (don.getTrangThai() != TrangThaiDonHang.DANG_GIAO.getValue()) {
+            throw new RuntimeException("Chỉ có thể đánh dấu giao hàng thất bại khi đơn hàng ở trạng thái đang giao!");
+        }
+        don.setTrangThai(TrangThaiDonHang.GIAO_HANG_THAT_BAI.getValue());
+        if (ghiChu != null && !ghiChu.trim().isEmpty()) {
+            don.setGhiChu(ghiChu.trim());
+        }
+        return donHangRepository.save(don);
     }
 
     public boolean isStockDeducted(DonHang donHang) {

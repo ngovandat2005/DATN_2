@@ -78,4 +78,11 @@ public class ThongKeController {
             @RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(thongKeService.getBestSellersByDateRange(startDate, endDate, limit));
     }
+
+    @GetMapping("/orders-by-range")
+    public ResponseEntity<List<Map<String, Object>>> getOrdersByRange(
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(thongKeService.getDailyStatsByRange(startDate, endDate));
+    }
 }

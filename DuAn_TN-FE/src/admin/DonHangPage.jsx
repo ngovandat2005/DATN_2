@@ -11,6 +11,7 @@ const TRANG_THAI = [
   { value: 3, label: 'Đang giao', color: '#1976d2' },
   { value: 4, label: 'Hoàn thành', color: '#009688' },
   { value: 5, label: 'Đã hủy', color: '#e53935' },
+  { value: 6, label: 'Trả hàng / Hoàn tiền', color: '#7b1fa2' },
 
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' },
   { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
@@ -256,6 +257,8 @@ const DonHangPage = () => {
         url = 'http://localhost:8080/api/donhang/dagiao'; break;
       case 5:
         url = 'http://localhost:8080/api/donhang/dahuy'; break;
+      case 6:
+        url = 'http://localhost:8080/api/donhang/trahanghoantien'; break;
       case 7:
         url = 'http://localhost:8080/api/donhang/giaohangthatbai'; break;
       default:

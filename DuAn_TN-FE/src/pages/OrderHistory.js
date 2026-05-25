@@ -36,6 +36,7 @@ const TRANG_THAI_MAP = [
   { value: 1, label: "Chờ vận chuyển" },
   { value: "cho-nhan", label: "Chờ nhận" },
   { value: 4, label: "Đã giao" },
+  { value: 6, label: "Trả hàng / Hoàn tiền" },
   { value: 5, label: "Đã hủy" },
 ];
 
@@ -47,6 +48,7 @@ const GET_STATUS_STYLE = (value) => {
     case 3: return { label: "Chờ nhận", color: "#2563eb" };
     case 4: return { label: "Đã giao", color: "#10b981" };
     case 5: return { label: "Đã hủy", color: "#ef4444" };
+    case 6: return { label: "Trả hàng / Hoàn tiền", color: "#ec4899" };
 
     case 7: return { label: "Thất bại", color: "#6366f1" };
     case 8: return { label: "Chờ thanh toán", color: "#d97706" };

@@ -35,8 +35,6 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet,I
     JOIN dhct.sanPhamChiTiet spct
     JOIN spct.sanPham sp
     WHERE dhct.donHang.id = :id
-    AND spct.trangThai = 1
-    AND sp.trangThai = 1
     """)
     List<DonHangChiTietDTO> findByDonHangId(@Param("id") Integer id);
 
@@ -46,7 +44,9 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet,I
     @Query("SELECT COALESCE(SUM(dhct.soLuong), 0) FROM DonHangChiTiet dhct JOIN dhct.donHang dh WHERE dh.trangThai IN (1, 4) AND dh.ngayMua BETWEEN :startDate AND :endDate")
     Integer sumProductsSoldByDateRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 
-    @Query("SELECT COALESCE(SUM(dhct.soLuong), 0) FROM DonHangChiTiet dhct JOIN dhct.donHang dh WHERE dh.trangThai IN (1, 4) AND UPPER(dh.loaiDonHang) = UPPER(:channel) AND dh.ngayMua BETWEEN :startDate AND :endDate")
+    @Query("SELECT COALESCE(SUM(dhct.soLuong), 0) FROM DonHangChiTiet dhct JOIN dhct.donHang dh WHERE dh.trangThai IN (1, 4) AND " +
+           "((UPPER(:channel) = 'ONLINE' AND UPPER(dh.loaiDonHang) = 'ONLINE') OR (UPPER(:channel) != 'ONLINE' AND UPPER(dh.loaiDonHang) != 'ONLINE')) " +
+           "AND dh.ngayMua BETWEEN :startDate AND :endDate")
     Integer sumProductsSoldByChannelAndDateRange(@Param("channel") String channel, @Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 
     @Query("SELECT new com.example.backend.dto.BestSellerDTO(sp.id, sp.tenSanPham, th.tenThuongHieu, SUM(CAST(dhct.soLuong AS long)), sp.images) " +

@@ -177,6 +177,17 @@ public class DonHangController {
         }
     }
 
+    @PutMapping("/donhang/giao-khong-thanh-cong/{id}")
+    public ResponseEntity<?> giaoKhongThanhCong(@PathVariable Integer id, @RequestBody(required = false) Map<String, String> body) {
+        try {
+            String ghiChu = body != null ? body.get("ghiChu") : null;
+            DonHang updated = donHangService.giaoKhongThanhCong(id, ghiChu);
+            return ResponseEntity.ok(new DonHangDTO(updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PutMapping("/donhang/sua-dia-chi")
     public ResponseEntity<?> suaDiaChi(@RequestParam Integer id,
             @RequestParam String diaChiMoi,

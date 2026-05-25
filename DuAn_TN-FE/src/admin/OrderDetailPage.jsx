@@ -12,7 +12,8 @@ const TRANG_THAI = [
   { value: 5, label: 'Đã hủy', color: '#e53935' },
 
   { value: 7, label: 'Giao hàng không thành công', color: '#9c27b0' },
-  { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
+  { value: 8, label: 'Chờ thanh toán', color: '#d97706' },
+  { value: 6, label: 'Trả hàng / Hoàn tiền', color: '#7b1fa2' }
 ];
 
 const OrderDetail = () => {
@@ -304,6 +305,11 @@ const OrderDetail = () => {
     // Nếu đơn hàng hoàn thành (trạng thái >= 4)
     if (currentStatus >= 4) {
       actualSteps.push(TRANG_THAI[4]);
+    }
+    
+    // Nếu đơn hàng trả hàng/hoàn tiền (trạng thái = 6)
+    if (currentStatus === 6) {
+      actualSteps.push(TRANG_THAI.find(t => t.value === 6));
     }
     
     // Xử lý trường hợp đặc biệt: Nếu đơn hàng bị hủy (trạng thái = 5)
@@ -654,6 +660,26 @@ const OrderDetail = () => {
               onClick={() => handleUpdateStatus(7)}
             >
               ⚠️ Giao hàng không thành công
+            </button>
+          )}
+
+          {/* Nút Trả hàng/Hoàn tiền (4 -> 6) */}
+          {order.trangThai === 4 && (
+            <button
+              style={{
+                padding: '10px 24px',
+                background: '#7b1fa2',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: 15,
+                boxShadow: '0 2px 6px rgba(123,31,162,0.2)'
+              }}
+              onClick={() => handleUpdateStatus(6)}
+            >
+              🔄 Trả hàng / Hoàn tiền
             </button>
           )}
         </div>

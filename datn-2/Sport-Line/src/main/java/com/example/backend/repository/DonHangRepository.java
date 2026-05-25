@@ -26,7 +26,7 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
 
     List<DonHang> findByTrangThai(Integer trangThai);
 
-    @Query("SELECT SUM(d.tongTien) FROM DonHang d WHERE d.trangThai IN (1, 4)")
+    @Query("SELECT COALESCE(SUM(d.tongTien - COALESCE(d.phiVanChuyen, 0)), 0) FROM DonHang d WHERE d.trangThai IN (1, 4)")
     double sumTongTien();
 
     int countByTrangThai(Integer trangThai);
@@ -41,12 +41,17 @@ public interface DonHangRepository extends JpaRepository<DonHang, Integer> {
     @Query("SELECT COUNT(d) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua BETWEEN :startDate AND :endDate")
     Integer countOrdersCompletedByDateRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 
-    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua BETWEEN :startDate AND :endDate")
+    @Query("SELECT COALESCE(SUM(d.tongTien - COALESCE(d.phiVanChuyen, 0)), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua BETWEEN :startDate AND :endDate")
     Double sumRevenueByDateRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 
-    @Query("SELECT COALESCE(SUM(d.tongTien), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND UPPER(d.loaiDonHang) = UPPER(:channel) AND d.ngayMua BETWEEN :startDate AND :endDate")
+    @Query("SELECT COALESCE(SUM(d.tongTien - COALESCE(d.phiVanChuyen, 0)), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND " +
+           "((UPPER(:channel) = 'ONLINE' AND UPPER(d.loaiDonHang) = 'ONLINE') OR (UPPER(:channel) != 'ONLINE' AND UPPER(d.loaiDonHang) != 'ONLINE')) " +
+           "AND d.ngayMua BETWEEN :startDate AND :endDate")
     Double sumRevenueByChannelAndDateRange(@Param("channel") String channel, @Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 
     @Query("SELECT d.trangThai, COUNT(d) FROM DonHang d WHERE d.ngayMua BETWEEN :startDate AND :endDate GROUP BY d.trangThai")
     List<Object[]> countOrdersByStatusInRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
+
+    @Query("SELECT d.ngayMua, COUNT(d), COALESCE(SUM(d.tongTien - COALESCE(d.phiVanChuyen, 0)), 0) FROM DonHang d WHERE d.trangThai IN (1, 4) AND d.ngayMua BETWEEN :startDate AND :endDate GROUP BY d.ngayMua")
+    List<Object[]> getDailyRevenueAndCountByDateRange(@Param("startDate") java.time.LocalDate startDate, @Param("endDate") java.time.LocalDate endDate);
 }

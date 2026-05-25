@@ -125,13 +125,15 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
   }
 
   if (type === 'pie') {
+    const isRevenuePie = title.toLowerCase().includes('doanh thu') || (data[0] && (data[0].label === 'ONLINE' || data[0].label === 'OFFLINE'));
+
     return (
       <div style={{ position: 'relative', padding: '10px' }}>
-        <Title level={5} style={{ marginBottom: '8px', textAlign: 'center', color: '#595959' }}>{title}</Title>
+        {title && <Title level={5} style={{ marginBottom: '8px', textAlign: 'center', color: '#595959' }}>{title}</Title>}
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <Text type="secondary" style={{ fontSize: '12px', fontWeight: 'bold', color: '#8c8c8c' }}>TỔNG CỘNG: </Text>
           <Text style={{ fontSize: '18px', fontWeight: '800', color: '#262626' }}>
-            {type === 'currency' || title.toLowerCase().includes('doanh thu') 
+            {type === 'currency' || isRevenuePie 
               ? `${totalValue.toLocaleString('vi-VN')}₫` 
               : totalValue.toLocaleString('vi-VN')}
           </Text>
@@ -158,7 +160,8 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
               <Tooltip 
                 formatter={(value, name) => {
                   const percent = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : 0;
-                  return [`${value.toLocaleString('vi-VN')} (${percent}%)`, `${name}`];
+                  const valStr = isRevenuePie ? `${value.toLocaleString('vi-VN')}₫` : value.toLocaleString('vi-VN');
+                  return [`${valStr} (${percent}%)`, `${name}`];
                 }}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 1000 }}
               />
@@ -170,7 +173,8 @@ const SimpleChart = ({ data, title, type = 'bar' }) => {
                   const { payload } = entry;
                   const val = payload.value;
                   const percent = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : 0;
-                  return <span style={{ color: '#595959', fontSize: '12px' }}>{value} ({percent}%)</span>;
+                  const valStr = isRevenuePie ? `${val.toLocaleString('vi-VN')}₫` : val.toLocaleString('vi-VN');
+                  return <span style={{ color: '#595959', fontSize: '12px' }}>{value}: {valStr} ({percent}%)</span>;
                 }}
               />
             </PieChart>

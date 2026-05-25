@@ -164,4 +164,31 @@ public class ThongKeService {
         data.put("revenue", rev != null ? rev : 0.0);
         return data;
     }
+
+    public List<Map<String, Object>> getDailyStatsByRange(LocalDate start, LocalDate end) {
+        List<Object[]> results = donHangRepository.getDailyRevenueAndCountByDateRange(start, end);
+        Map<LocalDate, Map<String, Object>> rawData = new HashMap<>();
+        for (Object[] row : results) {
+            LocalDate date = (LocalDate) row[0];
+            Long count = (Long) row[1];
+            Double revenue = (Double) row[2];
+            rawData.put(date, Map.of("count", count, "revenue", revenue));
+        }
+
+        List<Map<String, Object>> list = new java.util.ArrayList<>();
+        LocalDate current = start;
+        while (!current.isAfter(end)) {
+            Map<String, Object> dayData = rawData.get(current);
+            long count = dayData != null ? ((Number) dayData.get("count")).longValue() : 0L;
+            double revenue = dayData != null ? ((Number) dayData.get("revenue")).doubleValue() : 0.0;
+            
+            list.add(Map.of(
+                "date", current.toString(),
+                "count", count,
+                "revenue", revenue
+            ));
+            current = current.plusDays(1);
+        }
+        return list;
+    }
 }

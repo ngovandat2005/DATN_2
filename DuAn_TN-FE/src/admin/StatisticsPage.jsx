@@ -46,39 +46,27 @@ function StatisticsPage() {
   // Fetch dữ liệu biểu đồ số đơn hàng theo ngày
   const fetchOrderChartData = useCallback(async () => {
     try {
-      const data = [];
-      const formatDateToLocalTime = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      
-      let startOfPeriod, endOfPeriod;
-      
+      let start, end;
       if (dateRange && dateRange[0] && dateRange[1]) {
-        startOfPeriod = dateRange[0].toDate();
-        endOfPeriod = dateRange[1].toDate();
+        start = dateRange[0].format('YYYY-MM-DD');
+        end = dateRange[1].format('YYYY-MM-DD');
       } else {
-        const now = new Date();
-        startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
-        endOfPeriod = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const now = dayjs();
+        start = now.startOf('month').format('YYYY-MM-DD');
+        end = now.endOf('month').format('YYYY-MM-DD');
       }
       
-      const currentDate = new Date(startOfPeriod);
-      while (currentDate <= endOfPeriod) {
-        const localDate = formatDateToLocalTime(currentDate);
-        const response = await axios.get(`http://localhost:8080/api/thong-ke/orders-by-date?date=${localDate}`);
-        const { count, revenue } = response.data || { count: 0, revenue: 0 };
-        data.push({
-          label: currentDate.toLocaleDateString('vi-VN'),
-          value: count || 0,
-          revenue: revenue || 0
-        });
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
+      const response = await axios.get(`http://localhost:8080/api/thong-ke/orders-by-range?startDate=${start}&endDate=${end}`);
+      const chartData = (response.data || []).map(item => {
+        const dateObj = new Date(item.date);
+        return {
+          label: dateObj.toLocaleDateString('vi-VN'),
+          value: item.count || 0,
+          revenue: item.revenue || 0
+        };
+      });
       
-      setRevenueChartData(data);
+      setRevenueChartData(chartData);
     } catch (err) {
       console.error('Lỗi khi lấy dữ liệu biểu đồ số đơn hàng:', err);
       setRevenueChartData([]);

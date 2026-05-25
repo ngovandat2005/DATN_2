@@ -15,7 +15,8 @@ const TRANG_THAI = [
   { value: 5, label: 'Đã hủy', color: '#e53935' },
 
   { value: 7, label: 'Thất bại', color: '#6366f1' },
-  { value: 8, label: 'Chờ thanh toán', color: '#d97706' }
+  { value: 8, label: 'Chờ thanh toán', color: '#d97706' },
+  { value: 6, label: 'Trả hàng/Hoàn tiền', color: '#ec4899' }
 ];
 
 const formatImage = (raw) => {
@@ -2121,6 +2122,13 @@ const OrderDetailPage = () => {
                       onClick={handleGiaoKhongThanhCong}
                     >⚠️ Giao không thành công</button>
                   </>
+                )}
+
+                {orderInfo.trangThai === 4 && (
+                  <button
+                    style={{ padding: '8px 20px', background: '#7b1fa2', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, marginRight: 12, cursor: 'pointer' }}
+                    onClick={() => handleConfirmCapNhatTrangThai(6, 'trả hàng / hoàn tiền')}
+                  >🔄 Trả hàng / Hoàn tiền</button>
                 )}
               </>
             )}
