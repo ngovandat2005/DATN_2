@@ -27,9 +27,17 @@ const checkCustomerOrderLimit = async (customerId) => {
     const orders = await response.json();
     console.log('📋 Tất cả đơn hàng của khách hàng:', orders);
 
-    // Log các đơn hàng không tính vào giới hạn (trạng thái 4: Hoàn thành, 5: Đã hủy, 6: Trả hàng)
-    const activeOrders = orders.filter(order => ![4, 5, 6].includes(order.trangThai));
-    console.log('📊 Đơn hàng đang hoạt động (không tính 4,5,6):', activeOrders);
+    // Log các đơn hàng không tính vào giới hạn (trạng thái 4: Hoàn thành, 5: Đã hủy, 6: Trả hàng).
+    // Đối với đơn "Bán hàng tại quầy", chỉ những đơn chưa hoàn thành (trạng thái 0) mới tính vào giới hạn.
+    const activeOrders = orders.filter(order => {
+      const isOnline = order.loaiDonHang?.toLowerCase() === 'online';
+      if (isOnline) {
+        return ![4, 5, 6].includes(order.trangThai);
+      } else {
+        return order.trangThai === 0;
+      }
+    });
+    console.log('📊 Đơn hàng đang hoạt động (không tính 4,5,6 đối với online và chỉ tính 0 đối với tại quầy):', activeOrders);
     console.log('📈 Số lượng đơn hàng hiện tại:', activeOrders.length);
 
     return {
