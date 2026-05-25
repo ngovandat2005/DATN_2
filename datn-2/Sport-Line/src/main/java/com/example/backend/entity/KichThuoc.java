@@ -21,4 +21,14 @@ public class KichThuoc {
 
     @Column(name = "TrangThai")
     private Integer trangThai;
+
+    @Column(name = "Ma")
+    private String ma;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.ma == null || this.ma.trim().isEmpty()) {
+            this.ma = "KT" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
 }

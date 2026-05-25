@@ -24,4 +24,14 @@ public class DanhMuc {
 
     @Column(name = "TrangThai")
     private Integer trangThai;
+
+    @Column(name = "Ma")
+    private String ma;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.ma == null || this.ma.trim().isEmpty()) {
+            this.ma = "DM" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        }
+    }
 }
